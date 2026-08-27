@@ -1,0 +1,14 @@
+# Real credentials -- NEVER commit. Elsevier keys cannot be revoked;
+# a committed key is burned forever. Copy .env.example to .env and fill it.
+.env
+
+# Your real research queries (the repo ships queries.example.json only --
+# your query blocks can reveal unpublished research directions)
+queries.json
+
+# All run output
+lit/
+
+# Python
+__pycache__/
+*.pyc

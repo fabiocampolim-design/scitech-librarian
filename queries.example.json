@@ -1,0 +1,40 @@
+{
+  "PSC": {
+    "title": "Perovskite solar cell degradation under humidity",
+    "note": "grounding block -- expect thousands of hits; use it to sanity-check that every backend is reachable and the counts are plausible",
+    "groups": [
+      ["perovskite solar cell", "halide perovskite photovoltaic"],
+      ["degradation", "stability", "encapsulation"],
+      ["humidity", "moisture", "water ingress"]
+    ]
+  },
+  "MLP": {
+    "title": "Machine-learned interatomic potentials for amorphous materials",
+    "note": "a narrower intersection -- expect hundreds; good for testing record fetch and RIS export",
+    "arxiv_groups": [0, 1],
+    "groups": [
+      ["machine learning potential", "machine-learned interatomic potential", "neural network potential"],
+      ["amorphous", "glass", "disordered solid"],
+      ["molecular dynamics", "structure prediction"]
+    ]
+  },
+  "NOV": {
+    "title": "EXAMPLE NOVELTY CHECK: origami metamaterials as topological acoustic pumps",
+    "note": "novelty-check pattern -- a SMALL number is the good outcome; read every hit by hand before claiming a gap",
+    "groups": [
+      ["origami", "kirigami"],
+      ["acoustic metamaterial", "phononic crystal"],
+      ["topological pumping", "Thouless pump", "edge state"]
+    ]
+  },
+  "QC": {
+    "title": "Quasicrystal photonics (arXiv-tuned example)",
+    "note": "demonstrates arxiv_groups: arXiv chokes on deeply nested booleans, so name the two groups it should get",
+    "arxiv_groups": [0, 2],
+    "groups": [
+      ["quasicrystal", "quasiperiodic lattice"],
+      ["photonic", "waveguide", "optical lattice"],
+      ["localization", "critical states", "fractal spectrum"]
+    ]
+  }
+}
