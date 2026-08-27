@@ -324,7 +324,7 @@ it on Linux and Windows under Python 3.9 and 3.13.
 
 ## How it was built
 
-In Claude Code, for real use: the first version was written in the TM2FDM
+In Claude Code, for real use: the first version was written in a condensed-matter
 physics project's literature-review sessions (mid-August 2026, roughly three
 working days to v2.2), hardened by running actual PhD novelty checks —
 5,000-record scans, the arXiv hang, the OpenAlex junk discrepancy, WoS UI

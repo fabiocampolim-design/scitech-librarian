@@ -20,7 +20,7 @@ to lit/counts_history.csv so drift over time is visible.
 Backends
 --------
 no key needed:  openalex  arxiv  inspire  semanticscholar  crossref
-key needed:     scopus (SCOPUS_API_KEY + Unicamp network/VPN)
+key needed:     scopus (SCOPUS_API_KEY + institutional network/VPN)
                 ads    (ADS_TOKEN)
                 wos    (WOS_STARTER_KEY; restricted grammar, see .env.example)
 
@@ -29,7 +29,7 @@ Stdlib only -- no pip install required.
 
 LEGAL: documented public APIs only. Never point a scraper at the Web of
 Science or Scopus web interfaces; that breaches their terms and can get
-Unicamp's institutional access suspended.
+your institution's access suspended.
 """
 
 from __future__ import annotations
@@ -225,7 +225,7 @@ def _get(url: str, headers: dict | None = None, tries: int = 3,
             last = f"HTTP {e.code}: {body}"
             if e.code in (401, 403):
                 raise RuntimeError(
-                    f"{last}\n      -> auth/entitlement. Scopus: are you on the Unicamp "
+                    f"{last}\n      -> auth/entitlement. Scopus: are you on your institution's "
                     f"VPN and is the key valid? WoS: Starter keys reject complex queries."
                 ) from None
             if e.code in (429, 500, 502, 503):

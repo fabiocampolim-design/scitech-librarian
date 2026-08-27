@@ -9,7 +9,7 @@ entry, no code. API details verified August 2026 — re-check before wiring.
 | Backend | Key | Endpoint | Notes |
 |---|---|---|---|
 | **Europe PMC** | none | `https://www.ebi.ac.uk/europepmc/webservices/rest/search` | params `query`, `format=json`, `pageSize`, `cursorMark` (cursor paging, start `*`); total `hitCount`, items `resultList.result`; fields: `title`, `pubYear`, `doi`, `journalTitle`, `authorString`. Life sciences + preprints, huge. |
-| **CORE v3** | free key (Fabio has one) | `https://api.core.ac.uk/v3/search/works` | Bearer auth; `q` supports boolean; total `totalHits`, items `results`; OA aggregator, good for full-text links. |
+| **CORE v3** | free key | `https://api.core.ac.uk/v3/search/works` | Bearer auth; `q` supports boolean; total `totalHits`, items `results`; OA aggregator, good for full-text links. |
 | **DOAJ** | none | `https://doaj.org/api/search/articles/{query}` | query in URL path (needs a small driver or param-in-path support); items `results`, fields under `bibjson.*`. OA journals only. |
 | **OpenAIRE** | none (token raises limits) | `https://api.openaire.eu/search/publications` | `format=json`, `keywords`; XML-ish JSON, may need a driver. EU aggregator incl. datasets. |
 | **DBLP** | none | `https://dblp.org/search/publ/api` | `q`, `format=json`; total `result.hits.@total`, items `result.hits.hit[].info`. Computer science. |
