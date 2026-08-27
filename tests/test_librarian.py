@@ -263,6 +263,90 @@ check("every embedded default compiles",
           for v in compile_backends(load_backends()).values()))
 
 # ---------------------------------------------------------------------------
+print("\npagination, auth headers, and field fallbacks (canned, no network)")
+
+SEEN_HEADERS = {}
+
+
+def recording_get(url, headers=None, tries=3, timeout=None):
+    SEEN_HEADERS.update(headers or {})
+    return fake_get(url, headers, tries, timeout)
+
+
+litscan._get = recording_get
+try:
+    # cursor paging: two OpenAlex pages, cursor * -> NEXT -> exhausted
+    CANNED.clear()
+    page = {"meta": {"count": 2, "next_cursor": "NEXT"},
+            "results": [{"display_name": "P1", "cited_by_count": 0}]}
+    page2 = {"meta": {"count": 2, "next_cursor": None},
+             "results": [{"display_name": "P2", "cited_by_count": 0}]}
+    CANNED["cursor=%2A"] = json.dumps(page).encode()
+    CANNED["cursor=NEXT"] = json.dumps(page2).encode()
+    total, recs = litscan.bk_openalex("q", 10)
+    check("cursor paging walks both pages",
+          [r["title"] for r in recs] == ["P1", "P2"])
+
+    # offset paging + error-item filtering + auth headers (Scopus)
+    os.environ["SCOPUS_API_KEY"] = "testkey"
+    os.environ["SCOPUS_INSTTOKEN"] = "insttok"
+    sp1 = {"search-results": {"opensearch:totalResults": "30",
+           "entry": [{"dc:title": "S1", "prism:coverDate": "2020-05-01"},
+                     {"error": "Result set has been truncated"}]}}
+    sp2 = {"search-results": {"opensearch:totalResults": "30", "entry": []}}
+    CANNED["start=0"] = json.dumps(sp1).encode()
+    CANNED["start=25"] = json.dumps(sp2).encode()
+    SEEN_HEADERS.clear()
+    total, recs = litscan.bk_scopus("q", 30)
+    check("offset paging requests the next page then stops on empty",
+          total == 30 and len(recs) == 1)
+    check("error entries are dropped", recs[0]["title"] == "S1")
+    check("first4 turns coverDate into a year", recs[0]["year"] == "2020")
+    check("required auth header built", SEEN_HEADERS.get("X-ELS-APIKey") == "testkey")
+    check("optional extra header included when set",
+          SEEN_HEADERS.get("X-ELS-Insttoken") == "insttok")
+    check("static Accept header included",
+          SEEN_HEADERS.get("Accept") == "application/json")
+
+    # Bearer-format auth (ADS)
+    os.environ["ADS_TOKEN"] = "tok123"
+    CANNED.clear()
+    CANNED["adsabs"] = json.dumps({"response": {"numFound": 1, "docs": [
+        {"title": ["T"], "bibcode": "2020ApJ...1B", "author": ["A"]}]}}).encode()
+    SEEN_HEADERS.clear()
+    total, recs = litscan.bk_ads("q", 5)
+    check("Bearer auth format applied",
+          SEEN_HEADERS.get("Authorization") == "Bearer tok123")
+    check("ads url templated from bibcode",
+          recs[0]["url"].endswith("/abs/2020ApJ...1B"))
+
+    # template fallback (INSPIRE record without links.json)
+    CANNED.clear()
+    CANNED["inspirehep"] = json.dumps({"hits": {"total": 1, "hits": [
+        {"id": "12345", "metadata": {"titles": [{"title": "I1"}],
+                                     "earliest_date": "2019-07-01"}}]}}).encode()
+    total, recs = litscan.bk_inspire("q", 5)
+    check("inspire url falls back to template from id",
+          recs[0]["url"] == "https://inspirehep.net/literature/12345")
+    check("inspire default journal applied", recs[0]["journal"] == "INSPIRE record")
+    check("inspire year first4", recs[0]["year"] == "2019")
+
+    # given_family transform + nested date-parts (Crossref)
+    CANNED.clear()
+    CANNED["crossref"] = json.dumps({"message": {"total-results": 1, "items": [
+        {"title": ["C", "One"], "DOI": "10.1/c",
+         "issued": {"date-parts": [[2018, 3]]},
+         "author": [{"given": "Ada", "family": "Lovelace"}]}]}}).encode()
+    total, recs = litscan.bk_crossref("q", 5)
+    check("crossref multi-part title joined", recs[0]["title"] == "C One")
+    check("crossref given_family transform", recs[0]["authors"] == ["Ada Lovelace"])
+    check("crossref year from nested date-parts", recs[0]["year"] == "2018")
+finally:
+    litscan._get = real_get
+    for k in ("SCOPUS_API_KEY", "SCOPUS_INSTTOKEN", "ADS_TOKEN"):
+        os.environ.pop(k, None)
+
+# ---------------------------------------------------------------------------
 print("\nsummary")
 if FAILED:
     print(f"  {len(FAILED)} FAILED: {', '.join(FAILED)}")

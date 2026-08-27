@@ -83,13 +83,17 @@ not as fine print, but as a design principle:
   Figshare and the like — versus 0 % for ADS, Scopus, Semantic Scholar and
   INSPIRE. On one decisive novelty query that was the whole difference
   between 16 hits and 3. Filtered by default; `--keep-junk` disables.
+- **Works with zero affiliation.** Five backends need no key and no
+  institution; ADS needs only a free personal token. No VPN, no campus
+  network, no subscription — those matter only if you add Scopus or the WoS
+  API on top.
 - **Physics gets first-class coverage.** NASA ADS and INSPIRE-HEP are
   backends no comparable tool ships; for refereed physics, ADS is essentially
   complete.
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 64 checks run with no network and no keys (backends
+- **Offline-testable.** 79 checks run with no network and no keys (backends
   are exercised against canned API responses); CI on Linux and Windows,
   Python 3.9 and 3.13.
 
@@ -130,11 +134,17 @@ automatically, no shell variables to set.
 - **Web of Science** — see the manual companion below; the Starter key's
   restricted grammar makes the API rarely worth it.
 
-**Institutional access (the part nobody documents):** most of these are
-IP-authenticated. Off campus, log in through your institution's portal first —
-in Brazil, Portal CAPES → *Acesso CAFe* → your institution, *then* open the
-database; elsewhere, VPN/EZproxy/Shibboleth. The test is always the same: run
-`--selftest` and see whether Scopus returns a plausible number.
+**No institution? Most of it still works.** Five of the eight backends
+(OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref) need no key and no
+institutional access at all, and NASA ADS needs only a free personal token —
+so the tool is fully usable from any laptop, with zero affiliation and no
+VPN. Institutional entitlement matters only for Scopus (and the licensed WoS
+API): there the key authenticates *you*, but results flow through your
+institution's subscription, which is typically IP-based — be on the
+institutional network, or use whatever VPN, proxy or federated login your
+institution provides, before the API will return anything. The test is
+always the same: run `--selftest` and see whether Scopus returns a plausible
+number.
 
 ## Writing queries
 
@@ -287,6 +297,12 @@ python librarian.py --list                  blocks + backend readiness
    have — that catches what keyword search misses, and it caught the two most
    important references in the project this was built for.
 
+Or delegate the loop: state your research question to an AI agent (Claude
+Code or similar) and ask it to draft the `queries.json`, run the scans, and
+walk the archived results with you. The structured query file, the JSON
+config, and the timestamped run directories are deliberately easy for an
+agent to write and audit — this tool was built inside exactly that workflow.
+
 ## Roadmap
 
 - More databases as config: Europe PMC, CORE, DOAJ, OpenAIRE, DBLP, PubMed
@@ -302,7 +318,7 @@ python librarian.py --list                  blocks + backend readiness
 python tests/test_librarian.py
 ```
 
-64 checks, stdlib only, no network and no keys — backends run against canned
+79 checks, stdlib only, no network and no keys — backends run against canned
 API responses, so the suite exercises the real parsing paths offline. CI runs
 it on Linux and Windows under Python 3.9 and 3.13.
 
