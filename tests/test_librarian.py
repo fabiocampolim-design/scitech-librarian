@@ -180,6 +180,9 @@ try:
     check("openalex abstract rebuilt from inverted index",
           recs[0]["abstract"] == "Hello world")
     check("openalex doi normalised", recs[0]["doi"] == "10.1/oa")
+    check("inverted index keeps repeated words (regression: telegram abstracts)",
+          litscan.TRANSFORMS["inverted_abstract"](
+              {"the": [0, 2], "cat": [1], "hat": [3]}) == "the cat the hat")
     total, recs = litscan.bk_openalex("q", 0)
     check("openalex counts-only fetches no records", total == 2 and recs == [])
 
@@ -449,6 +452,9 @@ with tempfile.TemporaryDirectory() as td:
     tx = report.render_tex(title, nodes)
     check("tex: tikz flow, longtable, special chars escaped",
           "\\begin{tikzpicture}" in tx and "\\begin{longtable}" in tx and "\\_" in tx)
+    check("tex: leading [ in a cell cannot become a \\\\ optional argument "
+          "(regression: '[WITHDRAWN] ...' title broke xelatex)",
+          report._tex("[WITHDRAWN] x") == "{[}WITHDRAWN{]} x")
     txt = report.render_txt(title, nodes)
     check("txt: flow and PRISMA-S checklist", "Records screened" in txt
           and "Deduplication" in txt)

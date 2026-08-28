@@ -52,6 +52,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -563,7 +564,7 @@ def build(d: dict, level: str = "simple") -> tuple[str, list]:
         rows = [["Python", env.get("python", platform.python_version())],
                 ["Platform", env.get("platform", platform.platform())],
                 ["Tool version", meta.get("version", VERSION)],
-                ["Report generated on", env.get("report_host", platform.node())]]
+                ["Report generated", time.strftime("%Y-%m-%d %H:%M")]]
         N.append(("table", ["Item", "Value"], rows))
 
     # --- 8. suggestions --------------------------------------------------
@@ -881,7 +882,10 @@ def _html_inline(text: str) -> str:
 
 
 _TEX_ESC = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#",
-            "_": r"\_", "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\^{}"}
+            "_": r"\_", "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\^{}",
+            # a cell starting with [ right after \\ would be read as an optional
+            # argument (real data: "[WITHDRAWN] ..." titles)
+            "[": "{[}", "]": "{]}"}
 
 
 def _tex(s: str) -> str:
@@ -903,7 +907,7 @@ def render_tex(title: str, nodes: list) -> str:
         "\\usepackage[margin=2cm]{geometry}\\usepackage{longtable}\\usepackage{array}",
         "\\usepackage{tikz}\\usetikzlibrary{positioning,arrows.meta}",
         "\\usepackage{xurl}\\usepackage[hidelinks]{hyperref}\\usepackage{fancyvrb}",
-        "\\setlength{\\parskip}{4pt}\\setlength{\\parindent}{0pt}",
+        "\\setlength{\\parskip}{4pt}\\setlength{\\parindent}{0pt}\\setlength{\\tabcolsep}{3pt}",
         "\\tikzset{>={Latex}}",
         f"\\title{{{_tex(title)}}}\\author{{scitech-librarian {VERSION}}}\\date{{\\today}}",
         "\\begin{document}\\maketitle",
@@ -944,8 +948,11 @@ def _tex_table(headers, rows) -> str:
         vals = [len(_cell_text(r[i])) for r in rows if i < len(r)] + [len(headers[i])]
         lens.append(min(max(vals), 60) + 4)
     total = sum(lens)
-    widths = [max(0.06, 0.94 * ln / total) for ln in lens]
-    scale = 0.94 / sum(widths)
+    # usable width: \linewidth minus 2*\tabcolsep (3pt) per column, so a
+    # ten-column counts table does not run off the page
+    usable = 0.98 - 0.0125 * n
+    widths = [max(0.045, usable * ln / total) for ln in lens]
+    scale = usable / sum(widths)
     spec = "".join(f"p{{{w * scale:.3f}\\linewidth}}" for w in widths)
     cell = lambda c: (f"\\href{{{c[2]}}}{{{_tex(c[1])}}}" if isinstance(c, tuple)  # noqa: E731
                       else _tex(c))
@@ -1008,7 +1015,9 @@ def _pdf_builtin(text: str, path: Path) -> None:
     path.write_bytes(bytes(out))
 
 
-def _run(cmd: list, cwd: Path, timeout: int = 180) -> bool:
+def _run(cmd: list, cwd: Path, timeout: int = 1800) -> bool:
+    # 30 min per pass: a full-level report on a few thousand records is >1000
+    # pages and takes xelatex several minutes.
     try:
         r = subprocess.run(cmd, cwd=str(cwd), stdout=subprocess.DEVNULL,
                            stderr=subprocess.DEVNULL, timeout=timeout)

@@ -107,7 +107,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 113 checks run with no network and no keys (backends
+- **Offline-testable.** 115 checks run with no network and no keys (backends
   are exercised against canned API responses, the report generator against a
   synthetic run); CI on Linux and Windows, Python 3.9 and 3.13.
 
@@ -328,6 +328,27 @@ python report.py --latest --format txt            # newest run, plain text
 python librarian.py --no-report                   # search only
 ```
 
+### Sample reports
+
+[`samples/`](samples/) holds one real run of the four example blocks in
+`queries.example.json` (six databases, 2026-08-28: 16,436 hits identified,
+2,968 records retrieved, 2,216 unique) rendered at every level in every
+format — `simple` is 5 pages, `intermediate` 106, `full` 702. Excerpts from
+the PDFs:
+
+| `simple`, p. 1 — run metadata and search strategy | `simple`, p. 3 — PRISMA 2020 flow |
+|---|---|
+| [![](samples/img/simple_p1.png)](samples/simple/report.pdf) | [![](samples/img/simple_p3.png)](samples/simple/report.pdf) |
+
+| `simple`, p. 2 — exact query per backend, counts | `full`, p. 4 — records with abstracts |
+|---|---|
+| [![](samples/img/simple_p2.png)](samples/simple/report.pdf) | [![](samples/img/full_records.png)](samples/full/report.pdf) |
+
+Browse: [simple](samples/simple/report.md) ·
+[intermediate](samples/intermediate/report.md) ·
+[full](samples/full/report.md) (Markdown, rendered by GitHub), or the
+`.html`, `.tex`, `.pdf`, `.txt` next to each.
+
 ## Command reference
 
 ```
@@ -383,7 +404,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-113 checks, stdlib only, no network and no keys — backends run against
+115 checks, stdlib only, no network and no keys — backends run against
 canned API responses and the report generator against a synthetic run
 directory, so the suite exercises the real parsing and rendering paths
 offline. CI runs it on Linux and Windows under Python 3.9 and 3.13.
@@ -404,7 +425,7 @@ report generator on August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 113-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 115-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |

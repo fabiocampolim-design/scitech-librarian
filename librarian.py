@@ -495,7 +495,11 @@ def _extract(obj, path: str):
 
 
 TRANSFORMS = {
-    "inverted_abstract": lambda inv: " ".join(sorted(inv, key=lambda k: inv[k][0]))
+    # every position of every word, not just the first -- otherwise repeated
+    # words ("the", "of") vanish and the abstract reads like a telegram
+    "inverted_abstract": lambda inv: " ".join(
+        w for w, _ in sorted(((w, p) for w, ps in inv.items() for p in ps),
+                             key=lambda x: x[1]))
                                      if isinstance(inv, dict) and inv else "",
     "given_family": lambda items: [f"{a.get('given', '')} {a.get('family', '')}".strip()
                                    for a in (items or []) if isinstance(a, dict)],
