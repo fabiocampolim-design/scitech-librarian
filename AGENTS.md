@@ -28,8 +28,9 @@ A reproducible literature-search instrument for science and engineering:
 5. `wos_manual.py` handles Web of Science, which has no usable free API, as
    a paste-and-export routine, and registers the exports as manual sources.
 
-Standard library only. Python 3.9+. No install step: copy the five `.py`
-files (or clone) and run.
+Standard library only. Python 3.9+. No install step: copy the six `.py`
+files (five scripts plus `render.py`, which `report.py` imports) or clone,
+and run.
 
 ## Hard rules
 
@@ -105,9 +106,9 @@ python librarian.py --list | --selftest | --init-backends
 
 Output: `lit/runs/<stamp>/` with `counts.json|md`, `queries.json` (exact
 strings sent), `blocks.json`, `meta.json`, `records/<block>_<backend>.json`,
-`ris/`, `all_records.{json,csv,ris}` (deduplicated), `junk.json`,
+`ris/`, `all_records.{json,csv,ris,bib,csl.json}` (deduplicated), `junk.json`,
 `prisma.json` (template), `run.log`, `report.*`; and `lit/counts_history.csv`,
-`lit/logs/librarian_<stamp>.log`.
+`lit/logs/librarian_<stamp>_<pid>.log`.
 
 ### project.py — research directory
 
@@ -118,6 +119,7 @@ python project.py ingest FILE... --name NAME [--block B] [--kind ris|bibtex|csv|
                   [--method database|citation|website|organisation|expert|other]
                   [--who WHO] [--origin TEXT] [--note TEXT]
 python project.py ingest --inbox                  every file dropped in lit/inbox/
+python project.py oa [--members ID...]           Unpaywall pass over members lacking OA data (legal copies only)
 python project.py exclude <member> | include <member>
 python project.py label <member> "text"
 python project.py alias OLDBLOCK NEWBLOCK         a block renamed between runs
@@ -228,7 +230,8 @@ merge (by design: different questions, different blocks).
 - Journal metrics: OpenAlex values are snapshots (one per fetch year);
   JCR IF is not available without a licence.
 - No PDF download, no snowballing, no citation graph, no Zotero API push
-  (roadmap).
+  (roadmap). BibTeX/CSL-JSON are outputs; Zotero libraries come in as RIS
+  exports through `project.py ingest`.
 
 ## Tests
 

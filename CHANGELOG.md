@@ -2,6 +2,20 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.1 — 2026-08-28 (review follow-up)
+
+- `render.py` split out of `report.py` (renderers, PRISMA diagrams, PDF chain).
+- One deduplication rule everywhere: runs now use `project.merge` (records
+  carry `found_by` / `first_seen` from the first run on).
+- `project.py oa`: post-hoc Unpaywall pass over runs and manual sources.
+- BibTeX (`all_records.bib`) and CSL-JSON (`all_records.csl.json`) outputs;
+  RIS/BibTeX/CSL carry the block as a keyword.
+- Inbox ingest skips a malformed file instead of stopping; audit-log handles
+  closed on exit; `wos_manual.py` loads queries lazily; identical-search
+  suggestion in project reports; clearer OpenAlex snapshot note.
+- Tests: pytest-collectable, CLI smoke tests, budget-stop, inbox and OA
+  cases; pyflakes clean.
+
 ## 3.2 — 2026-08-28
 
 - **Research directories** (`project.py`): `project.json` index (labels,

@@ -51,7 +51,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.2"
+VERSION = "3.2.1"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -689,6 +689,8 @@ def write_ris(recs, path: Path):
                 f.write(f"PY  - {r['year']}\n")
             if r["journal"]:
                 f.write(f"JO  - {r['journal']}\n")
+            if r.get("block"):
+                f.write(f"KW  - block:{r['block']}\n")
             if r["doi"]:
                 f.write(f"DO  - {r['doi']}\n")
             if r["url"]:
@@ -696,6 +698,71 @@ def write_ris(recs, path: Path):
             if r["abstract"]:
                 f.write(f"AB  - {r['abstract'][:6000]}\n")
             f.write("ER  - \n\n")
+
+
+def _bib_key(r: dict, seen: set) -> str:
+    first = (r["authors"][0].split(",")[0].split()[-1] if r["authors"] else "anon")
+    base = re.sub(r"[^A-Za-z0-9]", "", first).lower() + (r["year"] or "nd")
+    key, n = base, 1
+    while key in seen:
+        n += 1
+        key = f"{base}{chr(ord('a') + n - 2)}"
+    seen.add(key)
+    return key
+
+
+def write_bibtex(recs, path: Path):
+    """BibTeX (@article; @misc when no venue). Keys: <lastname><year>[a,b,…]."""
+    esc = lambda s: str(s).replace("{", "").replace("}", "").replace("&", "\\&")  # noqa: E731
+    seen = set()
+    with path.open("w", encoding="utf-8") as f:
+        for r in recs:
+            kind = "article" if r["journal"] and not r["journal"].lower().startswith("arxiv") else "misc"
+            f.write(f"@{kind}{{{_bib_key(r, seen)},\n  title = {{{esc(r['title'])}}},\n")
+            if r["authors"]:
+                f.write("  author = {" + " and ".join(esc(a) for a in r["authors"]) + "},\n")
+            if r["journal"]:
+                f.write(f"  journal = {{{esc(r['journal'])}}},\n")
+            if r["year"]:
+                f.write(f"  year = {{{r['year']}}},\n")
+            if r["doi"]:
+                f.write(f"  doi = {{{r['doi']}}},\n")
+            if r["url"]:
+                f.write(f"  url = {{{r['url']}}},\n")
+            if r.get("block"):
+                f.write(f"  keywords = {{block:{r['block']}}},\n")
+            f.write("}\n\n")
+
+
+def write_csl(recs, path: Path):
+    """CSL-JSON (what Zotero, pandoc and citeproc consume)."""
+    items = []
+    for i, r in enumerate(recs, 1):
+        it = {"id": r["doi"] or f"rec{i}", "type": "article-journal", "title": r["title"]}
+        au = []
+        for a in r["authors"]:
+            if "," in a:
+                fam, giv = a.split(",", 1)
+            else:
+                parts = a.split()
+                fam, giv = (parts[-1], " ".join(parts[:-1])) if parts else (a, "")
+            au.append({"family": fam.strip(), "given": giv.strip()})
+        if au:
+            it["author"] = au
+        if r["journal"]:
+            it["container-title"] = r["journal"]
+        if r["year"] and r["year"].isdigit():
+            it["issued"] = {"date-parts": [[int(r["year"])]]}
+        if r["doi"]:
+            it["DOI"] = r["doi"]
+        if r["url"]:
+            it["URL"] = r["url"]
+        if r.get("abstract"):
+            it["abstract"] = r["abstract"]
+        if r.get("block"):
+            it["keyword"] = f"block:{r['block']}"
+        items.append(it)
+    path.write_text(json.dumps(items, indent=1, ensure_ascii=False), encoding="utf-8")
 
 
 def write_csv(recs, path: Path):
@@ -1001,14 +1068,24 @@ def main() -> int:
 
     uniq = []
     if everything:
-        seen = set()
-        for r in sorted(everything, key=lambda x: -x["cited_by"]):
-            k = r["doi"].lower() or r["title"].lower()[:90]
-            if k and k not in seen:
-                seen.add(k)
-                uniq.append(r)
+        try:
+            from project import merge as _merge      # one dedup rule for runs and projects
+            for r in everything:
+                r.setdefault("member", stamp)
+                r.setdefault("member_date", time.strftime("%Y-%m-%d %H:%M:%S",
+                                                          time.strptime(stamp, "%Y%m%dT%H%M%S")))
+            uniq = _merge(everything)
+        except ImportError:
+            seen = set()
+            for r in sorted(everything, key=lambda x: -x["cited_by"]):
+                k = r["doi"].lower() or r["title"].lower()[:90]
+                if k and k not in seen:
+                    seen.add(k)
+                    uniq.append(r)
         write_csv(uniq, run / "all_records.csv")
         write_ris(uniq, run / "all_records.ris")
+        write_bibtex(uniq, run / "all_records.bib")
+        write_csl(uniq, run / "all_records.csl.json")
         (run / "all_records.json").write_text(
             json.dumps(uniq, indent=1, ensure_ascii=False), encoding="utf-8")
         log(f"\n{len(everything)} records fetched, {len(uniq)} unique after DOI/title dedup")
@@ -1040,6 +1117,8 @@ def main() -> int:
     print(f"Counts history appended to: {hist}")
     print("\nNOTE: proximity operators are dropped in the generated queries, so counts")
     print("are NOT comparable across backends. Discovery here; WoS/Scopus in the paper.")
+    if _project:
+        _project.close_logging(logging.getLogger("librarian"))
     return 0
 
 

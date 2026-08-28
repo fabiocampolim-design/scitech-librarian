@@ -16,9 +16,9 @@ by other means, accumulate in a **research directory** that the same report
 can describe as a whole — what each search added, what each database
 contributed, how counts drifted, which venues matter.
 
-It is five Python files with no dependencies beyond the standard library.
-There is nothing to install: copy the files, fill `.env`, write
-`queries.json`, run.
+It is five Python scripts plus one shared module (`render.py`), with no
+dependencies beyond the standard library. There is nothing to install: copy
+the files, fill `.env`, write `queries.json`, run.
 
 | File | Role |
 |---|---|
@@ -27,6 +27,7 @@ There is nothing to install: copy the files, fill `.env`, write
 | `report.py` | reports for one run or the whole directory; PRISMA; filters |
 | `journals.py` | journal metrics (impact-factor-like figures) per year |
 | `wos_manual.py` | Web of Science by hand (no usable free API) |
+| `render.py` | Markdown / HTML / LaTeX / text renderers and the PDF chain (imported by `report.py`) |
 
 **For AI agents.** `AGENTS.md` at the repository root is the complete
 machine-oriented description of the tool. If you work with a coding agent
@@ -63,7 +64,7 @@ python librarian.py --selftest
 Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
 need no key and no institution.
 
-**Drop-in use inside another project.** Put the five files in a `tools/`
+**Drop-in use inside another project.** Put the six files in a `tools/`
 subdirectory; `.env`, `queries.json` and `lit/` are then looked for in the
 parent directory.
 
@@ -164,13 +165,14 @@ What a run writes (`lit/runs/<stamp>/`):
 | `records/<block>_<backend>.json` | raw records per backend (after the venue filter) |
 | `ris/<block>_<backend>.ris` | per-block RIS for Zotero/Mendeley/EndNote |
 | `all_records.json/.csv/.ris` | deduplicated, sorted by citations |
+| `all_records.bib`, `all_records.csl.json` | the same set as BibTeX and CSL-JSON |
 | `junk.json` | records removed by the venue filter, with their venues |
 | `prisma.json` | template for the manual PRISMA stages |
 | `run.log` | everything printed |
 | `report.*` | the report (see §7) |
 
 Plus `lit/counts_history.csv` (one row per block/backend/run, for drift)
-and `lit/logs/librarian_<stamp>.log` (audit log: invocation, versions,
+and `lit/logs/librarian_<stamp>_<pid>.log` (audit log: invocation, versions,
 every message).
 
 Counts are checkpointed after every API call and Ctrl-C is safe: a hang
@@ -202,7 +204,13 @@ discovered by listing the directory — nothing has to be declared.
 python project.py exclude 20260814T223331      # a test run you do not want in reports
 python project.py label 20260828T095041 "August full scan"
 python project.py alias X CD                    # block renamed between runs
+python project.py oa                            # Unpaywall pass over every member that lacks OA data
 ```
+
+`oa` is the post-hoc open-access lookup: runs made without `--pdfs` and
+manual sources get `is_oa` / `oa_pdf` fields (legal copies only, cached in
+`unpaywall_cache.json`), which the report's OA statistics and `--oa-only`
+then cover for the whole project.
 
 ## 6.2 Bringing records in from outside
 
@@ -239,9 +247,10 @@ You may also hand extra files to a single report without storing them:
 
 ## 6.3 From Zotero, Mendeley and EndNote
 
-*Out:* every run writes RIS (`all_records.ris`, per-block `ris/`); import
-with File → Import. Abstracts, DOIs and URLs are carried; the block name is
-not (roadmap: RIS keywords).
+*Out:* every run writes RIS (`all_records.ris`, per-block `ris/`), BibTeX
+(`all_records.bib`) and CSL-JSON (`all_records.csl.json`); import with File →
+Import. Abstracts, DOIs and URLs are carried, and the block name arrives as
+a keyword (`block:NOV`) so the imported items are pre-tagged.
 
 *In:* export a collection as RIS (Zotero: right-click → Export Collection →
 RIS; Mendeley: File → Export → RIS; EndNoteX: File → Export → RefMan RIS)
@@ -304,7 +313,7 @@ a built-in writer that lays out the text version — the option never fails.
 | `--records FILE…` | extra RIS/BibTeX/CSV/JSON as a transient manual source |
 | `--metric NAME --min-metric X` | keep records whose venue metric is at least X (see §8) |
 | `--min-citations N` | citation threshold |
-| `--oa-only` | only records with a legal open-access copy (needs `--pdfs` data) |
+| `--oa-only` | only records with a legal open-access copy (needs `--pdfs` or `project.py oa` data) |
 | `--top N`, `--sort cited\|year\|metric` | table size and order |
 | `--basename`, `--out` | file stem and output directory |
 
@@ -403,7 +412,7 @@ Collection, Advanced search, editions, tagged vs bare form).
 
 # 10. Logs and audit
 
-Every script writes `<outdir>/logs/<script>_<stamp>.log` with the exact
+Every script writes `<outdir>/logs/<script>_<stamp>_<pid>.log` with the exact
 invocation, tool and Python versions, the research directory, every
 warning and error, and the outcome. Console output is small by default;
 `--verbose` shows everything, `--quiet` only warnings and errors;
@@ -447,7 +456,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (157 checks) and
+with a per-year series; audit logs; an offline test suite (170 checks) and
 CI.
 
 Limitations, all by design or by the world:
@@ -463,7 +472,8 @@ Limitations, all by design or by the world:
 - OpenAlex indexes non-curated repositories (~15 % of its records);
   filtered by default, kept in `junk.json`.
 - No download of PDFs (Unpaywall links only), no snowballing, no citation
-  graph, no live Zotero/Mendeley connection (roadmap).
+  graph, no live Zotero/Mendeley connection (roadmap); BibTeX and CSL-JSON
+  are written, not read back from a Zotero library.
 - Journal metrics: OpenAlex values are snapshots; the JCR Impact Factor is
   proprietary and import-only; matching journals by name is imperfect
   when a record has no ISSN.
@@ -479,8 +489,10 @@ python tests/test_librarian.py
 ```
 
 Offline, stdlib only, no keys: backends run against canned API responses,
-the report generator against synthetic run and research directories. CI
-runs the suite on Linux and Windows under Python 3.9 and 3.13.
+the report generator against synthetic run and research directories, and
+every script's command line is exercised end to end. The file is also a
+pytest module (`pytest tests/`). CI runs pyflakes and the suite on Linux and
+Windows under Python 3.9 and 3.13.
 
 # 14. Licence and conduct
 

@@ -56,8 +56,8 @@ except ImportError:                       # drop-in installs may keep the old na
     import litscan as librarian           # type: ignore
 _extract = librarian._extract
 VERSION = librarian.VERSION
-from project import (add_common_args, load_project, member_records, members, resolve_outdir,
-                     setup_logging)
+from project import (add_common_args, close_logging, load_project, member_records, members,
+                     resolve_outdir, setup_logging)
 
 METRICS = {"openalex_2yr": "OpenAlex 2-yr mean citedness", "openalex_h": "OpenAlex h-index",
            "scopus_citescore": "Scopus CiteScore", "sjr": "SCImago Journal Rank",
@@ -514,6 +514,7 @@ def main() -> int:
         print(journal_list(outdir, args.missing))
     elif args.cmd == "show":
         print(show(outdir, args.metric, args.limit))
+    close_logging(log)
     return 0
 
 

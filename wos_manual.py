@@ -44,9 +44,34 @@ OUTDIR, load_blocks, q_wos, q_wos_bare, write_csv = (
 from project import ingest as project_ingest, parse_ris  # noqa: F401  (parse_ris re-exported)
 
 # librarian.py populates its module-level BLOCKS only inside main(), so importing
-# that name would bind an empty dict. Load the query file directly instead --
-# same search order (queries.json, then queries.example.json), same schema.
-BLOCKS = load_blocks()
+# that name would bind an empty dict. The query file is loaded lazily (first
+# use, or --queries in main) so importing this module never needs one.
+
+
+class _LazyBlocks(dict):
+    def _load(self):
+        if dict.__len__(self) == 0 and not getattr(self, "_loaded", False):
+            self._loaded = True                  # set first: load_blocks may raise
+            self.update(load_blocks())
+
+    def items(self):
+        self._load()
+        return super().items()
+
+    def values(self):
+        self._load()
+        return super().values()
+
+    def __iter__(self):
+        self._load()
+        return super().__iter__()
+
+    def __len__(self):
+        self._load()
+        return super().__len__()
+
+
+BLOCKS = _LazyBlocks()
 
 HERE = Path(__file__).resolve().parent
 BASE = OUTDIR / "manual_wos"    # same lit/ root as librarian's automated runs
@@ -203,7 +228,8 @@ def main() -> int:
     BASE = outdir / "manual_wos"
     QDIR, RDIR = BASE / "queries", BASE / "ris"
     if args.queries:
-        BLOCKS = load_blocks(args.queries)
+        BLOCKS = _LazyBlocks(load_blocks(args.queries))
+        BLOCKS._loaded = True
     try:
         import project
         project.setup_logging("wos_manual", args, outdir)

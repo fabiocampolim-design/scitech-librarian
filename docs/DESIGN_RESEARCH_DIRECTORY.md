@@ -156,7 +156,7 @@ Filters (project and single-run mode alike):
 
 Every script accepts `--outdir` (research directory, default `lit`),
 `--verbose`, `--quiet`, `--log-dir` (default `<outdir>/logs`) and writes
-`<outdir>/logs/<script>_<stamp>.log` containing the exact invocation, tool
+`<outdir>/logs/<script>_<stamp>_<pid>.log` containing the exact invocation, tool
 version, Python version, every warning and error, and a one-line outcome.
 Console output stays small by default. `--help` on every script lists every
 input and output parameter with its default.

@@ -26,10 +26,10 @@ source, database, year, citations or venue quality, in Markdown, HTML,
 LaTeX, PDF or plain text at three levels of detail. A lab runs one
 directory per project. Databases are **configuration, not code**.
 
-Standard library only, no install step: five files — `librarian.py`
+Standard library only, no install step: five scripts — `librarian.py`
 (search), `project.py` (research directory and ingest), `report.py`
 (reports), `journals.py` (venue metrics), `wos_manual.py` (Web of Science
-by hand). Full documentation: [**User Manual**](docs/USER_MANUAL.md)
+by hand) — plus `render.py`, the shared Markdown/HTML/LaTeX/PDF renderer. Full documentation: [**User Manual**](docs/USER_MANUAL.md)
 ([HTML](docs/USER_MANUAL.html) · [PDF](docs/USER_MANUAL.pdf)); a start-to-PRISMA
 [**walkthrough**](docs/WALKTHROUGH.md) of a real project exercises every
 feature; [JCR import](docs/JCR_IMPORT.md) covers the licensed Impact Factor. Working with
@@ -94,7 +94,7 @@ not as fine print, but as a design principle:
   to add, change or disable databases without touching code. Only engines
   that genuinely need code (arXiv's XML feed) use a small driver.
 - **Everything is archived.** Each run writes a timestamped directory with
-  raw JSON records, per-block RIS, a deduped combined CSV/RIS/JSON, the exact
+  raw JSON records, per-block RIS, a deduped combined CSV/RIS/JSON/BibTeX/CSL-JSON, the exact
   query string sent to each backend, counts as JSON and a paste-ready
   markdown table, run metadata, and a full log. Counts also append to a
   history file so drift over time is visible.
@@ -144,7 +144,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 157 checks run with no network and no keys (backends
+- **Offline-testable.** 170 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux and Windows, Python 3.9 and 3.13.
@@ -322,6 +322,7 @@ meta.json                        run settings, backend endpoints, version, timin
 records/<block>_<backend>.json   full records, raw
 ris/<block>_<backend>.ris        per-block RIS for Zotero
 all_records.{json,csv,ris}       deduped by DOI, sorted by citation count
+all_records.{bib,csl.json}       the same set as BibTeX and CSL-JSON (Zotero, pandoc)
 junk.json                        records removed by the venue filter (with receipts)
 prisma.json                      manual PRISMA screening stages -- fill in, re-render
 run.log                          everything printed, including errors
@@ -350,6 +351,7 @@ python project.py ingest export.ris --name zotero-aug --block CD --method citati
        --who "A. Colleague" --origin "Zotero group library"
 python project.py ingest --inbox                 # everything dropped in lit/inbox/
 python wos_manual.py ingest                      # Web of Science exports become manual sources
+python project.py oa                             # open-access lookup over every member that lacks it
 python project.py status
 python report.py --project                       # everything merged
 python report.py --project --since 2026-06-01 --diff --format pdf   # what is new since June
@@ -492,7 +494,7 @@ python librarian.py --no-report             skip the report
 python librarian.py --outdir DIR            another research directory (all scripts)
 python report.py <run dir> | --latest       re-render an archived run (--level, --format)
 python report.py --project [filters]        the whole research directory
-python project.py init|status|ingest|exclude|include|label|alias
+python project.py init|status|ingest|oa|exclude|include|label|alias
 python journals.py fetch|import-scimago|import-jcr|import-csv|list|show
 python wos_manual.py prep|walk|ingest|status
 ```
@@ -527,8 +529,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
   (`docs/FUTURE_BACKENDS.md` has the vetted API details — contributions of
   working `backends.json` entries are very welcome).
 - Legal OA-PDF downloading from the Unpaywall links already collected.
-- Zotero Web API push (a run straight into a collection) and RIS keywords
-  carrying the block name; BibTeX / CSL-JSON output.
+- Zotero Web API push (a run straight into a collection).
 - Snowballing via OpenAlex/Semantic Scholar reference endpoints, and citation
   graphs among a run's results.
 
@@ -538,7 +539,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-157 checks, stdlib only, no network and no keys — backends run against
+170 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -561,7 +562,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 157-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 170-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |

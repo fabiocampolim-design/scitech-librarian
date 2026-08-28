@@ -351,6 +351,7 @@ finally:
 
 # ---------------------------------------------------------------------------
 print("\nreport generation (report.py against a synthetic run directory)")
+import render  # noqa: E402
 import report  # noqa: E402
 
 with tempfile.TemporaryDirectory() as td:
@@ -465,13 +466,13 @@ with tempfile.TemporaryDirectory() as td:
     check("builtin pdf writer: valid header, trailer and pages",
           data.startswith(b"%PDF-1.4") and b"%%EOF" in data and b"/Type /Page " in data)
 
-    real_which = report.shutil.which
-    report.shutil.which = lambda name: None       # no LaTeX, no pandoc
+    real_which = render.shutil.which
+    render.shutil.which = lambda name: None       # no LaTeX, no pandoc
     try:
         (run / "prisma.json").unlink()
         out = report.write_reports(run, "simple", ["md", "pdf", "html"], quiet=True)
     finally:
-        report.shutil.which = real_which
+        render.shutil.which = real_which
     check("write_reports writes every requested format",
           set(out) == {"md", "pdf", "html"} and all(p.exists() for p in out.values()))
     check("pdf falls back to the builtin writer without LaTeX/pandoc",
@@ -717,6 +718,119 @@ with tempfile.TemporaryDirectory() as td:
     check("audit log written under <outdir>/logs with invocation and message",
           len(logs) == 1 and "invocation:" in txt and "hello audit" in txt)
     check("resolve_outdir honours an explicit path", project.resolve_outdir(td) == Path(td).resolve())
+
+# ---------------------------------------------------------------------------
+print("\nreview follow-up: outputs, robustness, CLI smoke")
+import subprocess  # noqa: E402
+
+with tempfile.TemporaryDirectory() as td:
+    tdp = Path(td)
+    recs = [_rec("Bib One", 2020, "10.1/b1", "J. One", ["Alpha, A.", "Beta, B."], "http://one", "Abs", 3),
+            _rec("Bib Two", 2020, "", "arXiv preprint", ["Alpha, A."], "http://arxiv.org/abs/x", "", 0)]
+    for r in recs:
+        r["block"] = "X"
+    litscan.write_bibtex(recs, tdp / "r.bib")
+    bib = (tdp / "r.bib").read_text(encoding="utf-8")
+    check("bibtex: @article/@misc, unique keys, block keyword",
+          "@article{alpha2020," in bib and "@misc{alpha2020a," in bib and "keywords = {block:X}" in bib)
+    back = project.parse_bibtex(bib)
+    check("bibtex round-trips through project.parse_bibtex",
+          len(back) == 2 and back[0]["doi"] == "10.1/b1" and back[0]["authors"] == ["Alpha, A.", "Beta, B."])
+    litscan.write_csl(recs, tdp / "r.csl.json")
+    csl = json.loads((tdp / "r.csl.json").read_text(encoding="utf-8"))
+    check("csl-json: author family/given split, issued date-parts, DOI",
+          csl[0]["author"][0] == {"family": "Alpha", "given": "A."} and csl[0]["issued"] == {"date-parts": [[2020]]}
+          and csl[0]["DOI"] == "10.1/b1")
+    litscan.write_ris(recs, tdp / "r.ris")
+    check("ris carries the block as a keyword", "KW  - block:X" in (tdp / "r.ris").read_text(encoding="utf-8"))
+
+    # inbox: a malformed file stays put, the good one is ingested
+    od = tdp / "lit"
+    (od / "inbox").mkdir(parents=True)
+    (od / "inbox" / "good.ris").write_text("TY  - JOUR\nTI  - Good\nPY  - 2020\nER  -\n", encoding="utf-8")
+    (od / "inbox" / "bad.json").write_text("{not json", encoding="utf-8")
+    import logging as _lg2
+    done = project.ingest_inbox(od, _lg2.getLogger("t2"))
+    check("inbox: malformed file left in place, good file ingested",
+          [s["name"] for s in done] == ["good"] and (od / "inbox" / "bad.json").exists()
+          and not (od / "inbox" / "good.ris").exists())
+
+    # post-hoc OA pass with canned Unpaywall
+    CANNED.clear()
+    CANNED["api.unpaywall.org"] = json.dumps({"is_oa": True, "best_oa_location": {"url_for_pdf": "http://pdf", "url": "http://u", "version": "publishedVersion"}}).encode()
+    (od / "manual" / "good" / "records.json").write_text(json.dumps([dict(_rec("Good", 2020, "10.1/oa", "J", [], ""), block="X", backend="manual:good")]), encoding="utf-8")
+    litscan._get = fake_get
+    try:
+        st = project.oa_pass(od, log=_lg2.getLogger("t2"))
+    finally:
+        litscan._get = real_get
+    got = json.loads((od / "manual" / "good" / "records.json").read_text(encoding="utf-8"))[0]
+    check("oa pass: manual records enriched and cached",
+          st["oa"] == 1 and got.get("is_oa") is True and got.get("oa_pdf") == "http://pdf"
+          and (od / "unpaywall_cache.json").exists())
+    st2 = project.oa_pass(od, log=_lg2.getLogger("t2"))
+    check("oa pass: second run fetches nothing (already enriched)", st2["fetched"] == 0)
+
+    # journals: budget exhaustion stops OpenAlex for the rest of the run
+    def budget_get(url, headers=None, tries=3, timeout=None):
+        if "openalex" in url:
+            raise RuntimeError("HTTP 429: Insufficient budget -> OpenAlex daily free budget exhausted")
+        return fake_get(url, headers, tries, timeout)
+    (od / "runs" / "20260101T000000" / "records").mkdir(parents=True)
+    (od / "runs" / "20260101T000000" / "counts.json").write_text("{}", encoding="utf-8")
+    (od / "runs" / "20260101T000000" / "records" / "X_openalex.json").write_text(json.dumps(
+        [dict(_rec("P1", 2020, "10.1/p1", "J. A", [], ""), block="X", backend="openalex"),
+         dict(_rec("P2", 2020, "10.1/p2", "J. B", [], ""), block="X", backend="openalex")]), encoding="utf-8")
+    litscan._get = budget_get
+    calls = []
+    real_fo = journals.fetch_openalex
+    journals.fetch_openalex = lambda name, issns: calls.append(name) or real_fo(name, issns)
+    try:
+        st3 = journals.fetch(od, ("openalex",), log=_lg2.getLogger("t2"))
+    finally:
+        litscan._get = real_get
+        journals.fetch_openalex = real_fo
+    check("journals: after the budget error OpenAlex is not asked again", len(calls) == 1 and st3["openalex"] == 0)
+
+    # close_logging releases the file
+    ns = _ap.Namespace(outdir=str(od), verbose=False, quiet=True, log_dir=None)
+    lg = project.setup_logging("closeme", ns)
+    project.close_logging(lg)
+    check("close_logging removes every handler", lg.handlers == [])
+
+    # lazy WoS blocks: import needs no query file; explicit --queries wins
+    check("wos_manual blocks load lazily", isinstance(wos_manual.BLOCKS, dict) and len(wos_manual.BLOCKS) > 0)
+
+# CLI smoke: every script answers --help and --version, and the subcommands round-trip
+cli_ok = True
+for script in ("librarian.py", "project.py", "report.py", "journals.py", "wos_manual.py"):
+    for flag in ("--help", "--version"):
+        r = subprocess.run([sys.executable, str(HERE.parent / script), flag], capture_output=True, text=True)
+        cli_ok = cli_ok and r.returncode == 0 and ("usage" in r.stdout.lower() or "scitech-librarian" in r.stdout)
+check("every script answers --help and --version", cli_ok)
+with tempfile.TemporaryDirectory() as td:
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    run = lambda *a: subprocess.run([sys.executable, str(HERE.parent / a[0]), *a[1:], "--outdir", td, "-q"],  # noqa: E731
+                                    capture_output=True, text=True, env=env)
+    r1 = run("project.py", "init", "--name", "Smoke")
+    ris = Path(td) / "in.ris"
+    ris.write_text("TY  - JOUR\nTI  - Smoke paper\nDO  - 10.1/s\nPY  - 2021\nJO  - J. S\nER  -\n", encoding="utf-8")
+    r2 = run("project.py", "ingest", str(ris), "--name", "smoke", "--method", "expert")
+    r3 = run("project.py", "status")
+    r4 = run("report.py", "--project", "--format", "md", "txt")
+    r5 = run("journals.py", "list")
+    rep = list((Path(td) / "reports").glob("*/report.md"))
+    check("CLI: init -> ingest -> status -> report --project -> journals list",
+          all(r.returncode == 0 for r in (r1, r2, r3, r4, r5)) and "smoke" in r3.stdout and rep
+          and "Smoke paper" in rep[0].read_text(encoding="utf-8"),
+          "; ".join((r.stderr or "")[-200:] for r in (r1, r2, r3, r4, r5) if r.returncode))
+    check("CLI: audit logs written for each invocation",
+          len(list((Path(td) / "logs").glob("*.log"))) >= 5)
+
+
+def test_offline_suite():
+    """pytest entry point: the module body above is the suite."""
+    assert not FAILED, FAILED
 
 # ---------------------------------------------------------------------------
 print("\nsummary")

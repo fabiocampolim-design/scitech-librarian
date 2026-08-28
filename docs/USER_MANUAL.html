@@ -153,7 +153,8 @@ the runs, plus records you obtained by other means, accumulate in a
 <strong>research directory</strong> that the same report can describe as
 a whole — what each search added, what each database contributed, how
 counts drifted, which venues matter.</p>
-<p>It is five Python files with no dependencies beyond the standard
+<p>It is five Python scripts plus one shared module
+(<code>render.py</code>), with no dependencies beyond the standard
 library. There is nothing to install: copy the files, fill
 <code>.env</code>, write <code>queries.json</code>, run.</p>
 <table>
@@ -187,6 +188,11 @@ library. There is nothing to install: copy the files, fill
 <tr>
 <td><code>wos_manual.py</code></td>
 <td>Web of Science by hand (no usable free API)</td>
+</tr>
+<tr>
+<td><code>render.py</code></td>
+<td>Markdown / HTML / LaTeX / text renderers and the PDF chain (imported
+by <code>report.py</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -259,7 +265,7 @@ python librarian.py --selftest</code></pre>
 </table>
 <p>Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
 Crossref) need no key and no institution.</p>
-<p><strong>Drop-in use inside another project.</strong> Put the five
+<p><strong>Drop-in use inside another project.</strong> Put the six
 files in a <code>tools/</code> subdirectory; <code>.env</code>,
 <code>queries.json</code> and <code>lit/</code> are then looked for in
 the parent directory.</p>
@@ -385,6 +391,10 @@ exist on every script.</p>
 <td>deduplicated, sorted by citations</td>
 </tr>
 <tr>
+<td><code>all_records.bib</code>, <code>all_records.csl.json</code></td>
+<td>the same set as BibTeX and CSL-JSON</td>
+</tr>
+<tr>
 <td><code>junk.json</code></td>
 <td>records removed by the venue filter, with their venues</td>
 </tr>
@@ -404,8 +414,8 @@ exist on every script.</p>
 </table>
 <p>Plus <code>lit/counts_history.csv</code> (one row per
 block/backend/run, for drift) and
-<code>lit/logs/librarian_&lt;stamp&gt;.log</code> (audit log:
-invocation, versions, every message).</p>
+<code>lit/logs/librarian_&lt;stamp&gt;_&lt;pid&gt;.log</code> (audit
+log: invocation, versions, every message).</p>
 <p>Counts are checkpointed after every API call and Ctrl-C is safe: a
 hang late in a long run loses nothing.</p>
 <h1 id="the-research-directory">6. The research directory</h1>
@@ -424,7 +434,13 @@ discovered:</p>
 <span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;defaults&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;level&quot;</span><span class="fu">:</span> <span class="st">&quot;simple&quot;</span><span class="fu">,</span> <span class="dt">&quot;format&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;md&quot;</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;metric&quot;</span><span class="fu">:</span> <span class="st">&quot;openalex_2yr&quot;</span><span class="fu">}}</span></span></code></pre></div>
 <pre><code>python project.py exclude 20260814T223331      # a test run you do not want in reports
 python project.py label 20260828T095041 &quot;August full scan&quot;
-python project.py alias X CD                    # block renamed between runs</code></pre>
+python project.py alias X CD                    # block renamed between runs
+python project.py oa                            # Unpaywall pass over every member that lacks OA data</code></pre>
+<p><code>oa</code> is the post-hoc open-access lookup: runs made without
+<code>--pdfs</code> and manual sources get <code>is_oa</code> /
+<code>oa_pdf</code> fields (legal copies only, cached in
+<code>unpaywall_cache.json</code>), which the report’s OA statistics and
+<code>--oa-only</code> then cover for the whole project.</p>
 <h2 id="bringing-records-in-from-outside">6.2 Bringing records in from
 outside</h2>
 <p>Three ways, all ending in <code>lit/manual/&lt;name&gt;/</code> with
@@ -464,8 +480,11 @@ them: <code>report.py --records file.ris</code>.</p>
 <h2 id="from-zotero-mendeley-and-endnote">6.3 From Zotero, Mendeley and
 EndNote</h2>
 <p><em>Out:</em> every run writes RIS (<code>all_records.ris</code>,
-per-block <code>ris/</code>); import with File → Import. Abstracts, DOIs
-and URLs are carried; the block name is not (roadmap: RIS keywords).</p>
+per-block <code>ris/</code>), BibTeX (<code>all_records.bib</code>) and
+CSL-JSON (<code>all_records.csl.json</code>); import with File → Import.
+Abstracts, DOIs and URLs are carried, and the block name arrives as a
+keyword (<code>block:NOV</code>) so the imported items are
+pre-tagged.</p>
 <p><em>In:</em> export a collection as RIS (Zotero: right-click → Export
 Collection → RIS; Mendeley: File → Export → RIS; EndNoteX: File → Export
 → RefMan RIS) and ingest it as above. There is no live connection to the
@@ -587,7 +606,7 @@ searches since DATE added”</td>
 <tr>
 <td><code>--oa-only</code></td>
 <td>only records with a legal open-access copy (needs
-<code>--pdfs</code> data)</td>
+<code>--pdfs</code> or <code>project.py oa</code> data)</td>
 </tr>
 <tr>
 <td><code>--top N</code>, <code>--sort cited\|year\|metric</code></td>
@@ -716,13 +735,13 @@ python wos_manual.py status</code></pre>
 (Core Collection, Advanced search, editions, tagged vs bare form).</p>
 <h1 id="logs-and-audit">10. Logs and audit</h1>
 <p>Every script writes
-<code>&lt;outdir&gt;/logs/&lt;script&gt;_&lt;stamp&gt;.log</code> with
-the exact invocation, tool and Python versions, the research directory,
-every warning and error, and the outcome. Console output is small by
-default; <code>--verbose</code> shows everything, <code>--quiet</code>
-only warnings and errors; <code>--log-dir</code> moves the logs. Runs
-additionally keep <code>run.log</code> (the console transcript) in the
-run directory.</p>
+<code>&lt;outdir&gt;/logs/&lt;script&gt;_&lt;stamp&gt;_&lt;pid&gt;.log</code>
+with the exact invocation, tool and Python versions, the research
+directory, every warning and error, and the outcome. Console output is
+small by default; <code>--verbose</code> shows everything,
+<code>--quiet</code> only warnings and errors; <code>--log-dir</code>
+moves the logs. Runs additionally keep <code>run.log</code> (the console
+transcript) in the run directory.</p>
 <h1 id="workflows">11. Workflows</h1>
 <p><strong>A novelty check (an afternoon).</strong> Write 1–3
 cross-query blocks; <code>--counts-only</code>; tighten anything in the
@@ -761,7 +780,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (157 checks) and CI.</p>
+logs; an offline test suite (170 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are
@@ -775,7 +794,8 @@ you need completeness.</li>
 <li>OpenAlex indexes non-curated repositories (~15 % of its records);
 filtered by default, kept in <code>junk.json</code>.</li>
 <li>No download of PDFs (Unpaywall links only), no snowballing, no
-citation graph, no live Zotero/Mendeley connection (roadmap).</li>
+citation graph, no live Zotero/Mendeley connection (roadmap); BibTeX and
+CSL-JSON are written, not read back from a Zotero library.</li>
 <li>Journal metrics: OpenAlex values are snapshots; the JCR Impact
 Factor is proprietary and import-only; matching journals by name is
 imperfect when a record has no ISSN.</li>
@@ -789,7 +809,9 @@ violates its terms).</li>
 <pre><code>python tests/test_librarian.py</code></pre>
 <p>Offline, stdlib only, no keys: backends run against canned API
 responses, the report generator against synthetic run and research
-directories. CI runs the suite on Linux and Windows under Python 3.9 and
+directories, and every script’s command line is exercised end to end.
+The file is also a pytest module (<code>pytest tests/</code>). CI runs
+pyflakes and the suite on Linux and Windows under Python 3.9 and
 3.13.</p>
 <h1 id="licence-and-conduct">14. Licence and conduct</h1>
 <p>MIT. The tool is built to make respecting each database’s terms of

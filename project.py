@@ -36,6 +36,7 @@ import csv
 import io
 import json
 import logging
+import os
 import re
 import shutil
 import sys
@@ -94,7 +95,7 @@ def setup_logging(script: str, args, outdir: Path | None = None) -> logging.Logg
     log.addHandler(con)
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
-        fh = logging.FileHandler(log_dir / f"{script}_{time.strftime('%Y%m%dT%H%M%S')}.log",
+        fh = logging.FileHandler(log_dir / f"{script}_{time.strftime('%Y%m%dT%H%M%S')}_{os.getpid()}.log",
                                  encoding="utf-8")
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
@@ -105,6 +106,17 @@ def setup_logging(script: str, args, outdir: Path | None = None) -> logging.Logg
     except OSError as e:  # noqa: BLE001
         log.warning("audit log not written: %s", e)
     return log
+
+
+def close_logging(log: logging.Logger) -> None:
+    """Flush and release the audit file (Windows keeps it locked otherwise)."""
+    for h in list(log.handlers):
+        try:
+            h.flush()
+            h.close()
+        except (OSError, ValueError):
+            pass
+        log.removeHandler(h)
 
 
 # ---------------------------------------------------------------------------
@@ -311,7 +323,11 @@ def ingest_inbox(outdir: Path, log: logging.Logger | None = None, **kw) -> list:
     for f in sorted(inbox.iterdir()):
         if not f.is_file() or f.suffix.lstrip(".").lower() not in PARSERS:
             continue
-        src = ingest(outdir, [f], f.stem, log=log, **kw)
+        try:
+            src = ingest(outdir, [f], f.stem, log=log, **kw)
+        except Exception as e:  # noqa: BLE001  -- a malformed file stays in the inbox
+            log.warning("inbox: %s left in place -- %s", f.name, str(e)[:120])
+            continue
         f.unlink()
         done.append(src)
     if not done:
@@ -436,6 +452,54 @@ def merge(records: list[dict]) -> list[dict]:
     return sorted(by.values(), key=lambda x: -(x.get("cited_by") or 0))
 
 
+def oa_pass(outdir: Path, member_ids=None, log: logging.Logger | None = None) -> dict:
+    """Post-hoc open-access lookup (Unpaywall, legal copies only) over every
+    member's records that lack it -- runs made without --pdfs and manual
+    sources alike. Results are written back into the member files and
+    cached in <outdir>/unpaywall_cache.json like librarian.py does."""
+    log = log or logging.getLogger("project")
+    try:
+        import librarian
+    except ImportError:
+        import litscan as librarian  # type: ignore
+    cfile = Path(outdir) / "unpaywall_cache.json"
+    cache = json.loads(cfile.read_text(encoding="utf-8")) if cfile.exists() else {}
+    stats = {"members": 0, "dois": 0, "fetched": 0, "oa": 0}
+    for m in members(outdir):
+        if member_ids and m["id"] not in member_ids:
+            continue
+        files = sorted((m["path"] / "records").glob("*.json")) + [m["path"] / "all_records.json"] \
+            if m["kind"] == "run" else [m["path"] / "records.json"]
+        files = [f for f in files if f.exists()]
+        touched = False
+        for f in files:
+            recs = json.loads(f.read_text(encoding="utf-8"))
+            for r in recs:
+                d = (r.get("doi") or "").strip()
+                if not d or "is_oa" in r:
+                    continue
+                if d not in cache:
+                    try:
+                        cache[d] = librarian.unpaywall(d)
+                    except Exception:  # noqa: BLE001
+                        cache[d] = {}
+                    stats["fetched"] += 1
+                    time.sleep(0.1)
+                if cache[d]:
+                    r.update(cache[d])
+                    touched = True
+                stats["dois"] += 1
+                stats["oa"] += 1 if cache[d].get("is_oa") else 0
+            if touched:
+                f.write_text(json.dumps(recs, indent=1, ensure_ascii=False), encoding="utf-8")
+        stats["members"] += 1
+        cfile.write_text(json.dumps(cache), encoding="utf-8")
+        log.info("  %-24s %s", m["id"], "updated" if touched else "nothing to add")
+    log.info("%d members, %d DOIs looked at, %d fetched, %d open access",
+             stats["members"], stats["dois"], stats["fetched"], stats["oa"])
+    return stats
+
+
 def status(outdir: Path) -> str:
     p = load_project(outdir)
     ms = members(outdir, p)
@@ -481,6 +545,8 @@ def main() -> int:
     s.add_argument("--method", default="other", choices=METHODS,
                    help="PRISMA 2020 identification method (default: other)")
     s.add_argument("--note", default="")
+    s = sub.add_parser("oa", help="open-access lookup (Unpaywall) over members that lack it")
+    s.add_argument("--members", nargs="+", default=None, help="restrict to these member ids")
     s = sub.add_parser("exclude", help="hide a member from project reports")
     s.add_argument("member")
     s = sub.add_parser("include", help="undo exclude")
@@ -523,6 +589,8 @@ def main() -> int:
         else:
             log.error("give files or --inbox")
             return 2
+    elif args.cmd == "oa":
+        oa_pass(outdir, args.members, log)
     elif args.cmd in ("exclude", "include"):
         ex = set(p["exclude"])
         (ex.add if args.cmd == "exclude" else ex.discard)(args.member)
@@ -535,6 +603,7 @@ def main() -> int:
     elif args.cmd == "alias":
         p["block_aliases"][args.old] = args.new
         save_project(outdir, p)
+    close_logging(log)
     return 0
 
 

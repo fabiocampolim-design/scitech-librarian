@@ -29,11 +29,8 @@ Google Scholar (no API; scraping breaches ToS — against this tool's stance).
 
 ## Features assessed as feasible (roadmap candidates)
 
-- **Post-hoc open-access lookup** — `--pdfs` runs only inside `librarian.py`;
-  a `project.py oa` pass over every member (runs and manual sources) would
-  make `report --oa-only` and the OA statistics complete for projects.
-- **Zotero Web API push** and RIS keywords carrying the block name; BibTeX
-  and CSL-JSON output next to RIS.
+- **Zotero Web API push** (a run straight into a collection). Done in
+  3.2.1: `project.py oa`, BibTeX / CSL-JSON output, block keywords.
 - **Post-hoc de-duplication rule for repeated searches** — collapse runs with
   identical query strings in PRISMA "identified" instead of summing them
   (today: `project.py exclude` the reconnaissance run by hand).
