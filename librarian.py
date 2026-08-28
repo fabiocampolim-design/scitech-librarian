@@ -829,6 +829,18 @@ def main() -> int:
                 msg = str(e).replace("\n", " ")[:150]
                 print(f"\r  {b:16s} FAIL     {msg}")
                 bad.append((b, msg))
+        if os.environ.get("OPENALEX_API_KEY"):
+            try:
+                rl = _json("https://api.openalex.org/rate-limit?api_key="
+                           + os.environ["OPENALEX_API_KEY"])
+                print(f"  {'openalex key':16s} OK       daily budget: "
+                      f"{rl.get('dailyRemainingUsd', rl.get('remaining', '?'))} remaining "
+                      f"(resets {rl.get('resetsAt', rl.get('reset', 'midnight UTC'))})")
+            except Exception as e:  # noqa: BLE001
+                print(f"  {'openalex key':16s} FAIL     {str(e)[:120]}")
+        else:
+            print(f"  {'openalex key':16s} none     keyless daily budget; set OPENALEX_API_KEY "
+                  f"(free, 10x budget: https://openalex.org/settings/api)")
         if CONTACT:
             print(f"  {'unpaywall':16s} ...", end="", flush=True)
             try:
