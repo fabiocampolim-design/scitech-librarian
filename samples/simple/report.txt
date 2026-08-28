@@ -9,10 +9,12 @@ Run started                2026-08-28 10:01:20
 Duration                   128 s
 Query file                 queries.example.json
 Blocks                     PSC, MLP, NOV, QC
-Backends                   openalex, arxiv, inspire, semanticscholar, ads, scopus
+Backends / sources         openalex, arxiv, inspire, semanticscholar, ads, scopus
 Mode                       full fetch, up to 300 records per block and backend
 Non-curated venue filter   on
 Open-access lookup         not run
+Journal metrics            none (journals.py fetch)
+Filters                    none
 Interrupted                no
 
 
@@ -160,7 +162,7 @@ Total   4,960      727     17        3,199          2,588   4,945    16,436     
 Identified = database hit counts (not comparable across backends: proximity operators
 are dropped and stemming differs). Retrieved = records actually downloaded after the
 venue filter, capped by `--limit`. Unique = after DOI/title deduplication across all
-backends.
+sources.
 
 
 PRISMA 2020 flow
@@ -210,7 +212,7 @@ Records identified from databases                           16,436
   semanticscholar                                           3,199
   ads                                                       2,588
   scopus                                                    4,945
-Records retrieved (downloaded)                              2,968
+Records retrieved (downloaded / ingested)                   2,968
 Removed before screening: automation (non-curated venues)   37
 Removed before screening: duplicates                        715
 Records to screen (unique)                                  2,216
@@ -222,7 +224,7 @@ Reports assessed for eligibility                            --
 Studies included                                            --
 Reports of included studies                                 --
 
-Automation stages are computed from the run; '--' marks manual stages not yet recorded
+Automation stages are computed from the data; '--' marks manual stages not yet recorded
 in prisma.json. Note that 'identified' counts hits reported by each database while
 'retrieved' is what was downloaded within `--limit`, so the two differ on large blocks.
 
@@ -232,15 +234,14 @@ PRISMA-S search-reporting checklist
 Item   Requirement                     This search
 ----   -----------------------------   -------------------------------------------------
 1      Database name                   openalex, arxiv, inspire, semanticscholar, ads,
-                                       scopus (queried through their documented public
-                                       APIs)
+                                       scopus (documented public APIs)
 2      Multi-database searching        6 databases, one structural query per block
                                        rendered into each native grammar; see Search
                                        strategy
 3      Study registries                not applicable
-4      Online resources and browsing   not applicable
-5      Citation searching              not performed by the tool (manual, if any)
-6      Contacts                        not applicable
+4      Online resources and browsing   none recorded
+5      Citation searching              not performed
+6      Contacts                        none recorded
 7      Other methods                   none
 8      Full search strategies          reported verbatim per backend under Search
                                        strategy; archived in queries.json
@@ -252,17 +253,18 @@ Item   Requirement                     This search
 11     Prior work                      none
 12     Updates                         2 earlier run(s) archived; counts tracked in
                                        counts_history.csv
-13     Dates of searches               all databases searched on 2026-08-28 10:01:20
+13     Dates of searches               searched on 2026-08-28 10:01:20
 14     Peer review                     none
-15     Total records                   16,436 identified; 2,968 retrieved; 2,216 unique
+15     Total records                   16,436 identified from databases; 2,968
+                                       retrieved; 2,216 unique
 16     Deduplication                   exact DOI match, else first 90 characters of the
                                        lower-cased title; 715 duplicates removed
 
 
 Top 10 records per block
 ------------------------
-Deduplicated across backends, sorted by citation count. The complete set is in
-all_records.csv / .ris.
+Deduplicated across sources, sorted by cited. The complete set is in all_records.csv /
+.ris.
 
 
 Block PSC (1163 unique)
@@ -505,9 +507,10 @@ Suggestions
     if you need the complete record set rather than the most-cited slice.
   * Open-access status was not looked up; rerun with `--pdfs` (optionally `--pdf-
     blocks`) to collect legal OA PDF links via Unpaywall.
-  * The PRISMA flow's manual stages are empty: fill in prisma.json in the run directory
-    (screened / excluded / assessed / included) and rerun report.py to complete the
-    diagram.
+  * The PRISMA flow's manual stages are empty: fill in prisma.json (screened / excluded
+    / assessed / included) and rerun report.py to complete the diagram.
+  * No journal metrics on file; run `python journals.py fetch` (OpenAlex, no key) to add
+    impact-factor-like figures and enable `--min-metric`.
   * Block MLP: total hits changed from 239 (run 20260828T091142) to 838; count drift is
     expected as indexes grow, but a large jump usually means the query changed -- diff
     queries.json between the runs.

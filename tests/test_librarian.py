@@ -503,6 +503,211 @@ check("run_meta records limit, flags and backend endpoint",
       and _m["backend_config"]["openalex"]["url"].startswith("https://api.openalex.org"))
 check("run_meta reports the tool version", _m["version"] == litscan.VERSION)
 
+import time
+
+# ---------------------------------------------------------------------------
+print("\nresearch directory: project.py parsers, ingest, members, merge")
+import project  # noqa: E402
+import journals  # noqa: E402
+
+RIS = ("﻿TY  - JOUR\nAU  - Wei, Q\nAU  - Zhang, XW\nTI  - Higher-order topological semimetal\n"
+       "T2  - NATURE MATERIALS\nSN  - 1476-1122\nDA  - JUN 10\nPY  - 2021\nDO  - 10.1038/s41563-021-00933-4\n"
+       "AB  - Abstract text.\nER  -\n\nTY  - JOUR\nAU  - Solo, H\nTI  - Second paper\nJO  - J. Two\n"
+       "PY  - 2019\nER  - \n")
+recs = project.parse_ris(RIS)
+check("ris: BOM, 'ER  -' without trailing space and DA before PY handled",
+      len(recs) == 2 and recs[0]["year"] == "2021" and recs[0]["doi"] == "10.1038/s41563-021-00933-4")
+check("ris: authors, venue, issn, abstract carried",
+      recs[0]["authors"] == ["Wei, Q", "Zhang, XW"] and recs[0]["journal"] == "NATURE MATERIALS"
+      and recs[0]["issn"] == "1476-1122" and recs[0]["abstract"] == "Abstract text.")
+
+BIB = ('@article{key1,\n  title = {A {Nested} Title},\n  author = {Ada Lovelace and Charles Babbage},\n'
+       '  journal = "J. Comp.",\n  year = 1843,\n  doi = {10.1/bib}\n}\n@comment{ignored}\n'
+       '@inproceedings{k2, title={Talk}, booktitle={Proc. X}, year={2020}, author={One, A}}\n')
+recs = project.parse_bibtex(BIB)
+check("bibtex: entries parsed, comment skipped, booktitle as venue",
+      len(recs) == 2 and recs[1]["journal"] == "Proc. X" and recs[1]["year"] == "2020")
+check("bibtex: braces stripped, authors split on 'and', doi kept",
+      recs[0]["title"] == "A Nested Title" and recs[0]["authors"] == ["Ada Lovelace", "Charles Babbage"]
+      and recs[0]["doi"] == "10.1/bib")
+
+CSV = "Title,Authors,Year,DOI,Source title,Cited by\nPaper C,\"A; B\",2022,10.1/c,J. C,7\n"
+recs = project.parse_csv(CSV)
+check("csv: Scopus-style headers matched case-insensitively",
+      recs[0]["title"] == "Paper C" and recs[0]["authors"] == ["A", "B"] and recs[0]["journal"] == "J. C"
+      and recs[0]["cited_by"] == 7)
+recs = project.parse_json(json.dumps([{"title": "J1", "doi": "https://doi.org/10.1/J", "year": 2001}]))
+check("json: doi prefix stripped, year coerced", recs[0]["doi"] == "10.1/J" and recs[0]["year"] == "2001")
+
+with tempfile.TemporaryDirectory() as td:
+    od = Path(td) / "lit"
+    # two runs, one old-style (no meta.json), block renamed between them
+    r1 = od / "runs" / "20260601T000000"
+    (r1 / "records").mkdir(parents=True)
+    A1 = dict(_rec("Shared paper", 2020, "10.1/shared", "J. Phys.", ["A"], "", "short", 3),
+              block="X", backend="openalex")
+    B1 = dict(_rec("Only in June", 2018, "10.1/june", "Nature", ["B"], "", "", 50), block="X", backend="openalex")
+    (r1 / "records" / "X_openalex.json").write_text(json.dumps([A1, B1]), encoding="utf-8")
+    (r1 / "counts.json").write_text(json.dumps({"X": {"openalex": 40}}), encoding="utf-8")
+    (r1 / "queries.json").write_text(json.dumps({"X": {"openalex": "(old)"}}), encoding="utf-8")
+    r2 = od / "runs" / "20260801T000000"
+    (r2 / "records").mkdir(parents=True)
+    A2 = dict(_rec("Shared paper", 2020, "10.1/shared", "J. Phys.", ["A"], "", "a longer abstract", 9),
+              block="CD", backend="ads")
+    C2 = dict(_rec("New in August", 2025, "10.1/aug", "J. Phys.", ["C"], "", "", 1), block="CD", backend="ads")
+    (r2 / "records" / "CD_ads.json").write_text(json.dumps([A2, C2]), encoding="utf-8")
+    (r2 / "counts.json").write_text(json.dumps({"CD": {"ads": 55, "openalex": "ERR"}}), encoding="utf-8")
+    (r2 / "queries.json").write_text(json.dumps({"CD": {"ads": "(new)"}}), encoding="utf-8")
+    (r2 / "blocks.json").write_text(json.dumps({"CD": {"title": "cross", "note": "", "groups": [["a"]]}}),
+                                    encoding="utf-8")
+    (r2 / "meta.json").write_text(json.dumps({"started": "2026-08-01 00:00:00", "blocks": ["CD"],
+                                              "backends": ["ads", "openalex"], "limit": 300}), encoding="utf-8")
+    ris = Path(td) / "colleague.ris"
+    ris.write_text("TY  - JOUR\nTI  - Shared paper\nDO  - 10.1/shared\nPY  - 2020\nER  -\n"
+                   "TY  - JOUR\nTI  - Reference-list find\nJO  - Nature\nPY  - 2015\nER  -\n", encoding="utf-8")
+    import logging as _lg
+    src = project.ingest(od, [ris], "colleague", block="CD", method="citation", who="a colleague",
+                         origin="reference list", log=_lg.getLogger("t"))
+    check("ingest: source.json provenance and records tagged manual:<name>",
+          src["n_records"] == 2 and src["method"] == "citation"
+          and json.loads((od / "manual" / "colleague" / "records.json").read_text())[0]["backend"] == "manual:colleague")
+    check("ingest: original file kept beside records.json", (od / "manual" / "colleague" / "colleague.ris").exists())
+    (od / "inbox").mkdir()
+    (od / "inbox" / "dropped.bib").write_text(BIB, encoding="utf-8")
+    done = project.ingest_inbox(od, _lg.getLogger("t"), method="expert")
+    check("inbox: file becomes a source named after it and is removed from inbox",
+          [s["name"] for s in done] == ["dropped"] and not (od / "inbox" / "dropped.bib").exists())
+
+    p = project.load_project(od)
+    p["block_aliases"] = {"X": "CD"}
+    p["labels"] = {"20260601T000000": "first pass"}
+    project.save_project(od, p)
+    ms = project.members(od)
+    check("members: runs and manual sources discovered oldest first, labels applied",
+          [m["id"] for m in ms] == ["20260601T000000", "20260801T000000", "colleague", "dropped"]
+          and ms[0]["label"] == "first pass")
+    p["exclude"] = ["dropped"]
+    project.save_project(od, p)
+    ms = project.members(od)
+    check("members: exclusions honoured", "dropped" not in [m["id"] for m in ms])
+    recs = [r for m in ms for r in project.member_records(m, p["block_aliases"])]
+    check("member_records: block alias X -> CD applied", all(r["block"] == "CD" for r in recs if r["member"] == "20260601T000000"))
+    merged = project.merge(recs)
+    shared = next(r for r in merged if r["doi"] == "10.1/shared")
+    check("merge: provenance across runs and manual source",
+          set(shared["found_by"]) == {"openalex@20260601T000000", "ads@20260801T000000", "manual:colleague@colleague"}
+          and shared["first_seen"].startswith("2026-06-01"))
+    check("merge: richest copy kept (longest abstract, highest citations)",
+          shared["abstract"] == "a longer abstract" and shared["cited_by"] == 9)
+    check("merge: total unique", len(merged) == 4)
+    check("status text lists members", "colleague" in project.status(od))
+
+    # --- project report ---
+    d = report.load_project(od)
+    check("project load: backends inferred from counts for the pre-meta run and manual source appended",
+          d["backends"] == ["openalex", "ads", "manual:colleague"])
+    check("project load: counts summed over runs with ERR superseded, aliases applied",
+          d["counts"]["CD"]["openalex"] == 40 and d["counts"]["CD"]["ads"] == 55
+          and d["counts"]["CD"]["manual:colleague"] == 2)
+    s = report.stats(d)
+    pn = report.prisma_numbers(d, s)
+    check("prisma: citation-searching source lands in the other-methods column",
+          pn["other_by"] == {"citation": 2} and "manual:colleague" not in pn["identified_by"])
+    title, nodes = report.build(d, "simple")
+    md = report.render_md(title, nodes)
+    check("project report: sources table with 'new here' and timeline",
+          "## Sources" in md and "| first pass" in md and "## Timeline" in md and "| CD | 40 | 55 |" in md)
+    check("project report: other-methods box in the ASCII flow",
+          "IDENTIFICATION VIA OTHER METHODS" in md and "citation: 2" in md)
+    check("project report: tikz and svg carry the other-methods boxes",
+          "(ot)" in report.render_tex(title, nodes) and "Other methods" in report.render_html(title, nodes))
+    # filters
+    d = report.load_project(od, since="2026-07-01")
+    check("filter --since drops the June run", [m["id"] for m in d["members"]] == ["20260801T000000", "colleague"])
+    d = report.load_project(od)
+    report.apply_filters(d, diff=True, since="2026-07-01")
+    check("filter --diff keeps only records first seen in the window",
+          {r["doi"] for r in d["unique"]} == {"10.1/aug", ""} or
+          {r.get("title") for r in d["unique"]} == {"New in August", "Reference-list find"})
+    d = report.load_project(od)
+    report.apply_filters(d, backends=["ads"], year_from=2019, min_citations=2)
+    check("filters: backend / year / citations combine",
+          [r["doi"] for r in d["unique"]] == ["10.1/shared"] and d["filters"]["backends"] == "ads")
+    d = report.load_project(od, sources="manual")
+    check("filter --sources manual", all(m["kind"] == "manual" for m in d["members"]) and d["members"])
+    d = report.load_project(od, latest=True)
+    check("filter --latest keeps the most recent member only", [m["id"] for m in d["members"]] == ["colleague"])
+    d = report.load_project(od, extra_records=[str(ris)])
+    check("--records adds a transient manual source", any(m["id"] == "colleague" and "not stored" in m["label"]
+                                                        for m in d["members"]))
+
+    # --- journals ---
+    store = {}
+    e = journals._entry(store, "Journal of Physics", ["1234-5678"])
+    journals.put(e, "openalex_2yr", "2025", "2,5")
+    journals.put(e, "openalex_2yr", "2026", 3.1)
+    e2 = journals._entry(store, "journal of physics", [])
+    check("store: ISSN key, name alias resolves to the same entry, comma decimals", e2 is e and
+          e["metrics"]["openalex_2yr"] == {"2025": 2.5, "2026": 3.1})
+    check("metric_value: latest year wins", journals.metric_value(e, "openalex_2yr") == (3.1, "2026"))
+    check("lookup by record issn then by journal name",
+          journals.lookup(store, {"issn": "12345678"}) is e and journals.lookup(store, {"journal": "The Journal of Physics"}) is e)
+    scim = "Rank;Sourceid;Title;Type;Issn;SJR;SJR Best Quartile;H index\n1;1;Nature;journal;00280836, 14764687;20,957;Q1;1300\n2;2;Obscure J;journal;11112222;0,1;Q4;3\n"
+    n = journals.import_scimago(scim, "2024", store, only={"nature": True})
+    check("scimago import restricted to seen journals, quartile kept",
+          n == 1 and store["0028-0836"]["quartile"]["2024"] == "Q1" and store["0028-0836"]["metrics"]["sjr"]["2024"] == 20.957)
+    n = journals.import_csv("Journal name,JIF\nNature,64.8\n", "jcr_if", "2023", store, "Journal name", "JIF")
+    check("generic csv import appends a provider series", n == 1 and store["0028-0836"]["metrics"]["jcr_if"] == {"2023": 64.8})
+    # canned OpenAlex + Scopus fetch
+    CANNED.clear()
+    CANNED["api.openalex.org/sources"] = json.dumps({"results": [{"id": "https://openalex.org/S1", "display_name": "J. Phys.",
+        "issn": ["1111-2222"], "summary_stats": {"2yr_mean_citedness": 4.2, "h_index": 100},
+        "counts_by_year": [{"year": 2025, "works_count": 10, "cited_by_count": 50}]}]}).encode()
+    CANNED["api.elsevier.com/content/serial"] = json.dumps({"serial-metadata-response": {"entry": [
+        {"SJRList": {"SJR": [{"@year": "2023", "$": "1.5"}]}, "SNIPList": {"SNIP": [{"@year": "2023", "$": "1.1"}]},
+         "citeScoreYearInfoList": {"citeScoreYearInfo": [{"@year": "2023", "citeScoreInformationList": [
+             {"citeScoreInfo": [{"citeScore": "6.0"}]}]}]}}]}}).encode()
+    litscan._get = fake_get
+    os.environ["SCOPUS_API_KEY"] = "k"
+    try:
+        journals.save_store(od, {})
+        st = journals.fetch(od, ("openalex", "scopus"), log=_lg.getLogger("t"))
+    finally:
+        litscan._get = real_get
+        os.environ.pop("SCOPUS_API_KEY", None)
+    store = journals.load_store(od)
+    jp = journals.lookup(store, {"journal": "J. Phys."})
+    check("fetch: journals collected from the directory, OpenAlex values stored under the fetch year",
+          st["journals"] >= 2 and jp is not None and jp["metrics"]["openalex_2yr"] == {time.strftime("%Y"): 4.2})
+    check("fetch: Scopus history parsed (CiteScore, SJR, SNIP by year)",
+          jp["metrics"].get("scopus_citescore") == {"2023": 6.0} and jp["metrics"].get("sjr") == {"2023": 1.5})
+    d = report.load_project(od)
+    report.apply_filters(d, metric="openalex_2yr", min_metric=4.0)
+    check("--min-metric keeps only records in journals above the threshold",
+          {r["journal"] for r in d["unique"]} == {"J. Phys."})
+    title, nodes = report.build(d, "intermediate")
+    md = report.render_md(title, nodes)
+    check("report: metric column and journal-metrics section present",
+          "OpenAlex 2-yr mean citedness" in md and "## Journal metrics" in md)
+    out = report.write_reports(None, "simple", ["md"], d=d, out_dir=od / "reports" / "t", quiet=True)
+    check("write_reports: project output dir and screening.json template",
+          (od / "reports" / "t" / "report.md").exists() and (od / "screening.json").exists())
+
+# ---------------------------------------------------------------------------
+print("\naudit logging and --outdir")
+with tempfile.TemporaryDirectory() as td:
+    ns = _ap.Namespace(outdir=td, verbose=False, quiet=True, log_dir=None)
+    lg = project.setup_logging("testscript", ns)
+    lg.info("hello audit")
+    for h in list(lg.handlers):            # release the file so the tempdir can be removed on Windows
+        h.close()
+        lg.removeHandler(h)
+    logs = list((Path(td) / "logs").glob("testscript_*.log"))
+    txt = logs[0].read_text(encoding="utf-8") if logs else ""
+    check("audit log written under <outdir>/logs with invocation and message",
+          len(logs) == 1 and "invocation:" in txt and "hello audit" in txt)
+    check("resolve_outdir honours an explicit path", project.resolve_outdir(td) == Path(td).resolve())
+
 # ---------------------------------------------------------------------------
 print("\nsummary")
 if FAILED:

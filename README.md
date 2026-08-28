@@ -6,27 +6,42 @@
 [![Plays by the rules](https://img.shields.io/badge/APIs-documented%20%26%20ToS--compliant-blueviolet)](#plays-by-the-rules)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**One query. Every scholarly database. A tidy archive — and a PRISMA report — of every run.**
+**One query, every scholarly database — and a research directory that
+remembers every search, every record you brought in by hand, and writes the
+PRISMA report for all of it.**
 
 Write a structured query once; scitech-librarian renders it into the native
 syntax of eight bibliographic databases (OpenAlex, NASA ADS, arXiv,
 INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, Web of Science), runs them
-all, and archives everything — raw records, RIS for Zotero, the exact query
-string sent to each backend, hit counts and their drift over time — in a
-timestamped directory you can cite — and writes a **literature-search
-report** with a PRISMA 2020 flow diagram, in Markdown, HTML, LaTeX, PDF or
-plain text, at three levels of detail. Databases are **configuration, not
-code**: add one with a JSON entry.
+all, and archives the run — raw records, RIS for Zotero, the exact query
+string sent to each backend, hit counts — in a timestamped directory you can
+cite. Runs accumulate in a **research directory**: a folder per project that
+also takes records obtained outside the tool (Zotero, Mendeley and Web of
+Science exports, a colleague's RIS, a reference list) with their
+provenance, keeps journal metrics year by year, and produces a
+**literature-search report** — search strategy, results, **PRISMA 2020 flow
+and PRISMA-S checklist**, timeline, what each search added, venue metrics,
+suggestions — for one run or for the whole project, filtered by date,
+source, database, year, citations or venue quality, in Markdown, HTML,
+LaTeX, PDF or plain text at three levels of detail. A lab runs one
+directory per project. Databases are **configuration, not code**.
 
-Standard library only, no install step: `librarian.py` searches,
-`report.py` reports, `wos_manual.py` handles Web of Science by hand.
+Standard library only, no install step: five files — `librarian.py`
+(search), `project.py` (research directory and ingest), `report.py`
+(reports), `journals.py` (venue metrics), `wos_manual.py` (Web of Science
+by hand). Full documentation: [**User Manual**](docs/USER_MANUAL.md)
+([HTML](docs/USER_MANUAL.html) · [PDF](docs/USER_MANUAL.pdf)). Working with
+an AI agent? Hand it [**AGENTS.md**](AGENTS.md) — the complete
+machine-oriented instructions — and say *"read AGENTS.md, then run a
+novelty check on X"*.
 
 ```bash
 python librarian.py --selftest                       # ping every backend; report what works
 python librarian.py --counts-only                    # fast: hit counts for every query block
 python librarian.py --pdfs                           # full run + legal open-access PDF lookup
-python librarian.py --report-level full --report-format html pdf
-python report.py --latest --level intermediate --format md html   # re-render any archived run
+python project.py ingest export.ris --name zotero --method citation   # records from outside
+python report.py --project --since 2026-06-01 --diff # what the searches since June added
+python journals.py fetch                             # venue metrics (OpenAlex, no key)
 ```
 
 > **Feedback is highly appreciated.** If a database misbehaves, a count looks
@@ -81,6 +96,26 @@ not as fine print, but as a design principle:
   query string sent to each backend, counts as JSON and a paste-ready
   markdown table, run metadata, and a full log. Counts also append to a
   history file so drift over time is visible.
+- **A research directory, not a pile of runs.** `project.py` indexes every
+  run and every record you bring in from outside (RIS, BibTeX, CSV, JSON —
+  Zotero, Mendeley, Web of Science, reference lists; an inbox folder for
+  collaborators), keeps provenance (who, when, where from, PRISMA method),
+  merges everything with `found_by` / `first_seen` per record, and
+  `report.py --project` describes the whole project: what each search
+  added, which database found what nobody else did, count drift over time,
+  and a PRISMA flow with both identification columns. Filters by date
+  window, differential ("new since June"), source kind, database, block,
+  publication year, citations, venue metric. One directory per project;
+  a lab has several.
+- **Journal metrics, year by year.** `journals.py` fetches OpenAlex 2-year
+  mean citedness (no key) and Scopus CiteScore/SJR/SNIP (key), imports
+  SCImago CSVs and licensed JCR exports, stores values per year so the
+  series builds up, and feeds a metric column, a venues-by-metric table, an
+  evolution table and `--min-metric` into reports.
+- **Logs and audits.** Every script writes an audit log (invocation,
+  versions, every warning) under `<outdir>/logs/`; console output is small
+  by default, `--verbose` / `--quiet` / `--log-dir` / `--outdir` on all of
+  them; `--help` lists every parameter with its default.
 - **A literature-search report, PRISMA included.** Every run ends with
   `report.md` (or HTML / LaTeX / PDF / plain text): the search strategy with
   the exact string sent to each database, a results summary, a **PRISMA 2020
@@ -107,9 +142,10 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 115 checks run with no network and no keys (backends
-  are exercised against canned API responses, the report generator against a
-  synthetic run); CI on Linux and Windows, Python 3.9 and 3.13.
+- **Offline-testable.** 155 checks run with no network and no keys (backends
+  are exercised against canned API responses; the research directory, ingest
+  parsers, journal store and report generator against synthetic
+  directories); CI on Linux and Windows, Python 3.9 and 3.13.
 
 ## The databases: what each is actually good for
 
@@ -257,6 +293,9 @@ and physics coverage, this one.
 
 ## Pitfalls we hit, so you do not have to
 
+(The [User Manual](docs/USER_MANUAL.md) §12 lists every feature and every
+known limitation in one place.)
+
 - **arXiv hangs on deeply nested booleans** — not an error, it just never
   returns. At most two groups are sent (`arxiv_groups` chooses which), over
   HTTPS, with a short timeout, because an automatic "most selective" heuristic
@@ -286,7 +325,43 @@ prisma.json                      manual PRISMA screening stages -- fill in, re-r
 run.log                          everything printed, including errors
 ```
 
-plus `lit/counts_history.csv`, appended every run.
+plus `lit/counts_history.csv`, appended every run, and the research
+directory around it:
+
+```
+lit/
+  project.json                  index: name, labels, exclusions, block aliases, defaults
+  runs/<stamp>/                 automated searches (above)
+  manual/<name>/                ingested sources: source.json (provenance), records.json, the original file
+  inbox/                        drop RIS/BibTeX/CSV/JSON here; `project.py ingest --inbox`
+  journals/metrics.json         venue metrics per year (journals.py)
+  screening.json                project-wide PRISMA manual stages
+  reports/<stamp>-<level>/      project reports (report.py --project)
+  logs/                         one audit log per script invocation
+```
+
+## The research directory
+
+```bash
+python project.py init --name "Topological materials review"
+python project.py ingest export.ris --name zotero-aug --block CD --method citation \
+       --who "A. Colleague" --origin "Zotero group library"
+python project.py ingest --inbox                 # everything dropped in lit/inbox/
+python wos_manual.py ingest                      # Web of Science exports become manual sources
+python project.py status
+python report.py --project                       # everything merged
+python report.py --project --since 2026-06-01 --diff --format pdf   # what is new since June
+python report.py --project --backends ads scopus --min-metric 3 --metric scopus_citescore
+```
+
+Records from outside arrive three ways: the command line (with full
+provenance), an inbox folder (drop and ingest), or the Web of Science
+routine. They keep the original file, get the common record schema, are
+tagged `manual:<name>`, and their `--method` (database, citation, website,
+organisation, expert, other) places them in the PRISMA flow. Manual
+sources appear in every table like one more database — including "found
+only here", which is how you learn what your colleague's reference list
+had that six databases did not.
 
 ## Reports and PRISMA
 
@@ -296,9 +371,9 @@ files; `report.py` re-renders any archived run without touching the network.
 
 | Level | What you get |
 |---|---|
-| `simple` (default) | run metadata; search strategy (structural query + the exact string sent to each backend); results summary; PRISMA 2020 flow + PRISMA-S checklist; top 10 records per block; suggestions |
-| `intermediate` | + every unique record; each backend's marginal contribution ("found only here"); year / venue / author distributions; venues removed by the filter; errors; open-access stats; count drift against earlier runs of the same blocks |
-| `full` | + every record with full abstract and author list, and which backends found it; per-backend raw lists before deduplication; the filtered records; backend endpoint configuration; the complete run log; environment |
+| `simple` (default) | run metadata; sources (project); search strategy (structural query + the exact string sent to each backend); results summary; timeline (project); PRISMA 2020 flow + PRISMA-S checklist; top 10 records per block; suggestions |
+| `intermediate` | + every unique record; each source's marginal contribution ("found only here"); year / venue / author distributions; journal metrics and their evolution; venues removed by the filter; errors; open-access stats; count drift against earlier runs |
+| `full` | + every record with full abstract and author list, and which sources found it; per-source raw lists before deduplication; the filtered records; backend endpoint configuration; project and source provenance files; the complete run log; environment |
 
 Formats: `md`, `html` (self-contained, light/dark, printable), `tex`,
 `pdf`, `txt`. The PDF is compiled from the LaTeX with xelatex / lualatex /
@@ -308,14 +383,16 @@ degrades.
 
 **PRISMA.** The report carries a [PRISMA 2020](https://www.prisma-statement.org/)
 flow diagram (SVG in HTML, TikZ in LaTeX/PDF, ASCII in Markdown/text). The
-stages a tool can know are filled from the run — records identified per
-database, records removed by automation (the venue filter), duplicates
-removed, records left to screen — and are honest about the difference
-between *identified* (what each database reports) and *retrieved* (what was
+stages a tool can know are filled from the data — records identified per
+database, records identified via other methods (manual sources by method),
+records removed by automation (the venue filter), duplicates removed,
+records left to screen — and are honest about the difference between
+*identified* (what each database reports) and *retrieved* (what was
 downloaded within `--limit`). The stages only a human can know — screened,
-excluded, sought, assessed, included, with exclusion reasons — are read from
-`prisma.json` in the run directory; a template is written on the first
-report, so fill it in as you screen and re-run `report.py`. A
+excluded, sought, assessed, included, with exclusion reasons, for both
+columns — are read from `prisma.json` (one run) or `screening.json`
+(research directory); a template is written on the first report, so fill it
+in as you screen and re-run `report.py`. A
 [PRISMA-S](https://doi.org/10.1186/s13643-020-01542-z) search-reporting
 checklist (all 16 items) is auto-completed where the tool has the data —
 databases, full strategies, limits, filters, dates, totals, deduplication
@@ -327,6 +404,32 @@ python report.py lit/runs/20260815T095908 --level full --format pdf
 python report.py --latest --format txt            # newest run, plain text
 python librarian.py --no-report                   # search only
 ```
+
+Report filters (both modes): `--since/--until DATE`, `--latest`, `--diff`,
+`--year-from/--year-to`, `--backends`, `--blocks`, `--sources auto|manual|all`,
+`--records FILE…` (extra RIS/BibTeX/CSV/JSON for this report only),
+`--metric NAME --min-metric X`, `--min-citations N`, `--oa-only`, `--top N`,
+`--sort cited|year|metric`. Filters are printed in the report's metadata and
+in PRISMA-S item 9, so a filtered report is never mistaken for the whole
+search.
+
+## Journal metrics
+
+```bash
+python journals.py fetch                                   # every journal seen in lit/: OpenAlex (+ Scopus with a key)
+python journals.py import-scimago scimagojr_2024.csv --year 2024 --all
+python journals.py import-csv jcr.csv --provider jcr_if --year 2023 --name-col "Journal name" --value-col JIF
+python journals.py show --metric scopus_citescore
+```
+
+`lit/journals/metrics.json` keeps one entry per journal (ISSN-keyed) with
+values **per year, never overwritten** — refetch next year and the report
+shows the series. Providers: OpenAlex 2-year mean citedness and h-index (no
+key; snapshot per fetch year), Scopus CiteScore / SJR / SNIP (key; full
+history), SCImago SJR / H index / quartile (one CSV download per year, the
+route to *all* ~30,000 journals), and the Clarivate Journal Impact Factor —
+proprietary, no free API, import-only from a licensed export. The tool will
+not scrape it.
 
 ### Sample reports
 
@@ -349,6 +452,16 @@ Browse: [simple](samples/simple/report.md) ·
 [full](samples/full/report.md) (Markdown, rendered by GitHub), or the
 `.html`, `.tex`, `.pdf`, `.txt` next to each.
 
+[`samples/project/`](samples/project/) is the same example as a **research
+directory**: two runs (a first pass and the full run) plus a colleague's
+reference list ingested as a manual source, with Scopus CiteScore on file
+for 228 venues — `report.md/html/tex/pdf/txt` (simple),
+`report_intermediate.md`, and `report_diff.md` (`--since 2026-08-28 --diff`).
+
+| `project`, p. 1 — sources and what each added | `project`, p. 4 — PRISMA with both identification columns |
+|---|---|
+| [![](samples/img/project_p1.png)](samples/project/report.pdf) | [![](samples/img/project_prisma.png)](samples/project/report.pdf) |
+
 ## Command reference
 
 ```
@@ -365,8 +478,16 @@ python librarian.py --list                  blocks + backend readiness
 python librarian.py --report-level full     simple | intermediate | full (default simple)
 python librarian.py --report-format md pdf  any of md html tex pdf txt (default md)
 python librarian.py --no-report             skip the report
+python librarian.py --outdir DIR            another research directory (all scripts)
 python report.py <run dir> | --latest       re-render an archived run (--level, --format)
+python report.py --project [filters]        the whole research directory
+python project.py init|status|ingest|exclude|include|label|alias
+python journals.py fetch|import-scimago|import-csv|show
+python wos_manual.py prep|walk|ingest|status
 ```
+
+Every script: `--help` lists every parameter with its default; `--outdir`,
+`--verbose`, `--quiet`, `--log-dir` are common to all.
 
 ## A workflow that works
 
@@ -395,6 +516,8 @@ agent to write and audit — this tool was built inside exactly that workflow.
   (`docs/FUTURE_BACKENDS.md` has the vetted API details — contributions of
   working `backends.json` entries are very welcome).
 - Legal OA-PDF downloading from the Unpaywall links already collected.
+- Zotero Web API push (a run straight into a collection) and RIS keywords
+  carrying the block name; BibTeX / CSL-JSON output.
 - Snowballing via OpenAlex/Semantic Scholar reference endpoints, and citation
   graphs among a run's results.
 
@@ -404,10 +527,11 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-115 checks, stdlib only, no network and no keys — backends run against
-canned API responses and the report generator against a synthetic run
-directory, so the suite exercises the real parsing and rendering paths
-offline. CI runs it on Linux and Windows under Python 3.9 and 3.13.
+155 checks, stdlib only, no network and no keys — backends run against
+canned API responses; the ingest parsers, research-directory merge, journal
+store and report generator against synthetic directories — so the suite
+exercises the real parsing, merging and rendering paths offline. CI runs it
+on Linux and Windows under Python 3.9 and 3.13.
 
 ## How it was built
 
@@ -417,15 +541,16 @@ working days to v2.2), hardened by running actual PhD novelty checks —
 5,000-record scans, the arXiv hang, the OpenAlex junk discrepancy, WoS UI
 query errors — productized on August 26, 2026 (declarative backend
 engine, offline test suite, CI) in a single session, and given its PRISMA
-report generator on August 28, 2026. In
+report generator, research directory, ingest, journal metrics and manuals on
+August 28, 2026. In
 [CRediT](https://credit.niso.org/) terms:
 
 | CRediT role | Fabio | Claude |
 |---|---|---|
-| **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain |
+| **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 115-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 155-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |

@@ -10,7 +10,8 @@ website itself -- scraping it would breach Clarivate's terms.
     python wos_manual.py walk         interactive: copies each query to the
                                       clipboard in turn, you paste and export
     python wos_manual.py ingest       read exported RIS back into librarian's
-                                      record schema so analysis is identical
+                                      record schema and register them as manual
+                                      sources of the research directory
     python wos_manual.py status       what has been collected so far
 
 Typical session
@@ -34,7 +35,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from librarian import OUTDIR, load_blocks, q_wos, q_wos_bare, write_csv
+try:
+    import librarian
+except ImportError:                       # drop-in installs may keep the old name
+    import litscan as librarian           # type: ignore
+OUTDIR, load_blocks, q_wos, q_wos_bare, write_csv = (
+    librarian.OUTDIR, librarian.load_blocks, librarian.q_wos, librarian.q_wos_bare, librarian.write_csv)
+from project import ingest as project_ingest, parse_ris  # noqa: F401  (parse_ris re-exported)
 
 # librarian.py populates its module-level BLOCKS only inside main(), so importing
 # that name would bind an empty dict. Load the query file directly instead --
@@ -133,38 +140,6 @@ def walk() -> None:
     print(f"\nCounts saved to {cfile}")
 
 
-def parse_ris(text: str) -> list[dict]:
-    """RIS -> librarian record schema, so manual and automated results merge."""
-    recs, cur, authors = [], {}, []
-    for raw in text.splitlines():
-        if len(raw) < 6 or raw[4:6] != "- ":
-            continue
-        tag, val = raw[:2].strip(), raw[6:].strip()
-        if tag == "TY":
-            cur, authors = {}, []
-        elif tag in ("AU", "A1"):
-            authors.append(val)
-        elif tag in ("TI", "T1"):
-            cur["title"] = val
-        elif tag in ("PY", "Y1"):
-            cur["year"] = val[:4]
-        elif tag in ("JO", "JF", "T2", "J9"):
-            cur.setdefault("journal", val)
-        elif tag == "DO":
-            cur["doi"] = val
-        elif tag in ("AB", "N2"):
-            cur["abstract"] = val
-        elif tag == "UR":
-            cur.setdefault("url", val)
-        elif tag == "ER":
-            recs.append({"title": cur.get("title", ""), "year": cur.get("year", ""),
-                         "doi": cur.get("doi", ""), "journal": cur.get("journal", ""),
-                         "authors": authors, "url": cur.get("url", ""),
-                         "abstract": cur.get("abstract", ""), "cited_by": 0})
-            cur, authors = {}, []
-    return recs
-
-
 def ingest() -> None:
     if not RDIR.exists():
         print(f"No {RDIR} — run `prep` first, then export RIS files there.")
@@ -193,6 +168,13 @@ def ingest() -> None:
                                        encoding="utf-8")
     write_csv(uniq, BASE / "all_wos.csv")
     print(f"\n{len(allrecs)} records, {len(uniq)} unique -> {BASE / 'all_wos.json'}")
+    # Register each block's export as a manual source of the research
+    # directory, so report.py --project sees Web of Science like any backend.
+    for f in files:
+        project_ingest(OUTDIR, [f], f"wos-{f.stem.upper()}", block=f.stem.upper(), kind="ris",
+                       origin="Web of Science Core Collection, web UI export",
+                       method="database", note="manual UI run via wos_manual.py")
+    print(f"registered as manual sources under {OUTDIR / 'manual'} (report.py --project)")
 
 
 def status() -> None:

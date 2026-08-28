@@ -22,6 +22,7 @@ lit/counts_history.csv so drift over time is visible.
 Backends
 --------
 no key needed:  openalex  arxiv  inspire  semanticscholar  crossref
+                (OpenAlex has a daily free budget; OPENALEX_API_KEY raises it)
 key needed:     scopus (SCOPUS_API_KEY + institutional network/VPN)
                 ads    (ADS_TOKEN)
                 wos    (WOS_STARTER_KEY; restricted grammar, see .env.example)
@@ -39,6 +40,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import logging
 import os
 import re
 import sys
@@ -49,7 +51,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.1"
+VERSION = "3.2"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -231,6 +233,11 @@ def _get(url: str, headers: dict | None = None, tries: int = 3,
                     f"{last}\n      -> auth/entitlement. Scopus: are you on your institution's "
                     f"VPN and is the key valid? WoS: Starter keys reject complex queries."
                 ) from None
+            if e.code == 429 and "budget" in body.lower():
+                raise RuntimeError(
+                    f"{last}\n      -> OpenAlex daily free budget exhausted (resets at midnight UTC). "
+                    f"Set OPENALEX_API_KEY in .env (free key, prepaid credits raise the "
+                    f"budget: https://openalex.org/pricing) or rerun tomorrow.") from None
             if e.code in (429, 500, 502, 503):
                 time.sleep(5 * (attempt + 1))
                 continue
@@ -256,11 +263,14 @@ def is_junk(rec: dict) -> bool:
     return bool(JUNK_VENUE.search(rec.get("journal") or ""))
 
 
-def _rec(title, year, doi, journal, authors, url, abstract="", cited=0) -> dict:
+def _rec(title, year, doi, journal, authors, url, abstract="", cited=0, issn="") -> dict:
+    if isinstance(issn, list):
+        issn = issn[0] if issn else ""
     return {"title": (title or "").strip(), "year": str(year or ""),
             "doi": (doi or "").replace("https://doi.org/", "").strip(),
             "journal": (journal or "").strip(), "authors": [a for a in (authors or []) if a],
-            "url": url or "", "abstract": (abstract or "").strip(), "cited_by": int(cited or 0)}
+            "url": url or "", "abstract": (abstract or "").strip(), "cited_by": int(cited or 0),
+            "issn": (issn or "").strip()}
 
 
 # ---------------------------------------------------------------------------
@@ -343,6 +353,8 @@ def unpaywall(doi: str) -> dict:
 DEFAULT_BACKENDS: dict[str, dict] = {
     "openalex": {
         "syntax": {},
+        "auth": {"env": "OPENALEX_API_KEY", "param": "api_key", "optional": True,
+                 "hint": "free key at https://openalex.org/pricing; raises the daily budget"},
         "request": {"url": "https://api.openalex.org/works",
                     "params": {"filter": "title_and_abstract.search:{q}", "per-page": "{n}",
                                "cursor": "{cursor}", "mailto": "{contact}"},
@@ -352,6 +364,7 @@ DEFAULT_BACKENDS: dict[str, dict] = {
                   "fields": {"title": "display_name", "year": "publication_year",
                              "doi": "doi",
                              "journal": "primary_location.source.display_name",
+                             "issn": "primary_location.source.issn_l",
                              "authors": "authorships[].author.display_name",
                              "url": "id",
                              "abstract": {"path": "abstract_inverted_index",
@@ -408,6 +421,7 @@ DEFAULT_BACKENDS: dict[str, dict] = {
                   "fields": {"title": {"path": "title", "join": " "},
                              "year": "issued.date-parts[0][0]", "doi": "DOI",
                              "journal": {"path": "container-title", "join": " "},
+                             "issn": "ISSN[0]",
                              "authors": {"path": "author[]", "transform": "given_family"},
                              "url": "URL", "abstract": "abstract",
                              "cited": "is-referenced-by-count"}},
@@ -442,6 +456,7 @@ DEFAULT_BACKENDS: dict[str, dict] = {
                   "fields": {"title": "dc:title",
                              "year": {"path": "prism:coverDate", "first4": True},
                              "doi": "prism:doi", "journal": "prism:publicationName",
+                             "issn": "prism:issn",
                              "authors": {"path": "dc:creator", "aslist": True},
                              "url": "prism:url", "abstract": "dc:description",
                              "cited": "citedby-count"}},
@@ -540,6 +555,8 @@ def _auth_headers(entry: dict) -> dict:
     hdr.update(auth.get("static", {}))
     specs = [auth] + list(auth.get("extra", []))
     for a in specs:
+        if a.get("param"):                 # sent as a query parameter, see _auth_params
+            continue
         val = os.environ.get(a["env"], "")
         if not val:
             if a.get("optional"):
@@ -547,6 +564,16 @@ def _auth_headers(entry: dict) -> dict:
             raise RuntimeError(f"{a['env']} not set -- {a.get('hint', 'see .env.example')}")
         hdr[a["header"]] = a.get("value", "{key}").format(key=val)
     return hdr
+
+
+def _auth_params(entry: dict) -> dict:
+    """Auth specs with "param" are query parameters (OpenAlex api_key)."""
+    auth = entry.get("auth") or {}
+    out = {}
+    for a in [auth] + list(auth.get("extra", [])) if auth else []:
+        if a.get("param") and os.environ.get(a.get("env", ""), ""):
+            out[a["param"]] = os.environ[a["env"]]
+    return out
 
 
 def _make_fetch(entry: dict):
@@ -567,6 +594,7 @@ def _make_fetch(entry: dict):
             subst = {"q": q, "n": n, "contact": CONTACT,
                      "cursor": cursor, "page": page, "start": start}
             params = {k: str(v).format(**subst) for k, v in req["params"].items()}
+            params.update(_auth_params(entry))
             d = _json(req["url"] + "?" + urllib.parse.urlencode(params), hdr)
             tot = _field(d, parse["total"]) if isinstance(parse["total"], dict) \
                 else _extract(d, parse["total"])
@@ -580,7 +608,8 @@ def _make_fetch(entry: dict):
                 f = {k: _field(it, s) for k, s in parse["fields"].items()}
                 recs.append(_rec(f.get("title"), f.get("year"), f.get("doi"),
                                  f.get("journal"), f.get("authors"), f.get("url"),
-                                 f.get("abstract") or "", f.get("cited") or 0))
+                                 f.get("abstract") or "", f.get("cited") or 0,
+                                 f.get("issn") or ""))
             if style == "none" or not items or len(recs) >= min(want, total):
                 break
             if style == "cursor":
@@ -695,7 +724,7 @@ def run_meta(stamp: str, args, backends: list, t_start: float, interrupted: bool
             "blocks": list(args.blocks), "backends": list(backends),
             "counts_only": bool(args.counts_only), "limit": args.limit,
             "keep_junk": bool(args.keep_junk), "pdfs": bool(args.pdfs),
-            "interrupted": interrupted, "backend_config": cfg,
+            "interrupted": interrupted, "backend_config": cfg, "outdir": str(OUTDIR),
             "environment": {"python": sys.version.split()[0],
                             "platform": f"{sys.platform}"}}
 
@@ -703,7 +732,7 @@ def run_meta(stamp: str, args, backends: list, t_start: float, interrupted: bool
 # ---------------------------------------------------------------------------
 
 def main() -> int:
-    global TIMEOUT, BLOCKS, BACKENDS_CFG, BACKENDS, NOKEY, DEFAULT_EXCLUDE
+    global TIMEOUT, BLOCKS, BACKENDS_CFG, BACKENDS, NOKEY, DEFAULT_EXCLUDE, OUTDIR
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--queries", default=None,
@@ -742,9 +771,19 @@ def main() -> int:
                     help="report formats to write (default: md). pdf uses LaTeX/pandoc "
                          "if installed, else a built-in plain-text writer")
     ap.add_argument("--no-report", action="store_true", help="skip report generation")
+    try:
+        import project as _project
+        _project.add_common_args(ap, "research directory for lit/ output")
+    except ImportError:
+        _project = None
+        ap.add_argument("--outdir", default=None, help="research directory (default ./lit)")
     args = ap.parse_args()
 
     TIMEOUT = args.timeout
+    if args.outdir:
+        OUTDIR = Path(args.outdir).resolve()
+    if _project:
+        _project.setup_logging("librarian", args, OUTDIR)
 
     if args.init_backends:
         out = HERE / "backends.json"
@@ -832,9 +871,14 @@ def main() -> int:
     log_lines, counts, queries, everything, junk_all = [], {}, {}, [], []
     t_start = time.time()
 
+    _audit = logging.getLogger("librarian")
+
     def log(s=""):
         print(s, flush=True)          # flush: otherwise Windows buffers and it LOOKS hung
         log_lines.append(s)
+        for h in _audit.handlers:      # audit file only; the console already has it
+            if isinstance(h, logging.FileHandler):
+                h.emit(logging.LogRecord("librarian", logging.INFO, "", 0, s, None, None))
 
     log(f"scitech-librarian run {stamp}")
     log(f"blocks:   {' '.join(args.blocks)}")

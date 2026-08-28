@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10.2" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2026-08-28" />
+  <title>scitech-librarian - User Manual</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style type="text/css">body{font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#1b1b1b;background:#fff}h1{font-size:1.6rem;border-bottom:1px solid #999;padding-bottom:.2rem;margin-top:2rem}h2{font-size:1.25rem;margin-top:1.6rem}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border:1px solid #bbb;padding:.3rem .5rem;text-align:left;vertical-align:top}th{background:#f3f3f3}pre,code{font-family:ui-monospace,Consolas,monospace;font-size:.86rem}pre{background:#f6f6f6;padding:.6rem;overflow-x:auto}@media(prefers-color-scheme:dark){body{color:#e6e6e6;background:#151515}th{background:#222}pre{background:#222}}</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">scitech-librarian - User Manual</h1>
+<p class="subtitle">version 3.2</p>
+<p class="date">2026-08-28</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#what-it-is" id="toc-what-it-is">1. What it is</a></li>
+<li><a href="#installation-and-setup" id="toc-installation-and-setup">2.
+Installation and setup</a></li>
+<li><a href="#concepts" id="toc-concepts">3. Concepts</a></li>
+<li><a href="#writing-queries" id="toc-writing-queries">4. Writing
+queries</a></li>
+<li><a href="#running-a-search" id="toc-running-a-search">5. Running a
+search</a></li>
+<li><a href="#the-research-directory" id="toc-the-research-directory">6.
+The research directory</a>
+<ul>
+<li><a href="#index" id="toc-index">6.1 Index</a></li>
+<li><a href="#bringing-records-in-from-outside" id="toc-bringing-records-in-from-outside">6.2 Bringing records in from
+outside</a></li>
+<li><a href="#from-zotero-mendeley-and-endnote" id="toc-from-zotero-mendeley-and-endnote">6.3 From Zotero, Mendeley and
+EndNote</a></li>
+</ul></li>
+<li><a href="#reports" id="toc-reports">7. Reports</a>
+<ul>
+<li><a href="#one-run" id="toc-one-run">7.1 One run</a></li>
+<li><a href="#the-whole-research-directory" id="toc-the-whole-research-directory">7.2 The whole research
+directory</a></li>
+<li><a href="#levels" id="toc-levels">7.3 Levels</a></li>
+<li><a href="#formats" id="toc-formats">7.4 Formats</a></li>
+<li><a href="#filters" id="toc-filters">7.5 Filters</a></li>
+<li><a href="#prisma" id="toc-prisma">7.6 PRISMA</a></li>
+<li><a href="#suggestions" id="toc-suggestions">7.7 Suggestions</a></li>
+</ul></li>
+<li><a href="#journal-metrics" id="toc-journal-metrics">8. Journal
+metrics</a></li>
+<li><a href="#web-of-science" id="toc-web-of-science">9. Web of
+Science</a></li>
+<li><a href="#logs-and-audit" id="toc-logs-and-audit">10. Logs and
+audit</a></li>
+<li><a href="#workflows" id="toc-workflows">11. Workflows</a></li>
+<li><a href="#features-and-limitations" id="toc-features-and-limitations">12. Features and limitations</a></li>
+<li><a href="#testing" id="toc-testing">13. Testing</a></li>
+<li><a href="#licence-and-conduct" id="toc-licence-and-conduct">14.
+Licence and conduct</a></li>
+</ul>
+</nav>
+<h1 id="what-it-is">1. What it is</h1>
+<p>scitech-librarian is a reproducible literature-search instrument for
+science and engineering. You write a structured query once; it runs the
+query against up to eight bibliographic databases through their
+documented APIs, archives everything (records, the exact query string
+sent to each database, hit counts, a log), and writes a
+literature-search report with a PRISMA 2020 flow diagram. Over months,
+the runs, plus records you obtained by other means, accumulate in a
+<strong>research directory</strong> that the same report can describe as
+a whole — what each search added, what each database contributed, how
+counts drifted, which venues matter.</p>
+<p>It is five Python files with no dependencies beyond the standard
+library. There is nothing to install: copy the files, fill
+<code>.env</code>, write <code>queries.json</code>, run.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>librarian.py</code></td>
+<td>run a search; archive a run; call the report</td>
+</tr>
+<tr>
+<td><code>project.py</code></td>
+<td>research directory: index, ingest external records, status</td>
+</tr>
+<tr>
+<td><code>report.py</code></td>
+<td>reports for one run or the whole directory; PRISMA; filters</td>
+</tr>
+<tr>
+<td><code>journals.py</code></td>
+<td>journal metrics (impact-factor-like figures) per year</td>
+</tr>
+<tr>
+<td><code>wos_manual.py</code></td>
+<td>Web of Science by hand (no usable free API)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>For AI agents.</strong> <code>AGENTS.md</code> at the
+repository root is the complete machine-oriented description of the
+tool. If you work with a coding agent (Claude Code, Codex, Cursor…),
+tell it: <em>“Read AGENTS.md, then run a novelty check on X”</em> — it
+contains the commands, file schemas, workflows and the rules the agent
+must not break.</p>
+<h1 id="installation-and-setup">2. Installation and setup</h1>
+<p>Requirements: Python 3.9 or newer. Optional, for typeset PDF reports:
+a LaTeX distribution (xelatex, lualatex or pdflatex) or pandoc; without
+them the PDF is produced by a built-in plain-text writer.</p>
+<pre><code>git clone https://github.com/fabiocampolim-design/scitech-librarian
+cd scitech-librarian
+cp .env.example .env            # fill in what you have
+cp queries.example.json queries.json
+python librarian.py --selftest</code></pre>
+<p><code>.env</code> keys:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Key</th>
+<th>Needed for</th>
+<th>How to get it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CONTACT_EMAIL</code></td>
+<td>polite-pool access to OpenAlex/Crossref/Unpaywall</td>
+<td>your address</td>
+</tr>
+<tr>
+<td><code>ADS_TOKEN</code></td>
+<td>NASA ADS</td>
+<td>free, <a href="https://ui.adsabs.harvard.edu/user/settings/token" class="uri">https://ui.adsabs.harvard.edu/user/settings/token</a></td>
+</tr>
+<tr>
+<td><code>SCOPUS_API_KEY</code></td>
+<td>Scopus (+ institutional network/VPN)</td>
+<td>free, <a href="https://dev.elsevier.com/apikey/manage" class="uri">https://dev.elsevier.com/apikey/manage</a></td>
+</tr>
+<tr>
+<td><code>SCOPUS_INSTTOKEN</code></td>
+<td>Scopus without VPN</td>
+<td>ask your library</td>
+</tr>
+<tr>
+<td><code>S2_API_KEY</code></td>
+<td>faster Semantic Scholar</td>
+<td>optional</td>
+</tr>
+<tr>
+<td><code>CORE_API_KEY</code></td>
+<td>CORE (if configured in backends.json)</td>
+<td>free, <a href="https://core.ac.uk/services/api" class="uri">https://core.ac.uk/services/api</a></td>
+</tr>
+<tr>
+<td><code>WOS_STARTER_KEY</code></td>
+<td>Web of Science Starter API (restricted grammar)</td>
+<td>rarely worth it</td>
+</tr>
+</tbody>
+</table>
+<p>Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
+Crossref) need no key and no institution.</p>
+<p><strong>Drop-in use inside another project.</strong> Put the five
+files in a <code>tools/</code> subdirectory; <code>.env</code>,
+<code>queries.json</code> and <code>lit/</code> are then looked for in
+the parent directory.</p>
+<h1 id="concepts">3. Concepts</h1>
+<p><strong>Block.</strong> One structured query: a list of synonym
+groups combined with AND, each group a list of synonyms combined with
+OR. A block has a name (<code>A</code>, <code>CD</code>,
+<code>NOV</code>…), a title and a note. Blocks live in
+<code>queries.json</code>.</p>
+<p><strong>Run.</strong> One execution of <code>librarian.py</code>:
+every selected block against every selected backend, archived under
+<code>lit/runs/&lt;timestamp&gt;/</code>.</p>
+<p><strong>Research directory.</strong> A folder (default
+<code>lit/</code>, choose another with <code>--outdir</code>) holding
+all the runs of one project, the records ingested from outside, the
+project index (<code>project.json</code>), the PRISMA screening numbers
+(<code>screening.json</code>), journal metrics, reports and audit logs.
+One directory per project; a lab has several.</p>
+<p><strong>Manual source.</strong> Records that did not come from a run:
+a Zotero or Mendeley export, a colleague’s RIS file, a Web of Science
+session, a reference list. Ingested with <code>project.py ingest</code>,
+they keep their provenance (who, when, where from, method) and appear in
+every report as one more source, and in the PRISMA flow in the right
+column.</p>
+<p><strong>Record.</strong> The common schema every file uses:
+<code>title year doi journal authors url abstract cited_by issn block backend</code>.
+Merged project records also carry <code>found_by</code> (which sources
+found it) and <code>first_seen</code>.</p>
+<p><strong>Level.</strong> How much a report contains:
+<code>simple</code> (a few pages), <code>intermediate</code> (every
+unique record plus analyses), <code>full</code> (everything, abstracts
+included — hundreds of pages for large projects).</p>
+<h1 id="writing-queries">4. Writing queries</h1>
+<p><code>queries.json</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;PSC&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;Perovskite solar cell degradation under humidity&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;note&quot;</span><span class="fu">:</span> <span class="st">&quot;grounding block -- expect thousands&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;groups&quot;</span><span class="fu">:</span> <span class="ot">[[</span><span class="st">&quot;perovskite solar cell&quot;</span><span class="ot">,</span> <span class="st">&quot;halide perovskite photovoltaic&quot;</span><span class="ot">],</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>               <span class="ot">[</span><span class="st">&quot;degradation&quot;</span><span class="ot">,</span> <span class="st">&quot;stability&quot;</span><span class="ot">],</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>               <span class="ot">[</span><span class="st">&quot;humidity&quot;</span><span class="ot">,</span> <span class="st">&quot;moisture&quot;</span><span class="ot">]]</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;NOV&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;novelty check: origami metamaterials as topological acoustic pumps&quot;</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;note&quot;</span><span class="fu">:</span> <span class="st">&quot;a SMALL number is the good outcome; read every hit&quot;</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;groups&quot;</span><span class="fu">:</span> <span class="ot">[[</span><span class="st">&quot;origami&quot;</span><span class="ot">,</span> <span class="st">&quot;kirigami&quot;</span><span class="ot">],</span> <span class="ot">[</span><span class="st">&quot;acoustic metamaterial&quot;</span><span class="ot">,</span> <span class="st">&quot;phononic crystal&quot;</span><span class="ot">],</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>               <span class="ot">[</span><span class="st">&quot;topological pumping&quot;</span><span class="ot">,</span> <span class="st">&quot;edge state&quot;</span><span class="ot">]]</span><span class="fu">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;arxiv_groups&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">0</span><span class="ot">,</span> <span class="dv">2</span><span class="ot">]</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Rules of thumb:</p>
+<ul>
+<li>Do not quote terms; the tool quotes for each database’s
+grammar.</li>
+<li>A lone generic word (<code>model</code>, <code>structure</code>,
+<code>system</code>) in its own group is the usual cause of counts in
+the tens of thousands.</li>
+<li><code>arxiv_groups</code> names which (at most two) groups arXiv
+receives; arXiv hangs on deeply nested booleans. Default: the first
+two.</li>
+<li>The most informative block is a deliberate intersection of two
+literatures you suspect do not talk to each other. A near-zero result is
+a finding — <em>if</em> you then read every hit.</li>
+<li>Proximity operators (<code>NEAR/n</code>, <code>W/n</code>) are not
+expressible; if your paper needs them, keep hand-written Web of Science
+/ Scopus strings alongside and quote those.</li>
+</ul>
+<h1 id="running-a-search">5. Running a search</h1>
+<pre><code>python librarian.py                        # all blocks, every configured backend
+python librarian.py --counts-only          # hit counts only (seconds)
+python librarian.py --blocks NOV CD        # selected blocks
+python librarian.py --backends openalex ads
+python librarian.py --skip arxiv           # drop a misbehaving backend
+python librarian.py --limit 500            # records per block and backend (default 300)
+python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
+python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
+python librarian.py --outdir lit_topomat   # another research directory
+python librarian.py --report-level intermediate --report-format md html pdf
+python librarian.py --no-report</code></pre>
+<p>Complete parameter list: <code>python librarian.py --help</code>.
+Every option has a default; <code>--outdir</code>,
+<code>--verbose</code>, <code>--quiet</code> and <code>--log-dir</code>
+exist on every script.</p>
+<p>What a run writes (<code>lit/runs/&lt;stamp&gt;/</code>):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>counts.json</code>, <code>counts.md</code></td>
+<td>hit counts per block and backend; paste-ready table</td>
+</tr>
+<tr>
+<td><code>queries.json</code></td>
+<td>the exact query string sent to each backend</td>
+</tr>
+<tr>
+<td><code>blocks.json</code></td>
+<td>the block definitions used</td>
+</tr>
+<tr>
+<td><code>meta.json</code></td>
+<td>settings, backends and endpoints, version, timing</td>
+</tr>
+<tr>
+<td><code>records/&lt;block&gt;_&lt;backend&gt;.json</code></td>
+<td>raw records per backend (after the venue filter)</td>
+</tr>
+<tr>
+<td><code>ris/&lt;block&gt;_&lt;backend&gt;.ris</code></td>
+<td>per-block RIS for Zotero/Mendeley/EndNote</td>
+</tr>
+<tr>
+<td><code>all_records.json/.csv/.ris</code></td>
+<td>deduplicated, sorted by citations</td>
+</tr>
+<tr>
+<td><code>junk.json</code></td>
+<td>records removed by the venue filter, with their venues</td>
+</tr>
+<tr>
+<td><code>prisma.json</code></td>
+<td>template for the manual PRISMA stages</td>
+</tr>
+<tr>
+<td><code>run.log</code></td>
+<td>everything printed</td>
+</tr>
+<tr>
+<td><code>report.*</code></td>
+<td>the report (see §7)</td>
+</tr>
+</tbody>
+</table>
+<p>Plus <code>lit/counts_history.csv</code> (one row per
+block/backend/run, for drift) and
+<code>lit/logs/librarian_&lt;stamp&gt;.log</code> (audit log:
+invocation, versions, every message).</p>
+<p>Counts are checkpointed after every API call and Ctrl-C is safe: a
+hang late in a long run loses nothing.</p>
+<h1 id="the-research-directory">6. The research directory</h1>
+<h2 id="index">6.1 Index</h2>
+<pre><code>python project.py init --name &quot;Topological materials review&quot; --description &quot;…&quot;
+python project.py status</code></pre>
+<p><code>status</code> lists every member (runs and manual sources) with
+date, record count, method and label, the inbox state, and the last
+report. Members are discovered by listing the directory — nothing has to
+be declared. <code>project.json</code> holds only what cannot be
+discovered:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;…&quot;</span><span class="fu">,</span> <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;…&quot;</span><span class="fu">,</span> <span class="dt">&quot;created&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-28&quot;</span><span class="fu">,</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;exclude&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;20260814T223331&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;labels&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;20260828T095041&quot;</span><span class="fu">:</span> <span class="st">&quot;August full scan&quot;</span><span class="fu">},</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;block_aliases&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;X&quot;</span><span class="fu">:</span> <span class="st">&quot;CD&quot;</span><span class="fu">},</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;defaults&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;level&quot;</span><span class="fu">:</span> <span class="st">&quot;simple&quot;</span><span class="fu">,</span> <span class="dt">&quot;format&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;md&quot;</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;metric&quot;</span><span class="fu">:</span> <span class="st">&quot;openalex_2yr&quot;</span><span class="fu">}}</span></span></code></pre></div>
+<pre><code>python project.py exclude 20260814T223331      # a test run you do not want in reports
+python project.py label 20260828T095041 &quot;August full scan&quot;
+python project.py alias X CD                    # block renamed between runs</code></pre>
+<h2 id="bringing-records-in-from-outside">6.2 Bringing records in from
+outside</h2>
+<p>Three ways, all ending in <code>lit/manual/&lt;name&gt;/</code> with
+the original file, a <code>records.json</code> in the common schema and
+a <code>source.json</code> with provenance:</p>
+<ol type="1">
+<li><p><strong>Command line</strong> — the fully described way:</p>
+<pre><code>python project.py ingest export.ris --name zotero-aug --block CD \
+       --method citation --who &quot;A. Colleague&quot; --origin &quot;Zotero group library&quot; \
+       --note &quot;reference lists of the three key papers&quot;</code></pre>
+<p>Several files may be given; <code>--kind</code> overrides extension
+detection (<code>ris</code>, <code>bibtex</code>, <code>csv</code>,
+<code>json</code>).</p></li>
+<li><p><strong>Inbox</strong> — drop files into <code>lit/inbox/</code>
+and run <code>python project.py ingest --inbox</code>; each file becomes
+a source named after it (add <code>--method</code> etc. to apply to
+all).</p></li>
+<li><p><strong>Web of Science</strong> —
+<code>python wos_manual.py ingest</code> reads the RIS files you
+exported from the WoS interface and registers them as manual sources
+with <code>method=database</code>.</p></li>
+</ol>
+<p>Accepted formats: RIS (Zotero, Mendeley, EndNote, Web of Science,
+Scopus), BibTeX, CSV with a header row (Scopus and WoS column names
+recognised; else
+<code>title, year, doi, journal, authors, url, abstract, block, cited_by</code>),
+and JSON record lists (for instance <code>all_records.json</code> from a
+colleague’s run).</p>
+<p><code>--method</code> follows PRISMA 2020’s categories for records
+identified via other methods: <code>database</code> (a database export —
+joins the databases column), <code>citation</code> (reference lists,
+citing papers), <code>website</code>, <code>organisation</code>,
+<code>expert</code> (a colleague’s recommendation),
+<code>other</code>.</p>
+<p>You may also hand extra files to a single report without storing
+them: <code>report.py --records file.ris</code>.</p>
+<h2 id="from-zotero-mendeley-and-endnote">6.3 From Zotero, Mendeley and
+EndNote</h2>
+<p><em>Out:</em> every run writes RIS (<code>all_records.ris</code>,
+per-block <code>ris/</code>); import with File → Import. Abstracts, DOIs
+and URLs are carried; the block name is not (roadmap: RIS keywords).</p>
+<p><em>In:</em> export a collection as RIS (Zotero: right-click → Export
+Collection → RIS; Mendeley: File → Export → RIS; EndNoteX: File → Export
+→ RefMan RIS) and ingest it as above. There is no live connection to the
+Zotero API (roadmap).</p>
+<h1 id="reports">7. Reports</h1>
+<h2 id="one-run">7.1 One run</h2>
+<pre><code>python report.py lit/runs/20260828T095041
+python report.py --latest --level full --format html pdf</code></pre>
+<h2 id="the-whole-research-directory">7.2 The whole research
+directory</h2>
+<pre><code>python report.py --project
+python report.py --project --outdir lit_topomat --level intermediate --format md html</code></pre>
+<p>Reports go to <code>lit/reports/&lt;stamp&gt;-&lt;level&gt;/</code>.
+The project report adds a <strong>Sources</strong> table (every run and
+manual source, its date, method, records and “new here” — the unique
+records no earlier source had found), a <strong>Timeline</strong>
+(per-block counts over runs; when records entered the project), a PRISMA
+flow with both identification columns, and, when
+<code>journals.py</code> has been run, journal metrics.</p>
+<h2 id="levels">7.3 Levels</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Sections</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>simple</code></td>
+<td>metadata; sources; search strategy with the exact string per
+backend; results summary; timeline; PRISMA 2020 flow + PRISMA-S
+checklist; top 10 records per block; suggestions</td>
+</tr>
+<tr>
+<td><code>intermediate</code></td>
+<td>+ every unique record; source overlap (“found only here”); year /
+venue / author distributions; journal metrics; filtered venues; errors;
+open-access stats; count history</td>
+</tr>
+<tr>
+<td><code>full</code></td>
+<td>+ every record with full abstract, author list and which sources
+found it; per-source raw lists before deduplication; the filtered
+records; backend configuration; project.json and source.json files; the
+run log; environment</td>
+</tr>
+</tbody>
+</table>
+<p>Sizes, from the shipped sample (four blocks, six databases, 2,216
+unique records): 5, 106 and 702 PDF pages.</p>
+<h2 id="formats">7.4 Formats</h2>
+<p><code>md</code> (Markdown; renders on GitHub), <code>html</code>
+(self-contained, light/dark, printable, SVG diagram), <code>tex</code>
+(LaTeX with a TikZ diagram), <code>pdf</code>, <code>txt</code> (plain
+text, ASCII diagram). The PDF is compiled from the LaTeX with xelatex,
+lualatex or pdflatex if one is installed, else with pandoc, else by a
+built-in writer that lays out the text version — the option never
+fails.</p>
+<h2 id="filters">7.5 Filters</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Option</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--since DATE</code>, <code>--until DATE</code></td>
+<td>keep members (runs / manual sources) searched in the window</td>
+</tr>
+<tr>
+<td><code>--latest</code></td>
+<td>most recent member only (project); newest run (single mode)</td>
+</tr>
+<tr>
+<td><code>--diff</code></td>
+<td>keep only records <em>first seen</em> inside the window — “what the
+searches since DATE added”</td>
+</tr>
+<tr>
+<td><code>--year-from Y</code>, <code>--year-to Y</code></td>
+<td>publication year</td>
+</tr>
+<tr>
+<td><code>--backends a b</code></td>
+<td>databases / sources to include (manual sources are
+<code>manual:&lt;name&gt;</code>)</td>
+</tr>
+<tr>
+<td><code>--blocks A CD</code></td>
+<td>blocks to include</td>
+</tr>
+<tr>
+<td><code>--sources auto\|manual\|all</code></td>
+<td>member kinds</td>
+</tr>
+<tr>
+<td><code>--records FILE…</code></td>
+<td>extra RIS/BibTeX/CSV/JSON as a transient manual source</td>
+</tr>
+<tr>
+<td><code>--metric NAME --min-metric X</code></td>
+<td>keep records whose venue metric is at least X (see §8)</td>
+</tr>
+<tr>
+<td><code>--min-citations N</code></td>
+<td>citation threshold</td>
+</tr>
+<tr>
+<td><code>--oa-only</code></td>
+<td>only records with a legal open-access copy (needs
+<code>--pdfs</code> data)</td>
+</tr>
+<tr>
+<td><code>--top N</code>, <code>--sort cited\|year\|metric</code></td>
+<td>table size and order</td>
+</tr>
+<tr>
+<td><code>--basename</code>, <code>--out</code></td>
+<td>file stem and output directory</td>
+</tr>
+</tbody>
+</table>
+<p>Filters are listed in the report’s metadata table and in PRISMA-S
+item 9, so a filtered report is never mistaken for the whole search.</p>
+<h2 id="prisma">7.6 PRISMA</h2>
+<p>The report carries a PRISMA 2020 flow diagram (SVG in HTML, TikZ in
+LaTeX/PDF, ASCII in Markdown and text) and a PRISMA-S search-reporting
+checklist. The tool fills what it can know: records identified per
+database (summed over runs in project mode), records identified via
+other methods (manual sources by method), records retrieved, removed by
+automation (the venue filter), duplicates removed, records left to
+screen. It is explicit that <em>identified</em> (what each database
+reports) and <em>retrieved</em> (what was downloaded within
+<code>--limit</code>) differ.</p>
+<p>The stages only a human can know are read from
+<code>prisma.json</code> (single run) or <code>screening.json</code>
+(research directory); a template with <code>null</code> values is
+written on the first report. Fill in the integers as screening
+progresses and re-run the report:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;records_screened&quot;</span><span class="fu">:</span> <span class="dv">2216</span><span class="fu">,</span> <span class="dt">&quot;records_excluded&quot;</span><span class="fu">:</span> <span class="dv">2100</span><span class="fu">,</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;reports_sought&quot;</span><span class="fu">:</span> <span class="dv">116</span><span class="fu">,</span> <span class="dt">&quot;reports_not_retrieved&quot;</span><span class="fu">:</span> <span class="dv">4</span><span class="fu">,</span> <span class="dt">&quot;reports_assessed&quot;</span><span class="fu">:</span> <span class="dv">112</span><span class="fu">,</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;excluded_reasons&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;not topological&quot;</span><span class="fu">:</span> <span class="dv">60</span><span class="fu">,</span> <span class="dt">&quot;no experiment&quot;</span><span class="fu">:</span> <span class="dv">30</span><span class="fu">},</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;other_sought&quot;</span><span class="fu">:</span> <span class="dv">12</span><span class="fu">,</span> <span class="dt">&quot;other_not_retrieved&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span> <span class="dt">&quot;other_assessed&quot;</span><span class="fu">:</span> <span class="dv">12</span><span class="fu">,</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;other_excluded_reasons&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;duplicate of included&quot;</span><span class="fu">:</span> <span class="dv">3</span><span class="fu">},</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;studies_included&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span> <span class="dt">&quot;reports_included&quot;</span><span class="fu">:</span> <span class="dv">31</span><span class="fu">,</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;citation_searching&quot;</span><span class="fu">:</span> <span class="st">&quot;reference lists of the 22 included studies&quot;</span><span class="fu">,</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;prior_work&quot;</span><span class="fu">:</span> <span class="st">&quot;none&quot;</span><span class="fu">,</span> <span class="dt">&quot;peer_review&quot;</span><span class="fu">:</span> <span class="st">&quot;search strategy reviewed by the librarian&quot;</span><span class="fu">}</span></span></code></pre></div>
+<h2 id="suggestions">7.7 Suggestions</h2>
+<p>Rule-based, at the end of every report: failed backend calls, blocks
+with thousands of hits, novelty-sized blocks (read every hit),
+<code>--limit</code> cap hits, a database with a high share of filtered
+venues, no citation-grade backend, open-access lookup not run, PRISMA
+stages unfilled, no journal metrics, count drift between runs, and — in
+project mode — the absence of any manual source.</p>
+<h1 id="journal-metrics">8. Journal metrics</h1>
+<pre><code>python journals.py fetch                          # every journal seen in the directory
+python journals.py fetch --providers openalex --refresh
+python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
+python journals.py import-csv jcr.csv --provider jcr_if --year 2023 --name-col &quot;Journal name&quot; --value-col JIF
+python journals.py show --metric scopus_citescore</code></pre>
+<p>Store: <code>lit/journals/metrics.json</code>, one entry per journal
+keyed by ISSN (else normalised name), values kept <strong>per year and
+never overwritten</strong> — refetch next year and the report shows the
+series.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Key</th>
+<th>Metrics</th>
+<th>History</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openalex</code></td>
+<td>none</td>
+<td><code>openalex_2yr</code> (2-year mean citedness, an
+impact-factor-like figure), <code>openalex_h</code>, works/citations by
+year</td>
+<td>snapshot under the fetch year</td>
+</tr>
+<tr>
+<td><code>scopus</code></td>
+<td><code>SCOPUS_API_KEY</code></td>
+<td><code>scopus_citescore</code>, <code>sjr</code>,
+<code>snip</code></td>
+<td>full history per year</td>
+</tr>
+<tr>
+<td><code>scimago</code></td>
+<td>none; download the year’s CSV from scimagojr.com</td>
+<td><code>sjr</code>, <code>scimago_h</code>, quartile</td>
+<td>one file per year</td>
+</tr>
+<tr>
+<td><code>jcr</code></td>
+<td>licence</td>
+<td><code>jcr_if</code></td>
+<td>import only</td>
+</tr>
+</tbody>
+</table>
+<p>The Journal Impact Factor (Clarivate JCR) is proprietary: there is no
+free API and the tool will not scrape it. Licensed users export a CSV
+from JCR and import it. For a metric that covers every journal, the
+SCImago CSV (~30,000 journals, one download) is the practical route;
+<code>--all</code> imports the whole file, the default imports only
+journals seen in your records.</p>
+<p>In reports: a metric column in record tables, “venues in this set by
+metric”, an evolution table for venues with two or more years on file,
+and the <code>--min-metric</code> filter. <code>--metric</code> selects
+which (default <code>openalex_2yr</code>, or
+<code>defaults.metric</code> in <code>project.json</code>).</p>
+<h1 id="web-of-science">9. Web of Science</h1>
+<p>The full <code>TS=</code>/<code>NEAR</code> grammar is in the
+Expanded API, rarely licensed; the free Starter tier rejects complex
+booleans. Web of Science is therefore a manual job, made small:</p>
+<pre><code>python wos_manual.py prep      # query files + CHECKLIST.md in WoS grammar
+python wos_manual.py walk      # copies each query to the clipboard in turn
+python wos_manual.py ingest    # RIS exports -&gt; records, registered as manual sources
+python wos_manual.py status</code></pre>
+<p>The checklist encodes the UI settings that silently break queries
+(Core Collection, Advanced search, editions, tagged vs bare form).</p>
+<h1 id="logs-and-audit">10. Logs and audit</h1>
+<p>Every script writes
+<code>&lt;outdir&gt;/logs/&lt;script&gt;_&lt;stamp&gt;.log</code> with
+the exact invocation, tool and Python versions, the research directory,
+every warning and error, and the outcome. Console output is small by
+default; <code>--verbose</code> shows everything, <code>--quiet</code>
+only warnings and errors; <code>--log-dir</code> moves the logs. Runs
+additionally keep <code>run.log</code> (the console transcript) in the
+run directory.</p>
+<h1 id="workflows">11. Workflows</h1>
+<p><strong>A novelty check (an afternoon).</strong> Write 1–3
+cross-query blocks; <code>--counts-only</code>; tighten anything in the
+thousands; full run with <code>--pdfs</code>; read the Suggestions; read
+every hit of the small blocks by hand; record what you screened in
+<code>prisma.json</code>; re-run <code>report.py</code>; import the RIS
+into Zotero.</p>
+<p><strong>A systematic search over a project (months).</strong>
+<code>project.py init</code>. Rerun <code>librarian.py</code> at
+intervals with the same <code>queries.json</code>. Ingest the Web of
+Science sessions and colleagues’ exports.
+<code>report.py --project</code> for the picture;
+<code>--project --since &lt;last report&gt; --diff</code> for what is
+new; <code>journals.py fetch</code> yearly. Fill
+<code>screening.json</code> as you go; the PRISMA diagram completes
+itself, ready for the supplement.</p>
+<p><strong>A lab.</strong> One research directory per project
+(<code>--outdir</code>); each has its own index, screening and reports.
+Inbox folders let collaborators drop exports without learning the tool.
+There is deliberately no cross-project merge: different questions,
+different blocks.</p>
+<p><strong>With an AI agent.</strong> Point it at
+<code>AGENTS.md</code>; ask it to draft <code>queries.json</code> from
+your research question, run the scans, and walk the report with you. The
+structured query file, the JSON archives and the report were designed to
+be written and audited by an agent.</p>
+<h1 id="features-and-limitations">12. Features and limitations</h1>
+<p>Features: one structural query rendered into eight native grammars;
+databases as JSON configuration (<code>--init-backends</code>);
+archived, citable runs with exact query strings and count history;
+checkpointing and safe Ctrl-C; a venue filter with receipts; five
+keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
+via Unpaywall; three-level reports in five formats with PRISMA 2020 and
+PRISMA-S; research directories with manual sources, provenance, timeline
+and differential reports; journal metrics with a per-year series; audit
+logs; an offline test suite (155 checks) and CI.</p>
+<p>Limitations, all by design or by the world:</p>
+<ul>
+<li>Counts are not comparable across databases; proximity operators are
+dropped. Discover here; quote one database in the paper.</li>
+<li>Scopus results require institutional entitlement (network/VPN). Web
+of Science’s API is rarely licensed; use the manual path.</li>
+<li>arXiv receives at most two groups per block.</li>
+<li><code>--limit</code> caps records per block and backend (most-cited
+first); large blocks are a slice, not the complete set. Raise it when
+you need completeness.</li>
+<li>OpenAlex indexes non-curated repositories (~15 % of its records);
+filtered by default, kept in <code>junk.json</code>.</li>
+<li>No download of PDFs (Unpaywall links only), no snowballing, no
+citation graph, no live Zotero/Mendeley connection (roadmap).</li>
+<li>Journal metrics: OpenAlex values are snapshots; the JCR Impact
+Factor is proprietary and import-only; matching journals by name is
+imperfect when a record has no ISSN.</li>
+<li>Deduplication is by DOI, else the first 90 characters of the title;
+preprint/published pairs with different titles survive as two
+records.</li>
+<li>Google Scholar is not and will not be a backend (no API; scraping
+violates its terms).</li>
+</ul>
+<h1 id="testing">13. Testing</h1>
+<pre><code>python tests/test_librarian.py</code></pre>
+<p>Offline, stdlib only, no keys: backends run against canned API
+responses, the report generator against synthetic run and research
+directories. CI runs the suite on Linux and Windows under Python 3.9 and
+3.13.</p>
+<h1 id="licence-and-conduct">14. Licence and conduct</h1>
+<p>MIT. The tool is built to make respecting each database’s terms of
+service the easy path: documented APIs only, rate limits honoured, a
+contact address in every request, no scraping, no paywall
+circumvention.</p>
+</body>
+</html>
