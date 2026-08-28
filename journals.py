@@ -55,10 +55,10 @@ try:
 except ImportError:                       # drop-in installs may keep the old name
     import litscan as librarian           # type: ignore
 _extract = librarian._extract
+VERSION = librarian.VERSION
 from project import (add_common_args, load_project, member_records, members, resolve_outdir,
                      setup_logging)
 
-VERSION = "3.2"
 METRICS = {"openalex_2yr": "OpenAlex 2-yr mean citedness", "openalex_h": "OpenAlex h-index",
            "scopus_citescore": "Scopus CiteScore", "sjr": "SCImago Journal Rank",
            "snip": "Scopus SNIP", "scimago_h": "SCImago H index", "jcr_if": "JCR Impact Factor"}
@@ -440,6 +440,7 @@ def show(outdir: Path, metric: str = "openalex_2yr", limit: int = 50) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")
     common = argparse.ArgumentParser(add_help=False)
     add_common_args(common)
     sub = ap.add_subparsers(dest="cmd", parser_class=lambda **kw: argparse.ArgumentParser(

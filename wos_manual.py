@@ -77,7 +77,7 @@ def prep() -> None:
         "- Search mode: **Advanced** (not Basic — `TS=` tags only work there)",
         "- Editions: SCI-EXPANDED ✅, ESCI ✅, CPCI-S ❌, BKCI ❌, SSCI ❌, A&HCI ❌",
         "", "Then for each block: paste the query, record the count, Export → RIS →",
-        f"save as `lit/manual_wos/ris/<BLOCK>.ris`.", "",
+        "save as `lit/manual_wos/ris/<BLOCK>.ris`.", "",
         "| Block | Hits | RIS saved | Title |", "|---|---:|:---:|---|",
     ]
     lines.insert(4, "**Two forms are provided for every block. Pick by which box you are in:**\n"
@@ -197,6 +197,7 @@ def main() -> int:
     ap.add_argument("--verbose", "-v", action="store_true")
     ap.add_argument("--quiet", "-q", action="store_true")
     ap.add_argument("--log-dir", default=None)
+    ap.add_argument("--version", action="version", version=f"scitech-librarian {librarian.VERSION}")
     args = ap.parse_args()
     outdir = Path(args.outdir).resolve() if args.outdir else OUTDIR
     BASE = outdir / "manual_wos"

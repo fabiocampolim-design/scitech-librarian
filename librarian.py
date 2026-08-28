@@ -771,6 +771,7 @@ def main() -> int:
                     help="report formats to write (default: md). pdf uses LaTeX/pandoc "
                          "if installed, else a built-in plain-text writer")
     ap.add_argument("--no-report", action="store_true", help="skip report generation")
+    ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")
     try:
         import project as _project
         _project.add_common_args(ap, "research directory for lit/ output")

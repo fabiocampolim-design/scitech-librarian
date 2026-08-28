@@ -100,7 +100,27 @@ def md_to_html_min(text: str) -> str:
     return "\n".join(out)
 
 
+def sync_check_count() -> int:
+    """Run the offline suite, count its PASS lines, and write that number
+    wherever the docs quote it -- so the figure can never drift."""
+    r = subprocess.run([sys.executable, str(HERE.parent / "tests" / "test_librarian.py")],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    n = sum(1 for ln in r.stdout.splitlines() if ln.startswith("  PASS"))
+    if r.returncode != 0 or n == 0:
+        print("test suite failed -- check count not synced")
+        return 0
+    for f in (HERE.parent / "README.md", SRC, HERE.parent / "AGENTS.md"):
+        t = f.read_text(encoding="utf-8")
+        t2 = re.sub(r"\b\d+ checks\b", f"{n} checks", t)
+        t2 = re.sub(r"\b\d+-check offline suite", f"{n}-check offline suite", t2)
+        if t2 != t:
+            f.write_text(t2, encoding="utf-8")
+    print(f"check count synced: {n}")
+    return n
+
+
 def main() -> int:
+    sync_check_count()
     text = SRC.read_text(encoding="utf-8")
     if shutil.which("pandoc"):
         css = HERE / "_manual.css"

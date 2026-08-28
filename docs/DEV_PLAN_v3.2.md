@@ -1,5 +1,8 @@
 # Dev plan v3.2 — research directory, ingest, journal metrics, docs
 
+**Status: all six steps done 2026-08-28** (commits 9cfe7c6, cfe0f03, b9addc2 and the
+review follow-up). Kept as the record of the order the work was built in.
+
 Spec: `docs/DESIGN_RESEARCH_DIRECTORY.md`. Each step ends with the offline
 suite green (`python tests/test_librarian.py`). Steps are ordered so that
 every intermediate state is shippable.

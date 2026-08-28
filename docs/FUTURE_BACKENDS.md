@@ -18,7 +18,25 @@ entry, no code. API details verified August 2026 — re-check before wiring.
 Skip (assessed, rejected): BASE (IP whitelist), Lens/Dimensions (commercial),
 Google Scholar (no API; scraping breaches ToS — against this tool's stance).
 
+## Done since this list was written
+
+- v3.1 (2026-08-28): literature-search reports in md/html/tex/pdf/txt at
+  three levels, PRISMA 2020 flow + PRISMA-S checklist, suggestions.
+- v3.2 (2026-08-28): research directories (`project.py`), ingest of
+  RIS/BibTeX/CSV/JSON with provenance, project reports with filters and the
+  two-column PRISMA flow, journal metrics (`journals.py`: OpenAlex, Scopus,
+  SCImago, JCR import), audit logs, AGENTS.md and the user manual.
+
 ## Features assessed as feasible (roadmap candidates)
+
+- **Post-hoc open-access lookup** — `--pdfs` runs only inside `librarian.py`;
+  a `project.py oa` pass over every member (runs and manual sources) would
+  make `report --oa-only` and the OA statistics complete for projects.
+- **Zotero Web API push** and RIS keywords carrying the block name; BibTeX
+  and CSL-JSON output next to RIS.
+- **Post-hoc de-duplication rule for repeated searches** — collapse runs with
+  identical query strings in PRISMA "identified" instead of summing them
+  (today: `project.py exclude` the reconnaissance run by hand).
 
 - **OA PDF downloading** — the Unpaywall pass already collects `oa_pdf` URLs;
   a `--download-pdfs` flag fetching them (plus arXiv PDFs by id) into

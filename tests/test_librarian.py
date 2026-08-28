@@ -723,4 +723,4 @@ print("\nsummary")
 if FAILED:
     print(f"  {len(FAILED)} FAILED: {', '.join(FAILED)}")
     sys.exit(1)
-print(f"  all passed")
+print("  all passed")

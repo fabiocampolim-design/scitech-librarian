@@ -436,16 +436,16 @@ not scrape it.
 ### Sample reports
 
 [`samples/`](samples/) holds one real run of the four example blocks in
-`queries.example.json` (six databases, 2026-08-28: 16,436 hits identified,
-2,968 records retrieved, 2,216 unique) rendered at every level in every
-format — `simple` is 5 pages, `intermediate` 106, `full` 702. Excerpts from
-the PDFs:
+`queries.example.json` against the three **CC0-licensed** databases
+(OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5,705 hits identified, 1,286
+records retrieved, 1,226 unique) rendered at every level in every format —
+`simple` is 6 pages, `intermediate` 68, `full` 427. Excerpts from the PDFs:
 
 | `simple`, p. 1 — run metadata and search strategy | `simple`, p. 3 — PRISMA 2020 flow |
 |---|---|
 | [![](samples/img/simple_p1.png)](samples/simple/report.pdf) | [![](samples/img/simple_p3.png)](samples/simple/report.pdf) |
 
-| `simple`, p. 2 — exact query per backend, counts | `full`, p. 4 — records with abstracts |
+| `simple`, p. 2 — exact query per backend, counts | `full` — records with abstracts |
 |---|---|
 | [![](samples/img/simple_p2.png)](samples/simple/report.pdf) | [![](samples/img/full_records.png)](samples/full/report.pdf) |
 
@@ -455,14 +455,23 @@ Browse: [simple](samples/simple/report.md) ·
 `.html`, `.tex`, `.pdf`, `.txt` next to each.
 
 [`samples/project/`](samples/project/) is the same example as a **research
-directory**: two runs (a first pass and the full run) plus a colleague's
-reference list ingested as a manual source, with Scopus CiteScore on file
-for 228 venues — `report.md/html/tex/pdf/txt` (simple),
-`report_intermediate.md`, and `report_diff.md` (`--since 2026-08-28 --diff`).
+directory**: two runs (an OpenAlex-only first pass and the full CC0 run)
+plus a colleague's reference list ingested as a manual source, with
+OpenAlex 2-year mean citedness on file for 103 venues —
+`report.md/html/tex/pdf/txt` (simple), `report_intermediate.md`, and
+`report_diff.md` (`--since 2026-08-28 --diff`).
 
-| `project`, p. 1 — sources and what each added | `project`, p. 4 — PRISMA with both identification columns |
+| `project`, p. 1 — sources and what each added | `project`, p. 3 — PRISMA with both identification columns |
 |---|---|
 | [![](samples/img/project_p1.png)](samples/project/report.pdf) | [![](samples/img/project_prisma.png)](samples/project/report.pdf) |
+
+**Why only three databases in the samples.** OpenAlex, arXiv and INSPIRE
+publish their metadata under CC0, so their records — abstracts included —
+can be redistributed here. Scopus, NASA ADS and Semantic Scholar data come
+under their own API terms (Scopus: no redistribution outside your
+institution; Semantic Scholar: ODC-BY), so reports built on them are for
+your own research directory, not for a public repository. The tool runs
+all eight; the samples show three.
 
 ## Command reference
 
@@ -484,7 +493,7 @@ python librarian.py --outdir DIR            another research directory (all scri
 python report.py <run dir> | --latest       re-render an archived run (--level, --format)
 python report.py --project [filters]        the whole research directory
 python project.py init|status|ingest|exclude|include|label|alias
-python journals.py fetch|import-scimago|import-csv|show
+python journals.py fetch|import-scimago|import-jcr|import-csv|list|show
 python wos_manual.py prep|walk|ingest|status
 ```
 

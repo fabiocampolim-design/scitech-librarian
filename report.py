@@ -62,7 +62,6 @@ import argparse
 import csv
 import html
 import json
-import os
 import platform
 import re
 import shutil
@@ -78,8 +77,13 @@ try:
     import journals as _journals
 except ImportError:                     # report.py copied alone: single-run mode only
     _project = _journals = None
-
-VERSION = "3.2"
+try:
+    from librarian import VERSION          # single source of the version number
+except ImportError:
+    try:
+        from litscan import VERSION        # type: ignore
+    except ImportError:
+        VERSION = "unknown"
 LEVELS = ("simple", "intermediate", "full")
 FORMATS = ("md", "html", "tex", "pdf", "txt")
 
@@ -1512,6 +1516,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("run", nargs="?", help="run directory (lit/runs/<stamp>)")
+    ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")
     ap.add_argument("--project", action="store_true",
                     help="merge every run and manual source in the research directory")
     ap.add_argument("--latest", action="store_true",

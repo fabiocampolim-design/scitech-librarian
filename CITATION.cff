@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If scitech-librarian helped your literature search, please cite it."
+title: "scitech-librarian: a reproducible literature-search instrument with research directories and PRISMA reports"
+type: software
+version: "3.2"
+date-released: "2026-08-28"
+license: MIT
+repository-code: "https://github.com/fabiocampolim-design/scitech-librarian"
+authors:
+  - family-names: Campolim
+    given-names: Fabio
+keywords:
+  - literature search
+  - systematic review
+  - PRISMA
+  - bibliographic databases
+  - OpenAlex
+  - NASA ADS
+  - Scopus
+  - reproducibility
+abstract: >-
+  Standard-library Python tool that renders one structured query into the
+  native syntax of eight bibliographic databases, archives every run with the
+  exact query strings and hit counts, accumulates runs and externally
+  obtained records in a research directory with provenance, tracks journal
+  metrics per year, and writes literature-search reports with a PRISMA 2020
+  flow diagram and PRISMA-S checklist.

@@ -6,8 +6,15 @@
 # your query blocks can reveal unpublished research directions)
 queries.json
 
-# All run output
+# All run output -- every research directory, whatever it is called
 lit/
+lit*/
+manual_wos/
+# Exports and licensed downloads you may drop next to the scripts
+/*.ris
+/*.bib
+JCR_*.csv
+scimagojr*.csv
 
 # Python
 __pycache__/

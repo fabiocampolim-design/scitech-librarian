@@ -8,15 +8,15 @@ Item                       Value
 Search dates               2026-08-28 to 2026-08-28
 Project                    Example project
 Description                the four example blocks of queries.example.json, searched
-                           twice, plus a reference list from a colleague
+                           twice, plus a reference list from a colleague; CC0 sources
+                           only
 Sources                    2 automated run(s), 1 manual source(s)
 Blocks                     NOV, MLP, PSC, QC
-Backends / sources         openalex, arxiv, inspire, semanticscholar, ads, scopus,
-                           manual:reference-list
+Backends / sources         openalex, arxiv, inspire, manual:reference-list
 Mode                       full fetch, up to 300 records per block and backend
 Non-curated venue filter   on
 Open-access lookup         not run
-Journal metrics            on file for 599 journals
+Journal metrics            on file for 103 journals
 Filters                    sources=all
 
 
@@ -31,10 +31,13 @@ Source          Kind     Date             Method     Records   New here   Label 
 42                       09:11                                            (OpenAlex
                                                                           only, NOV +
                                                                           MLP)
-20260828T1001   run      2026-08-28       database   2931      2211       full run, six
-20                       10:01                                            databases
+20260828T1604   run      2026-08-28       database   1286      1221       full run, CC0
+26                       16:04                                            databases
+                                                                          (OpenAlex,
+                                                                          arXiv,
+                                                                          INSPIRE)
 reference-      manual   2026-08-28       citation   8         2          reference list
-list                     11:30                                            of a review
+list                     16:07                                            of a review
                                                                           article
 
 
@@ -52,24 +55,14 @@ hand before claiming a gap
 
     (origami OR kirigami) AND (acoustic metamaterial OR phononic crystal) AND (topological pumping OR Thouless pump OR edge state)
 
-Backend           Query string sent
----------------   ----------------------------------------------------------------------
-openalex          (origami OR kirigami) AND ("acoustic metamaterial" OR "phononic
-                  crystal") AND ("topological pumping" OR "Thouless pump" OR "edge
-                  state")
-arxiv             (all:"origami" OR all:"kirigami") AND (all:"acoustic metamaterial" OR
-                  all:"phononic crystal")
-inspire           ("origami" or "kirigami") and ("acoustic metamaterial" or "phononic
-                  crystal") and ("topological pumping" or "Thouless pump" or "edge
-                  state")
-semanticscholar   ("origami" | "kirigami") + ("acoustic metamaterial" | "phononic
-                  crystal") + ("topological pumping" | "Thouless pump" | "edge state")
-ads               (abs:"origami" OR abs:"kirigami") AND (abs:"acoustic metamaterial" OR
-                  abs:"phononic crystal") AND (abs:"topological pumping" OR
-                  abs:"Thouless pump" OR abs:"edge state")
-scopus            TITLE-ABS-KEY(origami OR kirigami) AND TITLE-ABS-KEY("acoustic
-                  metamaterial" OR "phononic crystal") AND TITLE-ABS-KEY("topological
-                  pumping" OR "Thouless pump" OR "edge state")
+Backend    Query string sent
+--------   -----------------------------------------------------------------------------
+openalex   (origami OR kirigami) AND ("acoustic metamaterial" OR "phononic crystal") AND
+           ("topological pumping" OR "Thouless pump" OR "edge state")
+arxiv      (all:"origami" OR all:"kirigami") AND (all:"acoustic metamaterial" OR
+           all:"phononic crystal")
+inspire    ("origami" or "kirigami") and ("acoustic metamaterial" or "phononic crystal")
+           and ("topological pumping" or "Thouless pump" or "edge state")
 
 
 Block MLP: Machine-learned interatomic potentials for amorphous materials
@@ -81,30 +74,17 @@ RIS export
 
 arXiv receives groups [0, 1] only (nested-boolean limitation).
 
-Backend           Query string sent
----------------   ----------------------------------------------------------------------
-openalex          ("machine learning potential" OR "machine-learned interatomic
-                  potential" OR "neural network potential") AND (amorphous OR glass OR
-                  "disordered solid") AND ("molecular dynamics" OR "structure
-                  prediction")
-arxiv             (all:"machine learning potential" OR all:"machine-learned interatomic
-                  potential" OR all:"neural network potential") AND (all:"amorphous" OR
-                  all:"glass" OR all:"disordered solid")
-inspire           ("machine learning potential" or "machine-learned interatomic
-                  potential" or "neural network potential") and ("amorphous" or "glass"
-                  or "disordered solid") and ("molecular dynamics" or "structure
-                  prediction")
-semanticscholar   ("machine learning potential" | "machine-learned interatomic
-                  potential" | "neural network potential") + ("amorphous" | "glass" |
-                  "disordered solid") + ("molecular dynamics" | "structure prediction")
-ads               (abs:"machine learning potential" OR abs:"machine-learned interatomic
-                  potential" OR abs:"neural network potential") AND (abs:"amorphous" OR
-                  abs:"glass" OR abs:"disordered solid") AND (abs:"molecular dynamics"
-                  OR abs:"structure prediction")
-scopus            TITLE-ABS-KEY("machine learning potential" OR "machine-learned
-                  interatomic potential" OR "neural network potential") AND TITLE-ABS-
-                  KEY(amorphous OR glass OR "disordered solid") AND TITLE-ABS-
-                  KEY("molecular dynamics" OR "structure prediction")
+Backend    Query string sent
+--------   -----------------------------------------------------------------------------
+openalex   ("machine learning potential" OR "machine-learned interatomic potential" OR
+           "neural network potential") AND (amorphous OR glass OR "disordered solid")
+           AND ("molecular dynamics" OR "structure prediction")
+arxiv      (all:"machine learning potential" OR all:"machine-learned interatomic
+           potential" OR all:"neural network potential") AND (all:"amorphous" OR
+           all:"glass" OR all:"disordered solid")
+inspire    ("machine learning potential" or "machine-learned interatomic potential" or
+           "neural network potential") and ("amorphous" or "glass" or "disordered
+           solid") and ("molecular dynamics" or "structure prediction")
 
 
 Block PSC: Perovskite solar cell degradation under humidity
@@ -114,26 +94,16 @@ backend is reachable and the counts are plausible
 
     (perovskite solar cell OR halide perovskite photovoltaic) AND (degradation OR stability OR encapsulation) AND (humidity OR moisture OR water ingress)
 
-Backend           Query string sent
----------------   ----------------------------------------------------------------------
-openalex          ("perovskite solar cell" OR "halide perovskite photovoltaic") AND
-                  (degradation OR stability OR encapsulation) AND (humidity OR moisture
-                  OR "water ingress")
-arxiv             (all:"perovskite solar cell" OR all:"halide perovskite photovoltaic")
-                  AND (all:"degradation" OR all:"stability" OR all:"encapsulation")
-inspire           ("perovskite solar cell" or "halide perovskite photovoltaic") and
-                  ("degradation" or "stability" or "encapsulation") and ("humidity" or
-                  "moisture" or "water ingress")
-semanticscholar   ("perovskite solar cell" | "halide perovskite photovoltaic") +
-                  ("degradation" | "stability" | "encapsulation") + ("humidity" |
-                  "moisture" | "water ingress")
-ads               (abs:"perovskite solar cell" OR abs:"halide perovskite photovoltaic")
-                  AND (abs:"degradation" OR abs:"stability" OR abs:"encapsulation") AND
-                  (abs:"humidity" OR abs:"moisture" OR abs:"water ingress")
-scopus            TITLE-ABS-KEY("perovskite solar cell" OR "halide perovskite
-                  photovoltaic") AND TITLE-ABS-KEY(degradation OR stability OR
-                  encapsulation) AND TITLE-ABS-KEY(humidity OR moisture OR "water
-                  ingress")
+Backend    Query string sent
+--------   -----------------------------------------------------------------------------
+openalex   ("perovskite solar cell" OR "halide perovskite photovoltaic") AND
+           (degradation OR stability OR encapsulation) AND (humidity OR moisture OR
+           "water ingress")
+arxiv      (all:"perovskite solar cell" OR all:"halide perovskite photovoltaic") AND
+           (all:"degradation" OR all:"stability" OR all:"encapsulation")
+inspire    ("perovskite solar cell" or "halide perovskite photovoltaic") and
+           ("degradation" or "stability" or "encapsulation") and ("humidity" or
+           "moisture" or "water ingress")
 
 
 Block QC: Quasicrystal photonics (arXiv-tuned example)
@@ -145,39 +115,28 @@ two groups it should get
 
 arXiv receives groups [0, 2] only (nested-boolean limitation).
 
-Backend           Query string sent
----------------   ----------------------------------------------------------------------
-openalex          (quasicrystal OR "quasiperiodic lattice") AND (photonic OR waveguide
-                  OR "optical lattice") AND (localization OR "critical states" OR
-                  "fractal spectrum")
-arxiv             (all:"quasicrystal" OR all:"quasiperiodic lattice") AND
-                  (all:"localization" OR all:"critical states" OR all:"fractal
-                  spectrum")
-inspire           ("quasicrystal" or "quasiperiodic lattice") and ("photonic" or
-                  "waveguide" or "optical lattice") and ("localization" or "critical
-                  states" or "fractal spectrum")
-semanticscholar   ("quasicrystal" | "quasiperiodic lattice") + ("photonic" | "waveguide"
-                  | "optical lattice") + ("localization" | "critical states" | "fractal
-                  spectrum")
-ads               (abs:"quasicrystal" OR abs:"quasiperiodic lattice") AND
-                  (abs:"photonic" OR abs:"waveguide" OR abs:"optical lattice") AND
-                  (abs:"localization" OR abs:"critical states" OR abs:"fractal
-                  spectrum")
-scopus            TITLE-ABS-KEY(quasicrystal OR "quasiperiodic lattice") AND TITLE-ABS-
-                  KEY(photonic OR waveguide OR "optical lattice") AND TITLE-ABS-
-                  KEY(localization OR "critical states" OR "fractal spectrum")
+Backend    Query string sent
+--------   -----------------------------------------------------------------------------
+openalex   (quasicrystal OR "quasiperiodic lattice") AND (photonic OR waveguide OR
+           "optical lattice") AND (localization OR "critical states" OR "fractal
+           spectrum")
+arxiv      (all:"quasicrystal" OR all:"quasiperiodic lattice") AND (all:"localization"
+           OR all:"critical states" OR all:"fractal spectrum")
+inspire    ("quasicrystal" or "quasiperiodic lattice") and ("photonic" or "waveguide" or
+           "optical lattice") and ("localization" or "critical states" or "fractal
+           spectrum")
 
 
 Results summary
 ---------------
-Block   openalex   arxiv   inspire   semanticscho   ads     scopus   manual:refer   Identified   Retrieved   Unique
-                                     lar                             ence-list
------   --------   -----   -------   ------------   -----   ------   ------------   ----------   ---------   ------
-NOV     0          0       0         0              0       0        -              0            0           0
-MLP     478        138     0         109            203     149      8              1,085        815         446
-PSC     4567       175     0         2968           2179    4731     -              14,620       1275        1163
-QC      154        414     17        122            206     65       -              978          854         609
-Total   5,199      727     17        3,199          2,588   4,945    8              16,683       2944        2218
+Block   openalex   arxiv   inspire   manual:reference-   Identified   Retrieved   Unique
+                                     list
+-----   --------   -----   -------   -----------------   ----------   ---------   ------
+NOV     0          0       0         -                   0            0           0
+MLP     477        138     0         8                   623          357         315
+PSC     4569       175     0         -                   4,744        475         474
+QC      154        414     17        -                   585          467         439
+Total   5,200      727     17        8                   5,952        1299        1228
 
 Identified = database hit counts (not comparable across backends: proximity operators
 are dropped and stemming differs); summed over runs, and for manual sources the number
@@ -190,19 +149,19 @@ Timeline
 Per-block hit totals in each automated run (sum over backends), oldest first; drift
 shows how the indexes -- or the queries -- changed.
 
-Block   20260828T091142   20260828T100120
+Block   20260828T091142   20260828T160426
 -----   ---------------   ---------------
 NOV     0                 0
-MLP     239               838
-PSC     -                 14,620
-QC      -                 978
+MLP     239               376
+PSC     -                 4,744
+QC      -                 585
 
 
 When records entered the project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Month     Records first seen
 -------   ------------------
-2026-08   2218
+2026-08   1228
 
 
 PRISMA 2020 flow
@@ -210,13 +169,10 @@ PRISMA 2020 flow
 IDENTIFICATION
 +------------------------------------------+     +------------------------------------------+
 | Records identified from databases        |     | Records removed before screening:        |
-| (n = 16,675)                             |     | automation tools (venue filter) (n = 37) |
-| openalex: 5,199                          |     | duplicates removed (n = 726)             |
+| (n = 5,944)                              |     | automation tools (venue filter) (n = 37) |
+| openalex: 5,200                          | --> | duplicates removed (n = 71)              |
 | arxiv: 727                               |     +------------------------------------------+
-| inspire: 17                              | -->
-| semanticscholar: 3,199                   |
-| ads: 2,588                               |
-| scopus: 4,945                            |
+| inspire: 17                              |
 +------------------------------------------+
 
 IDENTIFICATION VIA OTHER METHODS
@@ -233,7 +189,7 @@ IDENTIFICATION VIA OTHER METHODS
                       v
 SCREENING
 +------------------------------------------+     +------------------------------------------+
-| Records screened (n = 2,218)             | --> | Records excluded (n = --)                |
+| Records screened (n = 1,228)             | --> | Records excluded (n = --)                |
 +------------------------------------------+     +------------------------------------------+
                       |
                       v
@@ -256,20 +212,17 @@ INCLUDED
 
 Stage                                                       n
 ---------------------------------------------------------   ------------------------
-Records identified from databases                           16,675
-  openalex                                                  5,199
+Records identified from databases                           5,944
+  openalex                                                  5,200
   arxiv                                                     727
   inspire                                                   17
-  semanticscholar                                           3,199
-  ads                                                       2,588
-  scopus                                                    4,945
 Records identified via other methods                        8
   citation                                                  8
-Records retrieved (downloaded / ingested)                   2,981
+Records retrieved (downloaded / ingested)                   1,336
 Removed before screening: automation (non-curated venues)   37
-Removed before screening: duplicates                        726
-Records to screen (unique)                                  2,218
-Records screened                                            2,218 (assumed = unique)
+Removed before screening: duplicates                        71
+Records to screen (unique)                                  1,228
+Records screened                                            1,228 (assumed = unique)
 Records excluded at screening                               --
 Reports sought for retrieval                                --
 Reports not retrieved                                       --
@@ -289,9 +242,8 @@ PRISMA-S search-reporting checklist
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Item   Requirement                     This search
 ----   -----------------------------   -------------------------------------------------
-1      Database name                   openalex, arxiv, inspire, semanticscholar, ads,
-                                       scopus (documented public APIs)
-2      Multi-database searching        6 databases, one structural query per block
+1      Database name                   openalex, arxiv, inspire (documented public APIs)
+2      Multi-database searching        3 databases, one structural query per block
                                        rendered into each native grammar; see Search
                                        strategy
 3      Study registries                not applicable
@@ -311,10 +263,10 @@ Item   Requirement                     This search
 12     Updates                         2 run(s) combined; see Timeline
 13     Dates of searches               searched on 2026-08-28 to 2026-08-28
 14     Peer review                     none
-15     Total records                   16,675 identified from databases, 8 via other
-                                       methods; 2,981 retrieved; 2,218 unique
+15     Total records                   5,944 identified from databases, 8 via other
+                                       methods; 1,336 retrieved; 1,228 unique
 16     Deduplication                   exact DOI match, else first 90 characters of the
-                                       lower-cased title; 726 duplicates removed
+                                       lower-cased title; 71 duplicates removed
 
 
 Top 10 records per block
@@ -323,12 +275,13 @@ Deduplicated across sources, sorted by cited. The complete set is in all_records
 .ris of each run.
 
 
-Block MLP (446 unique)
+Block MLP (315 unique)
 ~~~~~~~~~~~~~~~~~~~~~~
-Title          Authors        Year   Venue          Cited   DOI            Scopus
-                                                                           CiteScore
+Title          Authors        Year   Venue          Cited   DOI            OpenAlex 2-yr
+                                                                           mean
+                                                                           citedness
 ------------   ------------   ----   ------------   -----   ------------   -------------
-Atom-          Jörg Behler    2011   The Journal    1643    10.1063/1.35   5.3 (2025)
+Atom-          Jörg Behler    2011   The Journal    1644    10.1063/1.35
 centered                             of Chemical            53717
 symmetry                             Physics
 functions
@@ -339,7 +292,7 @@ dimensional
 neural
 network
 potentials
-Realistic      Volker L.      2018   The Journal    269     10.1021/acs.   7.8 (2025)
+Realistic      Volker L.      2018   The Journal    269     10.1021/acs.
 Atomistic      Deringer;             of Physical            jpclett.8b00
 Structure of   Noam                  Chemistry              902
 Amorphous      Bernstein;            Letters
@@ -349,7 +302,7 @@ Learning-      al.
 Driven
 Molecular
 Dynamics
-Machine-       Ganesh         2020   npj Computat   195     10.1038/s415   17.4 (2025)
+Machine-       Ganesh         2020   npj Computat   185     10.1038/s415
 learned        Sivaraman;            ional                  24-020-
 interatomic    Anand                 Materials              00367-7
 potentials     Narayanan Kr
@@ -359,7 +312,7 @@ amorphous      Baur et al.
 and liquid
 hafnium
 dioxide
-Machine-       Ganesh         2019   Cambridge      184     10.17863/cam
+Machine-       Ganesh         2019   Cambridge      184     10.17863/cam   1 (2026)
 learned        Sivaraman;            University             .55408
 interatomic    Anand                 Engineering
 potentials     Narayanan Kr          Department
@@ -369,23 +322,22 @@ amorphous      Baur et al.
 and liquid
 hafnium
 dioxide
-Growth         Caro, Miguel   2018   Phys. Rev.     178     10.1103/Phys
-Mechanism      A.;                   Lett. 120,             RevLett.120.
-and Origin     Deringer,             166101                 166101
-of High s p<   Volker L.;            (2018)
-SUP>3</SUP>    Koskinen,
-Content in     Jari et al.
+Growth         Miguel A.      2018   Phys. Rev.     178     10.1103/Phys
+Mechanism      Caro; Volker          Lett. 120,             RevLett.120.
+and Origin     L. Deringer;          166101                 166101
+of High        Jari                  (2018)
+$sp^3$         Koskinen et
+Content in     al.
 Tetrahedral
 Amorphous
 Carbon
-Constructing   Artrith,       2018   The Journal    155     10.1063/1.50
-first-         Nongnuch;             of Chemical            17661
-principles     Urban,                Physics 148
-phase          Alexander;            (24), 241711
-diagrams of    Ceder,                2018
-amorphous Li   Gerbrand
-<SUB>x</SUB>
-Si using
+Constructing   Nongnuch       2018   The Journal    155     10.1063/1.50
+first-         Artrith;              of Chemical            17661
+principles     Alexander             Physics 148
+phase          Urban;                (24), 241711
+diagrams of    Gerbrand              2018
+amorphous      Ceder
+LixSi using
 machine-
 learning-
 assisted
@@ -393,7 +345,7 @@ sampling
 with an
 evolutionary
 algorithm
-Study of Li    Wenwen Li;     2017   The Journal    154     10.1063/1.49   5.3 (2025)
+Study of Li    Wenwen Li;     2017   The Journal    154     10.1063/1.49
 atom           Yasunobu              of Chemical            97242
 diffusion in   Ando; Emi             Physics
 amorphous      Minamitani
@@ -401,7 +353,7 @@ Li3PO4 with    et al.
 neural
 network
 potential
-Impact of      Taiping Hu;    2022   Journal of     107     10.1021/jacs   22 (2025)
+Impact of      Taiping Hu;    2022   Journal of     107     10.1021/jacs
 the Local      Jianxin               the American           .2c11521
 Environment    Tian; Fuzhi           Chemical
 on Li Ion      Dai et al.            Society
@@ -411,9 +363,9 @@ Components
 of Solid
 Electrolyte
 Interphases
-Thermal        Qian, X.;      2019   Materials      103     10.1016/j.mt   16.7 (2025)
-conductivity   Peng, S.;             Today                  phys.2019.10
-modeling       Li, X. et             Physics                0140
+Thermal        Xin Qian;      2019   Materials      103     10.1016/j.mt
+conductivity   Shiyu Peng;           Today                  phys.2019.10
+modeling       Xiaobo Li et          Physics                0140
 using          al.
 machine
 learning
@@ -424,9 +376,9 @@ crystalline
 and
 amorphous
 silicon
-A unified      Li, R.; Lee,   2020   Materials      102     10.1016/j.mt   16.7 (2025)
-deep neural    E.; Luo, T.           Today                  phys.2020.10
-network                              Physics                0181
+A unified      Ruiyang Li;    2020   Materials      102     10.1016/j.mt
+deep neural    Eungkyu Lee;          Today                  phys.2020.10
+network        Tengfei Luo           Physics                0181
 potential
 capable of
 predicting
@@ -437,10 +389,11 @@ in different
 phases
 
 
-Block PSC (1163 unique)
-~~~~~~~~~~~~~~~~~~~~~~~
-Title          Authors        Year   Venue          Cited   DOI            Scopus
-                                                                           CiteScore
+Block PSC (474 unique)
+~~~~~~~~~~~~~~~~~~~~~~
+Title          Authors        Year   Venue          Cited   DOI            OpenAlex 2-yr
+                                                                           mean
+                                                                           citedness
 ------------   ------------   ----   ------------   -----   ------------   -------------
 Incorporatio   Michael        2016   Science        3691    10.1126/scie
 n of           Saliba;                                      nce.aah5557
@@ -451,7 +404,7 @@ solar cells    Domanski et
 improves       al.
 photovoltaic
 performance
-High-          Hsinhan        2016   Nature         3360    10.1038/natu
+High-          Hsinhan        2016   Nature         3361    10.1038/natu
 efficiency     Tsai; Wanyi                                  re18306
 two-           Nie; Jean‐Ch
 dimensional    ristophe
@@ -459,15 +412,15 @@ Ruddlesden–P   Blancon et
 opper          al.
 perovskite
 solar cells
-Efficient,     Jung, Eui      2019   Nature         2318    10.1038/s415
-stable and     Hyuk; Jeon,                                  86-019-1036-
-scalable       Nam Joong;                                   3
-perovskite     Park, Eun
-solar cells    Young et al.
+Efficient,     Eui Hyuk       2019   Nature         2318    10.1038/s415
+stable and     Jung; Nam                                    86-019-1036-
+scalable       Joong Jeon;                                  3
+perovskite     Eun Young
+solar cells    Park et al.
 using poly(3
 -hexylthioph
 ene)
-A Layered      Ian C. P.      2014   Angewandte     2006    10.1002/anie   25.7 (2025)
+A Layered      Ian C. P.      2014   Angewandte     2006    10.1002/anie   15.006 (2026)
 Hybrid         Smith; Eric           Chemie Inter           .201406466
 Perovskite     T. Hoke;              national
 Solar‐Cell     Diego Solís-          Edition
@@ -476,14 +429,14 @@ with           al.
 Enhanced
 Moisture
 Stability
-Review of      Guangda Niu;   2014   Journal of     1942    10.1039/c4ta   14.5 (2025)
+Review of      Guangda Niu;   2014   Journal of     1945    10.1039/c4ta
 recent         Xudong Guo;           Materials              04994b
 progress in    Liduo Wang            Chemistry A
 chemical
 stability of
 perovskite
 solar cells
-Understandin   Caleb C.       2018   Chemical       1767    10.1021/acs.   109.1 (2025)
+Understandin   Caleb C.       2018   Chemical       1767    10.1021/acs.   53.886 (2026)
 g              Boyd;                 Reviews                chemrev.8b00
 Degradation    Rongrong                                     336
 Mechanisms     Cheacharoen;
@@ -492,16 +445,15 @@ Improving      Leijtens et
 Stability of   al.
 Perovskite P
 hotovoltaics
-Formamidiniu   Lee, Jin-      2015   Advanced       1661    10.1002/aenm   39.9 (2025)
-m and Cesium   Wook; Kim,            Energy                 .201501310
-Hybridizatio   Deok-Hwan;            Materials
-n for Photo-   Kim, Hui-
-and            Seon et al.
-Moisture-
-Stable
+Formamidiniu   Jin‐Wook       2015   Advanced       1661    10.1002/aenm   18.63 (2026)
+m and Cesium   Lee;                  Energy                 .201501310
+Hybridizatio   Deok‐Hwan             Materials
+n for Photo‐   Kim;
+and Moisture   Hui‐Seon Kim
+‐Stable        et al.
 Perovskite
 Solar Cell
-23.6%-         Kevin A.       2017   Nature         1533    10.1038/nene   78.4 (2025)
+23.6%-         Kevin A.       2017   Nature         1533    10.1038/nene
 efficient      Bush; Axel            Energy                 rgy.2017.9
 monolithic p   F.
 erovskite/si   Palmstrom;
@@ -510,7 +462,7 @@ solar cells    Yu et al.
 with
 improved
 stability
-Investigatio   Jinli Yang;    2015   ACS Nano       1342    10.1021/nn50   23.1 (2025)
+Investigatio   Jinli Yang;    2015   ACS Nano       1342    10.1021/nn50   16.894 (2026)
 n of CH 3 NH   Braden D.                                    6864k
 3 PbI 3        Siempelkamp;
 Degradation    Dianyi Liu
@@ -523,7 +475,7 @@ Environments
 Using in
 Situ
 Techniques
-Carbon Nanot   Severin N. H   2014   Nano Letters   1198    10.1021/nl50   13.5 (2025)
+Carbon Nanot   Severin N. H   2014   Nano Letters   1198    10.1021/nl50
 ube/Polymer    abisreutinge                                 1982b
 Composites     r; Tomas
 as a Highly    Leijtens;
@@ -534,82 +486,81 @@ Perovskite
 Solar Cells
 
 
-Block QC (609 unique)
+Block QC (439 unique)
 ~~~~~~~~~~~~~~~~~~~~~
-Title          Authors        Year   Venue          Cited   DOI            Scopus
-                                                                           CiteScore
+Title          Authors        Year   Venue          Cited   DOI            OpenAlex 2-yr
+                                                                           mean
+                                                                           citedness
 ------------   ------------   ----   ------------   -----   ------------   -------------
-Transport      Schwartz,      2007                  1329    10.1038/natu
-and Anderson   Tal; Bartal,                                 re05623
-localization   Guy;
-in             Fishman,
-disordered     Shmuel et
-two-           al.
-dimensional
-photonic
-lattices
-Observation    Fleischer,     2003                  1039    10.1038/natu
-of two-        Jason W.;                                    re01452
-dimensional    Segev,
-discrete       Mordechai;
-solitons in    Efremidis,
-optically      Nikolaos K.
-induced        et al.
-nonlinear
-photonic
-lattices
-Hyperuniform   Salvatore      2018   Physics        501     10.1016/j.ph   54.4 (2025)
+Hyperuniform   Salvatore      2018   Physics        485     10.1016/j.ph
 states of      Torquato              Reports                ysrep.2018.0
 matter                                                      3.001
-Localization   Wang, Peng;    2020   Nature 577,    482     10.1038/s415
-and delocali   Zheng,                42-46(2020)            86-019-1851-
-zation of      Yuanlin;                                     6
-light in       Chen,
-photonic       Xianfeng et
-moiré          al.
+Localization   Peng Wang;     2020   Nature 577,    482     10.1038/s415
+and delocali   Yuanlin               42-46(2020)            86-019-1851-
+zation of      Zheng;                                       6
+light in       Xianfeng
+photonic       Chen et al.
+moire
 lattices
-Decoherence    Schreiber,     2011                  355     10.1103/Phys
-and Disorder   A.;                                          RevLett.106.
-in Quantum     Cassemiro,                                   180403
-Walks: From    K. N.;
-Ballistic      Potoček, V.
-Spread to      et al.
-Localization
-Delocalizati   B. Deissler;   2010   Nature         273     10.1038/nphy   29.4 (2025)
+Delocalizati   B. Deissler;   2010   Nature         273     10.1038/nphy
 on of a        Matteo                Physics                s1635
 disordered     Zaccanti; G.
 bosonic        Roati et al.
 system by
 repulsive
 interactions
-Topological    Weidemann,     2022   Nature         223     10.1038/s415
-triple phase   Sebastian;                                   86-021-
-transition     Kremer,                                      04253-0
-in non-        Mark;
-Hermitian      Longhi,
-Floquet quas   Stefano et
-icrystals      al.
-Observation    Vila,          2017                  219     10.1103/Phys
-of             Javier; Pal,                                 RevB.96.1343
-topological    Raj Kumar;                                   07
-valley modes   Ruzzene,
-in an          Massimo
-elastic
-hexagonal
-lattice
+Topological    Sebastian      2022   Nature         225     10.1038/s415
+triple phase   Weidemann;                                   86-021-
+transition     Mark Kremer;                                 04253-0
+in non-        Stefano
+Hermitian      Longhi et
+Floquet quas   al.
+icrystals
 Disorder-      Liad Levi;     2011   Science        205     10.1126/scie
 Enhanced       Mikael C.                                    nce.1202977
 Transport in   Rechtsman;
 Photonic Qua   Barak
 sicrystals     Freedman et
                al.
-Compact        Maimaiti,      2017                  184     10.1103/Phys
-localized      Wulayimu;                                    RevB.95.1151
-states and     Andreanov,                                   35
-flat-band      Alexei;
-generators     Park, Hee
-in one         Chul et al.
-dimension
+Generalized    Tong Liu;      2020   Physical       148     10.1103/phys
+Aubry-André    Hao Guo;              review.                revb.102.024
+self-duality   Yong Pu et            B./Physical            205
+and mobility   al.                   review. B
+edges in
+non-
+Hermitian qu
+asiperiodic
+lattices
+Simulating     Quan Lin;      2021   Phys. Rev.     136     10.1103/Phys
+non-           Tianyu Li;            Lett. 129,             RevLett.129.
+Hermitian qu   Lei Xiao et           113601                 113601
+asicrystals    al.                   (2022)
+with single-
+photon
+quantum
+walks
+Localization   Peng Wang;     2020   LA             121     (link)
+and delocali   Yuanlin               Referencia
+zation of      Zheng;                (Red
+light in       Xianfeng              Federada de
+photonic       Chen et al.           Repositorios
+moiré                                Instituciona
+lattices                             les de Publi
+                                     caciones
+                                     Científicas)
+Bose-          Laurent        2005   Physical       117     10.1103/Phys
+Einstein       Sanchez-              Review A 72            RevA.72.0536
+Condensates    Palencia;             (2005)                 07
+in Optical     Luis Santos           053607
+Quasicrystal
+Lattices
+Observing      Matteo         2020   Physical       105     10.1103/phys
+Localization   Sbroscia;             Review                 revlett.125.
+in a 2D Quas   Konrad                Letters                200604
+icrystalline   Viebahn;
+Optical        Edward
+Lattice        Carter et
+               al.
 
 
 Suggestions
@@ -617,13 +568,14 @@ Suggestions
   * Block NOV: zero hits on every backend. Either the intersection is genuinely empty (a
     finding -- check the synonyms first) or one group is too narrow; try dropping one
     group and rerunning.
-  * Block PSC: openalex 4,567, semanticscholar 2,968, ads 2,179, scopus 4,731 hits -- a
-    generic term is probably driving this; tighten a group or add a more specific one
-    before reading.
-  * Block PSC: counts differ >20x across backends (175 to 4,731); grammar and coverage
+  * Block PSC: openalex 4,569 hits -- a generic term is probably driving this; tighten a
+    group or add a more specific one before reading.
+  * Block PSC: counts differ >20x across backends (175 to 4,569); grammar and coverage
     diverge, so do not compare these numbers -- discover here, quote one source.
   * Block QC: counts differ >20x across backends (17 to 414); grammar and coverage
     diverge, so do not compare these numbers -- discover here, quote one source.
+  * No citation-grade backend (Scopus, Web of Science, NASA ADS) was in this search; add
+    ADS (free token) or Scopus before quoting counts.
   * Open-access status was not looked up; rerun with `--pdfs` (optionally `--pdf-
     blocks`) to collect legal OA PDF links via Unpaywall.
   * The PRISMA flow's manual stages are empty: fill in screening.json (screened /

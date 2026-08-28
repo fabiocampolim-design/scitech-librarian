@@ -40,10 +40,15 @@ import re
 import shutil
 import sys
 import time
-from collections import defaultdict
 from pathlib import Path
 
-VERSION = "3.2"
+try:
+    from librarian import VERSION          # single source of the version number
+except ImportError:
+    try:
+        from litscan import VERSION        # type: ignore
+    except ImportError:
+        VERSION = "unknown"
 METHODS = ("database", "citation", "website", "organisation", "expert", "other")
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent if HERE.name == "tools" else HERE
@@ -444,7 +449,7 @@ def status(outdir: Path) -> str:
         lines.append(f"\nexcluded: {', '.join(p['exclude'])}")
     inbox = Path(outdir) / "inbox"
     if inbox.exists() and any(inbox.iterdir()):
-        lines.append(f"\ninbox has files waiting: python project.py ingest --inbox")
+        lines.append("\ninbox has files waiting: python project.py ingest --inbox")
     reports = sorted((Path(outdir) / "reports").glob("*")) if (Path(outdir) / "reports").exists() else []
     if reports:
         lines.append(f"\nlast project report: {reports[-1]}")
@@ -456,6 +461,7 @@ def status(outdir: Path) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")
     common = argparse.ArgumentParser(add_help=False)
     add_common_args(common)
     sub = ap.add_subparsers(dest="cmd", parser_class=lambda **kw: argparse.ArgumentParser(

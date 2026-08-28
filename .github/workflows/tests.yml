@@ -17,5 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: Static check (pyflakes)
+        run: |
+          python -m pip install --quiet pyflakes
+          python -m pyflakes librarian.py project.py report.py journals.py wos_manual.py tests docs
       - name: Run offline test suite (stdlib only, no network, no keys)
         run: python tests/test_librarian.py
