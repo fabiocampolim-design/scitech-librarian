@@ -74,6 +74,11 @@ def setup_logging(script: str, args, outdir: Path | None = None) -> logging.Logg
     invocation, versions and every message. Returns the logger."""
     outdir = outdir or resolve_outdir(getattr(args, "outdir", None))
     log_dir = Path(args.log_dir) if getattr(args, "log_dir", None) else outdir / "logs"
+    for stream in (sys.stdout, sys.stderr):      # journal and author names are not cp1252
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     log = logging.getLogger(script)
     log.setLevel(logging.DEBUG)
     log.handlers.clear()
@@ -417,6 +422,10 @@ def merge(records: list[dict]) -> list[dict]:
             for f in ("doi", "issn", "url", "journal", "year"):
                 if not c.get(f) and r.get(f):
                     c[f] = r[f]
+            # a preprint label loses to the published venue another source knows
+            if (c.get("journal") or "").lower().startswith("arxiv") and r.get("journal") \
+                    and not r["journal"].lower().startswith("arxiv"):
+                c["journal"] = r["journal"]
             if r.get("member_date", "") and (not c["first_seen"] or r["member_date"] < c["first_seen"]):
                 c["first_seen"] = r["member_date"]
     return sorted(by.values(), key=lambda x: -(x.get("cited_by") or 0))

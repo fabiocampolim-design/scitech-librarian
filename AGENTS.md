@@ -149,9 +149,15 @@ Project reports go to `lit/reports/<stamp>-<level>/`. `--diff` with
 ```
 python journals.py fetch [--providers openalex scopus] [--refresh]
 python journals.py import-scimago FILE.csv --year 2024 [--all]
-python journals.py import-csv FILE --provider jcr_if --year 2023 --name-col "Journal name" --value-col JIF [--issn-col ISSN]
+python journals.py import-jcr FILE... [--year Y]      Journal Citation Reports downloads (see docs/JCR_IMPORT.md)
+python journals.py import-csv FILE --provider NAME --year Y --name-col C --value-col C [--issn-col C]
+python journals.py list [--missing METRIC]            journals seen in the directory; --missing = manual look-up list
 python journals.py show [--metric openalex_2yr] [--limit 50]
 ```
+
+JCR cannot be fetched; coordinate with the researcher: run `list --missing
+jcr_if`, ask them to download the JCR category CSVs (600-row cap per
+download, slice by category then quartile), then `import-jcr`.
 
 Store: `lit/journals/metrics.json`, values per year, never overwritten.
 Metric names: `openalex_2yr openalex_h scopus_citescore sjr snip scimago_h

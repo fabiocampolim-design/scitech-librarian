@@ -353,7 +353,9 @@ any manual source.
 python journals.py fetch                          # every journal seen in the directory
 python journals.py fetch --providers openalex --refresh
 python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
-python journals.py import-csv jcr.csv --provider jcr_if --year 2023 --name-col "Journal name" --value-col JIF
+python journals.py import-jcr JCR_JournalResults_*.csv       # Journal Citation Reports downloads
+python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value
+python journals.py list --missing jcr_if                      # journals still to look up by hand
 python journals.py show --metric scopus_citescore
 ```
 
@@ -369,8 +371,12 @@ refetch next year and the report shows the series.
 | `jcr` | licence | `jcr_if` | import only |
 
 The Journal Impact Factor (Clarivate JCR) is proprietary: there is no free
-API and the tool will not scrape it. Licensed users export a CSV from JCR
-and import it. For a metric that covers every journal, the SCImago CSV
+API and the tool will not scrape it. Licensed users download CSVs from the
+JCR *Browse journals* page (600 rows per download; slice by category, then
+by quartile) and import them with `journals.py import-jcr FILE...` — columns
+and the JIF year are detected. `journals.py list --missing jcr_if` prints
+the journals in your directory still without a value, which is the list to
+look up. The full protocol is in `docs/JCR_IMPORT.md`. For a metric that covers every journal, the SCImago CSV
 (~30,000 journals, one download) is the practical route; `--all` imports
 the whole file, the default imports only journals seen in your records.
 
@@ -424,6 +430,9 @@ own index, screening and reports. Inbox folders let collaborators drop
 exports without learning the tool. There is deliberately no cross-project
 merge: different questions, different blocks.
 
+**A worked example.** `docs/WALKTHROUGH.md` runs a real project from
+`queries.json` to a completed PRISMA diagram, every command included.
+
 **With an AI agent.** Point it at `AGENTS.md`; ask it to draft
 `queries.json` from your research question, run the scans, and walk the
 report with you. The structured query file, the JSON archives and the
@@ -438,7 +447,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (155 checks) and
+with a per-year series; audit logs; an offline test suite (157 checks) and
 CI.
 
 Limitations, all by design or by the world:

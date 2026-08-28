@@ -635,7 +635,9 @@ project mode — the absence of any manual source.</p>
 <pre><code>python journals.py fetch                          # every journal seen in the directory
 python journals.py fetch --providers openalex --refresh
 python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
-python journals.py import-csv jcr.csv --provider jcr_if --year 2023 --name-col &quot;Journal name&quot; --value-col JIF
+python journals.py import-jcr JCR_JournalResults_*.csv       # Journal Citation Reports downloads
+python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value
+python journals.py list --missing jcr_if                      # journals still to look up by hand
 python journals.py show --metric scopus_citescore</code></pre>
 <p>Store: <code>lit/journals/metrics.json</code>, one entry per journal
 keyed by ISSN (else normalised name), values kept <strong>per year and
@@ -687,11 +689,16 @@ year</td>
 </tbody>
 </table>
 <p>The Journal Impact Factor (Clarivate JCR) is proprietary: there is no
-free API and the tool will not scrape it. Licensed users export a CSV
-from JCR and import it. For a metric that covers every journal, the
-SCImago CSV (~30,000 journals, one download) is the practical route;
-<code>--all</code> imports the whole file, the default imports only
-journals seen in your records.</p>
+free API and the tool will not scrape it. Licensed users download CSVs
+from the JCR <em>Browse journals</em> page (600 rows per download; slice
+by category, then by quartile) and import them with
+<code>journals.py import-jcr FILE...</code> — columns and the JIF year
+are detected. <code>journals.py list --missing jcr_if</code> prints the
+journals in your directory still without a value, which is the list to
+look up. The full protocol is in <code>docs/JCR_IMPORT.md</code>. For a
+metric that covers every journal, the SCImago CSV (~30,000 journals, one
+download) is the practical route; <code>--all</code> imports the whole
+file, the default imports only journals seen in your records.</p>
 <p>In reports: a metric column in record tables, “venues in this set by
 metric”, an evolution table for venues with two or more years on file,
 and the <code>--min-metric</code> filter. <code>--metric</code> selects
@@ -737,6 +744,9 @@ itself, ready for the supplement.</p>
 Inbox folders let collaborators drop exports without learning the tool.
 There is deliberately no cross-project merge: different questions,
 different blocks.</p>
+<p><strong>A worked example.</strong> <code>docs/WALKTHROUGH.md</code>
+runs a real project from <code>queries.json</code> to a completed PRISMA
+diagram, every command included.</p>
 <p><strong>With an AI agent.</strong> Point it at
 <code>AGENTS.md</code>; ask it to draft <code>queries.json</code> from
 your research question, run the scans, and walk the report with you. The
@@ -751,7 +761,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (155 checks) and CI.</p>
+logs; an offline test suite (157 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are

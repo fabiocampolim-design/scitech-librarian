@@ -6,6 +6,8 @@ figures, kept by year so their evolution is visible).
     python journals.py fetch                      # every journal seen in lit/, all providers available
     python journals.py fetch --providers openalex --refresh
     python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
+    python journals.py import-jcr JCR_JournalResults_*.csv       # Journal Citation Reports downloads
+    python journals.py list --missing jcr_if                      # what to look up by hand
     python journals.py import-csv jcr.csv --provider jcr_if --year 2023 --name-col "Journal name" --value-col "JIF"
     python journals.py show [--metric openalex_2yr]
 
@@ -258,10 +260,10 @@ def apply_scopus(e: dict, src: dict) -> None:
 def import_scimago(text: str, year: str, store: dict, only: dict | None = None) -> int:
     """SCImago Journal Rankings CSV (semicolon-separated, comma decimals).
     `only` = {norm_name: True} restricts to journals seen in the directory."""
-    rd = csv.DictReader(io.StringIO(text), delimiter=";")
+    rd = _csv_rows(text, "Title", ";")
     n = 0
     for row in rd:
-        title = row.get("Title", "").strip()
+        title = (row.get("Title") or "").strip()
         issns = [x.strip() for x in (row.get("Issn") or "").split(",") if x.strip()]
         if only is not None and norm_name(title) not in only \
                 and not any(norm_issn(i) in only for i in issns):
@@ -277,9 +279,21 @@ def import_scimago(text: str, year: str, store: dict, only: dict | None = None) 
     return n
 
 
+def _csv_rows(text: str, must_have: str, delimiter: str = ",") -> csv.DictReader:
+    """DictReader that starts at the header line containing `must_have` --
+    JCR and other exports put title/date lines before the table -- and
+    ignores a BOM."""
+    lines = text.lstrip("\ufeff").splitlines()
+    start = next((i for i, ln in enumerate(lines) if must_have.lower() in ln.lower()), 0)
+    rd = csv.DictReader(io.StringIO("\n".join(lines[start:])), delimiter=delimiter)
+    rd.fieldnames = [f.strip().strip('"') for f in (rd.fieldnames or [])]
+    return rd
+
+
 def import_csv(text: str, provider: str, year: str, store: dict, name_col: str,
-               value_col: str, issn_col: str = "", delimiter: str = ",") -> int:
-    rd = csv.DictReader(io.StringIO(text), delimiter=delimiter)
+               value_col: str, issn_col: str = "", delimiter: str = ",",
+               quartile_col: str = "") -> int:
+    rd = _csv_rows(text, name_col, delimiter)
     n = 0
     for row in rd:
         title = (row.get(name_col) or "").strip()
@@ -288,9 +302,66 @@ def import_csv(text: str, provider: str, year: str, store: dict, name_col: str,
         issns = [x.strip() for x in (row.get(issn_col) or "").split(",")] if issn_col else []
         e = _entry(store, title, issns)
         put(e, provider, year, row.get(value_col))
+        if quartile_col and (row.get(quartile_col) or "").strip():
+            e["quartile"][str(year)] = row[quartile_col].strip()
         e["fetched"][provider] = time.strftime("%Y-%m-%d")
         n += 1
     return n
+
+
+def import_jcr(text: str, store: dict, year: str = "") -> tuple:
+    """A Journal Citation Reports 'Download' CSV: columns are detected
+    (Journal name, ISSN/eISSN, '<year> JIF', JIF Quartile). Returns
+    (journals imported, year used). The JIF year is read from the column
+    name unless given."""
+    rd = _csv_rows(text, "Journal name")
+    cols = rd.fieldnames or []
+    jif = next((c for c in cols if re.fullmatch(r"\d{4} JIF", c.strip())), None)
+    if jif is None:
+        jif = next((c for c in cols if "JIF" in c and "Quartile" not in c and "5 Year" not in c
+                    and "Percentile" not in c and "Rank" not in c), None)
+    if jif is None:
+        raise ValueError(f"no JIF column in {cols}")
+    m = re.match(r"(\d{4})", jif.strip())
+    yr = year or (m.group(1) if m else time.strftime("%Y"))
+    name_col = next(c for c in cols if c.lower() == "journal name")
+    issn_cols = [c for c in cols if c.upper() in ("ISSN", "EISSN")]
+    q_col = next((c for c in cols if "quartile" in c.lower()), "")
+    n = 0
+    for row in rd:
+        title = (row.get(name_col) or "").strip()
+        if not title or not re.match(r"\d", (row.get(jif) or "").strip()):
+            continue                     # trailer lines ("Copyright ... Clarivate") and blanks
+        issns = [row.get(c, "") for c in issn_cols if (row.get(c) or "").strip() not in ("", "N/A")]
+        e = _entry(store, title.title() if title.isupper() else title, issns)
+        put(e, "jcr_if", yr, row.get(jif))
+        if q_col and (row.get(q_col) or "").strip():
+            e["quartile"][str(yr)] = row[q_col].strip()
+        e["fetched"]["jcr"] = time.strftime("%Y-%m-%d")
+        n += 1
+    return n, yr
+
+
+def journal_list(outdir: Path, missing: str = "") -> str:
+    """Every journal seen in the directory, with the value of each metric on
+    file; --missing METRIC keeps only those without that metric (the list to
+    look up by hand, e.g. in JCR)."""
+    store = load_store(outdir)
+    idx = alias_index(store)
+    rows = []
+    for name, issns in sorted(collect(outdir).items(), key=lambda kv: kv[0].lower()):
+        e = lookup(store, {"journal": name, "issn": issns[0] if issns else ""}, idx)
+        vals = {m: metric_value(e, m)[0] for m in METRICS} if e else {}
+        if missing and vals.get(missing) is not None:
+            continue
+        rows.append((name, ", ".join((e or {}).get("issn") or issns), vals))
+    out = [f"{len(rows)} journals" + (f" without {missing}" if missing else "") + f" in {outdir}",
+           f"{'journal':55s} {'issn':20s} " + " ".join(f"{m[:12]:>12s}" for m in METRICS)]
+    for name, issn, vals in rows:
+        out.append(f"{name[:55]:55s} {issn[:20]:20s} "
+                   + " ".join(f"{vals.get(m):>12g}" if vals.get(m) is not None else f"{'-':>12s}"
+                              for m in METRICS))
+    return "\n".join(out)
 
 
 def fetch(outdir: Path, providers=PROVIDERS, refresh=False, log=None) -> dict:
@@ -334,7 +405,10 @@ def fetch(outdir: Path, providers=PROVIDERS, refresh=False, log=None) -> dict:
                 else:
                     log.debug("scopus: no match for %r", name)
             except Exception as ex:  # noqa: BLE001
-                log.warning("scopus %r: %s", name, str(ex)[:120])
+                if "404" in str(ex) or "RESOURCE_NOT_FOUND" in str(ex):
+                    log.debug("scopus: no match for %r", name)
+                else:
+                    log.warning("scopus %r: %s", name, str(ex)[:120])
             time.sleep(0.35)
         if i % 25 == 0:
             save_store(outdir, store)
@@ -386,6 +460,12 @@ def main() -> int:
     s.add_argument("--value-col", required=True)
     s.add_argument("--issn-col", default="")
     s.add_argument("--delimiter", default=",")
+    s = sub.add_parser("import-jcr", help="import a Journal Citation Reports download (CSV)")
+    s.add_argument("files", nargs="+")
+    s.add_argument("--year", default="", help="JIF year (default: read from the '<year> JIF' column)")
+    s = sub.add_parser("list", help="journals seen in the directory and their metrics")
+    s.add_argument("--missing", default="", metavar="METRIC",
+                   help="only journals without this metric (e.g. jcr_if): the manual look-up list")
     s = sub.add_parser("show", help="table of journals by a metric")
     s.add_argument("--metric", default="openalex_2yr")
     s.add_argument("--limit", type=int, default=50)
@@ -420,6 +500,17 @@ def main() -> int:
                        args.issn_col, args.delimiter)
         save_store(outdir, store)
         log.info("%d journals imported as %s/%s", n, args.provider, args.year)
+    elif args.cmd == "import-jcr":
+        store = load_store(outdir)
+        total = 0
+        for f in args.files:
+            n, yr = import_jcr(Path(f).read_text(encoding="utf-8", errors="replace"), store, args.year)
+            log.info("%d journals from %s (JIF %s)", n, Path(f).name, yr)
+            total += n
+        save_store(outdir, store)
+        log.info("%d journals imported -> %s", total, store_path(outdir))
+    elif args.cmd == "list":
+        print(journal_list(outdir, args.missing))
     elif args.cmd == "show":
         print(show(outdir, args.metric, args.limit))
     return 0

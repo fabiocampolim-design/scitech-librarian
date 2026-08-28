@@ -171,10 +171,10 @@ def ingest() -> None:
     # Register each block's export as a manual source of the research
     # directory, so report.py --project sees Web of Science like any backend.
     for f in files:
-        project_ingest(OUTDIR, [f], f"wos-{f.stem.upper()}", block=f.stem.upper(), kind="ris",
+        project_ingest(globals()['OUTDIR'], [f], f"wos-{f.stem.upper()}", block=f.stem.upper(), kind="ris",
                        origin="Web of Science Core Collection, web UI export",
                        method="database", note="manual UI run via wos_manual.py")
-    print(f"registered as manual sources under {OUTDIR / 'manual'} (report.py --project)")
+    print(f"registered as manual sources under {globals()['OUTDIR'] / 'manual'} (report.py --project)")
 
 
 def status() -> None:
@@ -186,10 +186,32 @@ def status() -> None:
         print(f"{name:6s} {counts.get(name, '-'):>8s}  {'yes' if ris.exists() else 'no'}")
 
 
+def main() -> int:
+    global BASE, QDIR, RDIR, BLOCKS
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("cmd", nargs="?", default="prep", choices=("prep", "walk", "ingest", "status"))
+    ap.add_argument("--queries", default=None, help="query JSON (default: queries.json)")
+    ap.add_argument("--outdir", default=None, help="research directory (default: ./lit)")
+    ap.add_argument("--verbose", "-v", action="store_true")
+    ap.add_argument("--quiet", "-q", action="store_true")
+    ap.add_argument("--log-dir", default=None)
+    args = ap.parse_args()
+    outdir = Path(args.outdir).resolve() if args.outdir else OUTDIR
+    BASE = outdir / "manual_wos"
+    QDIR, RDIR = BASE / "queries", BASE / "ris"
+    if args.queries:
+        BLOCKS = load_blocks(args.queries)
+    try:
+        import project
+        project.setup_logging("wos_manual", args, outdir)
+    except ImportError:
+        pass
+    globals()["OUTDIR"] = outdir
+    {"prep": prep, "walk": walk, "ingest": ingest, "status": status}[args.cmd]()
+    return 0
+
+
 if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "prep"
-    fn = {"prep": prep, "walk": walk, "ingest": ingest, "status": status}.get(cmd)
-    if not fn:
-        print(__doc__)
-        sys.exit(2)
-    fn()
+    sys.exit(main())

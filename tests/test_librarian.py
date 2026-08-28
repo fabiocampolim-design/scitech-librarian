@@ -600,6 +600,16 @@ with tempfile.TemporaryDirectory() as td:
     check("merge: richest copy kept (longest abstract, highest citations)",
           shared["abstract"] == "a longer abstract" and shared["cited_by"] == 9)
     check("merge: total unique", len(merged) == 4)
+    pre = project.merge([dict(_rec("P", 2024, "10.1/p", "arXiv preprint", [], ""), member="a", backend="arxiv"),
+                         dict(_rec("P", 2024, "10.1/p", "Nature Physics", [], ""), member="b", backend="ads")])
+    check("merge: published venue replaces the arXiv preprint label", pre[0]["journal"] == "Nature Physics")
+    jc = ('"Journal Data Filtered By: Selected JCR Year: 2024"\nJournal name,ISSN,eISSN,2024 JIF,JIF Quartile\n'
+          'NATURE PHYSICS,1745-2473,1745-2481,17.6,Q1\nCopyright Clarivate\n')
+    st_ = {}
+    n_, yr_ = journals.import_jcr(jc, st_)
+    check("jcr import: preamble/trailer skipped, year from column, quartile kept",
+          n_ == 1 and yr_ == "2024" and st_["1745-2473"]["metrics"]["jcr_if"] == {"2024": 17.6}
+          and st_["1745-2473"]["quartile"]["2024"] == "Q1")
     check("status text lists members", "colleague" in project.status(od))
 
     # --- project report ---
