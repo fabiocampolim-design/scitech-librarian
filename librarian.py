@@ -316,6 +316,28 @@ def bk_arxiv(q, want):
     return total, recs[:want]
 
 
+def unpaywall_cached(dois, cfile: Path, progress=None, sleep: float = 0.1) -> dict:
+    """Look up DOIs via Unpaywall with a JSON cache on disk. Failed lookups are
+    NOT cached, so a transient outage is retried next time. Ctrl-C keeps
+    what was fetched. Returns the cache (doi -> oa fields)."""
+    cache: dict = json.loads(cfile.read_text(encoding="utf-8")) if cfile.exists() else {}
+    todo = [d for d in dois if d and d not in cache]
+    try:
+        for i, d in enumerate(todo, 1):
+            try:
+                cache[d] = unpaywall(d)
+            except Exception:  # noqa: BLE001  -- retried on the next pass
+                pass
+            if progress and (i % 25 == 0 or i == len(todo)):
+                progress(i, len(todo))
+                cfile.write_text(json.dumps(cache), encoding="utf-8")
+            time.sleep(sleep)
+    except KeyboardInterrupt:
+        print("\n    Unpaywall interrupted -- cache kept")
+    cfile.write_text(json.dumps(cache), encoding="utf-8")
+    return cache
+
+
 def unpaywall(doi: str) -> dict:
     """Legal open-access PDF lookup. No key -- just an email address."""
     if not doi:
@@ -701,23 +723,38 @@ def write_ris(recs, path: Path):
 
 
 def _bib_key(r: dict, seen: set) -> str:
-    first = (r["authors"][0].split(",")[0].split()[-1] if r["authors"] else "anon")
-    base = re.sub(r"[^A-Za-z0-9]", "", first).lower() + (r["year"] or "nd")
+    """<lastname><year>, then a, b, ... z, then -27, -28 ... on collisions."""
+    words = (r["authors"][0].split(",")[0].split() if r.get("authors") else [])
+    first = re.sub(r"[^A-Za-z0-9]", "", words[-1]).lower() if words else ""
+    base = (first or "anon") + (r.get("year") or "nd")
     key, n = base, 1
     while key in seen:
         n += 1
-        key = f"{base}{chr(ord('a') + n - 2)}"
+        key = f"{base}{chr(ord('a') + n - 2)}" if n <= 27 else f"{base}-{n}"
     seen.add(key)
     return key
 
 
+_BIB_ESC = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#",
+            "_": r"\_", "~": r"\textasciitilde{}", "^": r"\^{}"}
+
+
+def _bib_esc(s) -> str:
+    """LaTeX-special characters escaped; braces dropped (they would unbalance the field)."""
+    return "".join(_BIB_ESC.get(ch, ch) for ch in str(s).replace("{", "").replace("}", ""))
+
+
+def _is_preprint(r: dict) -> bool:
+    return (r.get("journal") or "").lower().startswith("arxiv")
+
+
 def write_bibtex(recs, path: Path):
     """BibTeX (@article; @misc when no venue). Keys: <lastname><year>[a,b,…]."""
-    esc = lambda s: str(s).replace("{", "").replace("}", "").replace("&", "\\&")  # noqa: E731
+    esc = _bib_esc
     seen = set()
     with path.open("w", encoding="utf-8") as f:
         for r in recs:
-            kind = "article" if r["journal"] and not r["journal"].lower().startswith("arxiv") else "misc"
+            kind = "article" if r["journal"] and not _is_preprint(r) else "misc"
             f.write(f"@{kind}{{{_bib_key(r, seen)},\n  title = {{{esc(r['title'])}}},\n")
             if r["authors"]:
                 f.write("  author = {" + " and ".join(esc(a) for a in r["authors"]) + "},\n")
@@ -738,7 +775,8 @@ def write_csl(recs, path: Path):
     """CSL-JSON (what Zotero, pandoc and citeproc consume)."""
     items = []
     for i, r in enumerate(recs, 1):
-        it = {"id": r["doi"] or f"rec{i}", "type": "article-journal", "title": r["title"]}
+        it = {"id": r["doi"] or f"rec{i}", "type": "article" if _is_preprint(r) else "article-journal",
+              "title": r["title"]}
         au = []
         for a in r["authors"]:
             if "," in a:
@@ -1020,27 +1058,18 @@ def main() -> int:
         targets = args.pdf_blocks or args.blocks
         pool = sorted({r["doi"] for r in everything if r["doi"] and r["block"] in targets})
         cfile = OUTDIR / "unpaywall_cache.json"
-        cache: dict[str, dict] = json.loads(cfile.read_text()) if cfile.exists() else {}
-        todo = [d for d in pool if d not in cache]
+        have = json.loads(cfile.read_text(encoding="utf-8")) if cfile.exists() else {}
+        todo = [d for d in pool if d not in have]
         log(f"\nUnpaywall: {len(pool)} DOIs in blocks {' '.join(targets)}"
-            f" — {len(cache and [d for d in pool if d in cache])} cached, {len(todo)} to fetch"
+            f" — {len(pool) - len(todo)} cached, {len(todo)} to fetch"
             f" (~{len(todo)*0.45/60:.1f} min). Ctrl-C is safe.")
         t0 = time.time()
-        try:
-            for i, d in enumerate(todo, 1):
-                try:
-                    cache[d] = unpaywall(d)
-                except Exception:  # noqa: BLE001
-                    cache[d] = {}
-                if i % 25 == 0 or i == len(todo):
-                    rate = (time.time() - t0) / i
-                    print(f"    {i}/{len(todo)}  eta {(len(todo)-i)*rate/60:.1f} min",
-                          end="\r", flush=True)
-                    cfile.write_text(json.dumps(cache), encoding="utf-8")
-                time.sleep(0.1)
-        except KeyboardInterrupt:
-            log("\n    Unpaywall interrupted — cache kept, records still saved")
-        cfile.write_text(json.dumps(cache), encoding="utf-8")
+
+        def progress(i, n):
+            rate = (time.time() - t0) / i
+            print(f"    {i}/{n}  eta {(n-i)*rate/60:.1f} min", end="\r", flush=True)
+
+        cache = unpaywall_cached(pool, cfile, progress)
         for r in everything:
             if r["doi"] in cache:
                 r.update(cache[r["doi"]])
@@ -1068,14 +1097,13 @@ def main() -> int:
 
     uniq = []
     if everything:
-        try:
-            from project import merge as _merge      # one dedup rule for runs and projects
+        if _project:                                  # one dedup rule for runs and projects
+            started = time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(stamp, "%Y%m%dT%H%M%S"))
             for r in everything:
                 r.setdefault("member", stamp)
-                r.setdefault("member_date", time.strftime("%Y-%m-%d %H:%M:%S",
-                                                          time.strptime(stamp, "%Y%m%dT%H%M%S")))
-            uniq = _merge(everything)
-        except ImportError:
+                r.setdefault("member_date", started)
+            uniq = _project.merge(everything)
+        else:
             seen = set()
             for r in sorted(everything, key=lambda x: -x["cited_by"]):
                 k = r["doi"].lower() or r["title"].lower()[:90]

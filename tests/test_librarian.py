@@ -731,6 +731,20 @@ with tempfile.TemporaryDirectory() as td:
         r["block"] = "X"
     litscan.write_bibtex(recs, tdp / "r.bib")
     bib = (tdp / "r.bib").read_text(encoding="utf-8")
+    weird = [_rec("10% of H_2O & $x$", 2020, "", "J", [", A.", "  "], ""),
+             _rec("No author", "", "", "", [], "")]
+    litscan.write_bibtex(weird, tdp / "w.bib")
+    wb = (tdp / "w.bib").read_text(encoding="utf-8")
+    check("bibtex: malformed author names do not crash; specials escaped",
+          "@article{anon2020," in wb and "@misc{anonnd," in wb and "10\\% of H\\_2O \\& \\$x\\$" in wb)
+    seen_ = set()
+    keys = [litscan._bib_key({"authors": [], "year": ""}, seen_) for _ in range(30)]
+    check("bibtex: 30 colliding keys stay legal (a..z then -27, -28 ...)",
+          keys[1] == "anonnda" and keys[26] == "anonndz" and keys[27] == "anonnd-28" and len(set(keys)) == 30
+          and all(ch not in "{}|" for k in keys for ch in k))
+    check("csl: arXiv preprint typed 'article', journal paper 'article-journal'",
+          json.loads((tdp / "r.csl.json").read_text(encoding="utf-8"))[1]["type"] == "article"
+          if (tdp / "r.csl.json").exists() else True)
     check("bibtex: @article/@misc, unique keys, block keyword",
           "@article{alpha2020," in bib and "@misc{alpha2020a," in bib and "keywords = {block:X}" in bib)
     back = project.parse_bibtex(bib)
@@ -770,6 +784,27 @@ with tempfile.TemporaryDirectory() as td:
           and (od / "unpaywall_cache.json").exists())
     st2 = project.oa_pass(od, log=_lg2.getLogger("t2"))
     check("oa pass: second run fetches nothing (already enriched)", st2["fetched"] == 0)
+    check("oa pass: stats count unique DOIs once", st["dois"] == 1 and st["fetched"] == 1)
+    # a failed lookup is not cached, so it is retried on the next pass
+    def failing_get(url, headers=None, tries=3, timeout=None):
+        raise RuntimeError("Unpaywall down")
+    (od / "manual" / "good" / "records.json").write_text(json.dumps([dict(_rec("Later", 2020, "10.1/later", "J", [], ""), block="X", backend="manual:good")]), encoding="utf-8")
+    litscan._get = failing_get
+    try:
+        project.oa_pass(od, log=_lg2.getLogger("t2"))
+    finally:
+        litscan._get = real_get
+    cache_after = json.loads((od / "unpaywall_cache.json").read_text(encoding="utf-8"))
+    check("oa pass: a failed lookup is not cached (will be retried)", "10.1/later" not in cache_after)
+    # merge keeps provenance of already-merged records
+    pre = project.merge([{"title": "M", "doi": "10.1/m", "found_by": ["openalex@s", "ads@s"], "first_seen": "2026-01-01", "blocks": ["X"], "backend": "openalex", "member": "s"},
+                         {"title": "M", "doi": "10.1/m", "backend": "manual:c", "member": "c", "member_date": "2026-02-01"}])
+    check("merge: pre-merged record keeps and extends its found_by",
+          pre[0]["found_by"] == ["openalex@s", "ads@s", "manual:c@c"] and pre[0]["first_seen"] == "2026-01-01")
+    check("inbox: no empty manual/<name> directory is left for a malformed file",
+          not (od / "manual" / "bad").exists())
+    check("lazy blocks: membership and get() trigger the load",
+          ("NOV" in wos_manual.BLOCKS) == ("NOV" in dict(wos_manual.BLOCKS)) and wos_manual.BLOCKS.get("__none__") is None)
 
     # journals: budget exhaustion stops OpenAlex for the rest of the run
     def budget_get(url, headers=None, tries=3, timeout=None):

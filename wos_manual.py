@@ -70,6 +70,22 @@ class _LazyBlocks(dict):
         self._load()
         return super().__len__()
 
+    def __getitem__(self, k):
+        self._load()
+        return super().__getitem__(k)
+
+    def __contains__(self, k):
+        self._load()
+        return super().__contains__(k)
+
+    def get(self, k, default=None):
+        self._load()
+        return super().get(k, default)
+
+    def keys(self):
+        self._load()
+        return super().keys()
+
 
 BLOCKS = _LazyBlocks()
 

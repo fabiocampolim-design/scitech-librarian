@@ -4,6 +4,13 @@ All notable changes to scitech-librarian. Dates are release dates.
 
 ## 3.2.1 — 2026-08-28 (review follow-up)
 
+- Code-review pass: BibTeX keys survive malformed author names and >26
+  collisions; LaTeX specials escaped in `.bib`; CSL type agrees with BibTeX
+  for preprints; `merge` keeps the provenance of already-merged records;
+  one shared Unpaywall cache helper (failed lookups are retried, stats count
+  unique DOIs); inbox ingest leaves no empty directory behind; lazy WoS
+  blocks answer `in`/`get()`.
+
 - `render.py` split out of `report.py` (renderers, PRISMA diagrams, PDF chain).
 - One deduplication rule everywhere: runs now use `project.merge` (records
   carry `found_by` / `first_seen` from the first run on).

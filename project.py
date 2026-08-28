@@ -288,11 +288,10 @@ def ingest(outdir: Path, files: list, name: str, block: str = "MANUAL", kind: st
         raise ValueError(f"--method must be one of {METHODS}")
     name = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip("-") or "manual"
     dest = Path(outdir) / "manual" / name
+    parsed = [(Path(f), parse_records(Path(f), kind)) for f in files]   # parse first: no litter on failure
     dest.mkdir(parents=True, exist_ok=True)
     recs, kept = [], []
-    for f in files:
-        f = Path(f)
-        got = parse_records(f, kind)
+    for f, got in parsed:
         for r in got:
             r["block"] = r.get("block") or block
             r["backend"] = f"manual:{name}"
@@ -325,6 +324,11 @@ def ingest_inbox(outdir: Path, log: logging.Logger | None = None, **kw) -> list:
             continue
         try:
             src = ingest(outdir, [f], f.stem, log=log, **kw)
+        except ValueError as e:
+            if "--method" in str(e):
+                raise                                # a bad option, not a bad file
+            log.warning("inbox: %s left in place -- %s", f.name, str(e)[:120])
+            continue
         except Exception as e:  # noqa: BLE001  -- a malformed file stays in the inbox
             log.warning("inbox: %s left in place -- %s", f.name, str(e)[:120])
             continue
@@ -423,17 +427,18 @@ def merge(records: list[dict]) -> list[dict]:
         k = rec_key(r)
         if not k:
             continue
-        tag = f"{r.get('backend', '?')}@{r.get('member', '?')}"
+        tags = list(r.get("found_by") or [f"{r.get('backend', '?')}@{r.get('member', '?')}"])
         if k not in by:
             c = dict(r)
-            c["found_by"] = [tag]
-            c["first_seen"] = r.get("member_date", "")
-            c["blocks"] = [r.get("block", "")]
+            c["found_by"] = tags                      # an already-merged record keeps its provenance
+            c["first_seen"] = r.get("first_seen") or r.get("member_date", "")
+            c["blocks"] = list(r.get("blocks") or [r.get("block", "")])
             by[k] = c
         else:
             c = by[k]
-            if tag not in c["found_by"]:
-                c["found_by"].append(tag)
+            for tag in tags:
+                if tag not in c["found_by"]:
+                    c["found_by"].append(tag)
             if r.get("block") and r["block"] not in c["blocks"]:
                 c["blocks"].append(r["block"])
             if len(r.get("abstract") or "") > len(c.get("abstract") or ""):
@@ -463,7 +468,6 @@ def oa_pass(outdir: Path, member_ids=None, log: logging.Logger | None = None) ->
     except ImportError:
         import litscan as librarian  # type: ignore
     cfile = Path(outdir) / "unpaywall_cache.json"
-    cache = json.loads(cfile.read_text(encoding="utf-8")) if cfile.exists() else {}
     stats = {"members": 0, "dois": 0, "fetched": 0, "oa": 0}
     for m in members(outdir):
         if member_ids and m["id"] not in member_ids:
@@ -471,29 +475,26 @@ def oa_pass(outdir: Path, member_ids=None, log: logging.Logger | None = None) ->
         files = sorted((m["path"] / "records").glob("*.json")) + [m["path"] / "all_records.json"] \
             if m["kind"] == "run" else [m["path"] / "records.json"]
         files = [f for f in files if f.exists()]
+        loaded = [(f, json.loads(f.read_text(encoding="utf-8"))) for f in files]
+        dois = {(r.get("doi") or "").strip() for _, recs in loaded for r in recs
+                if (r.get("doi") or "").strip() and "is_oa" not in r}
+        before = json.loads(cfile.read_text(encoding="utf-8")) if cfile.exists() else {}
+        cache = librarian.unpaywall_cached(sorted(dois), cfile)
+        stats["fetched"] += sum(1 for d in dois if d in cache and d not in before)
         touched = False
-        for f in files:
-            recs = json.loads(f.read_text(encoding="utf-8"))
+        for f, recs in loaded:
+            changed = False
             for r in recs:
                 d = (r.get("doi") or "").strip()
-                if not d or "is_oa" in r:
-                    continue
-                if d not in cache:
-                    try:
-                        cache[d] = librarian.unpaywall(d)
-                    except Exception:  # noqa: BLE001
-                        cache[d] = {}
-                    stats["fetched"] += 1
-                    time.sleep(0.1)
-                if cache[d]:
+                if d and "is_oa" not in r and cache.get(d):
                     r.update(cache[d])
-                    touched = True
-                stats["dois"] += 1
-                stats["oa"] += 1 if cache[d].get("is_oa") else 0
-            if touched:
+                    changed = True
+            if changed:
                 f.write_text(json.dumps(recs, indent=1, ensure_ascii=False), encoding="utf-8")
+                touched = True
         stats["members"] += 1
-        cfile.write_text(json.dumps(cache), encoding="utf-8")
+        stats["dois"] += len(dois)
+        stats["oa"] += sum(1 for d in dois if cache.get(d, {}).get("is_oa"))
         log.info("  %-24s %s", m["id"], "updated" if touched else "nothing to add")
     log.info("%d members, %d DOIs looked at, %d fetched, %d open access",
              stats["members"], stats["dois"], stats["fetched"], stats["oa"])
