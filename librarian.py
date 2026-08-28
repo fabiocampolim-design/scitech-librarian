@@ -14,8 +14,10 @@ comment or use PowerShell.
 
 EVERYTHING IS SAVED. Every run writes a timestamped directory under lit/runs/
 containing the raw records (JSON), RIS files for Zotero, a combined CSV, the
-exact query string sent to each backend, and a log. Counts are also appended
-to lit/counts_history.csv so drift over time is visible.
+exact query string sent to each backend, a log, and a literature-search
+REPORT with a PRISMA 2020 flow (report.py; --report-level simple|intermediate|
+full, --report-format md html tex pdf txt). Counts are also appended to
+lit/counts_history.csv so drift over time is visible.
 
 Backends
 --------
@@ -47,6 +49,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+VERSION = "3.1"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -211,7 +214,7 @@ TIMEOUT = 45          # per-request socket timeout, seconds (overridable via --t
 
 def _get(url: str, headers: dict | None = None, tries: int = 3,
          timeout: float | None = None) -> bytes:
-    hdr = {"User-Agent": f"scitech-librarian/3.0 (mailto:{CONTACT})", **(headers or {})}
+    hdr = {"User-Agent": f"scitech-librarian/{VERSION} (mailto:{CONTACT})", **(headers or {})}
     tmo = timeout or TIMEOUT
     last = None
     for attempt in range(tries):
@@ -671,6 +674,28 @@ def write_csv(recs, path: Path):
                         r["title"], r["journal"], r["doi"], r["url"]])
 
 
+def run_meta(stamp: str, args, backends: list, t_start: float, interrupted: bool) -> dict:
+    """Everything report.py needs to describe the run that is not in the
+    counts/records themselves."""
+    cfg = {}
+    for b in backends:
+        e = BACKENDS_CFG.get(b, {})
+        auth = e.get("auth") or {}
+        cfg[b] = {"url": e.get("request", {}).get("url", "(driver: %s)" % e.get("driver", "?")),
+                  "auth": auth.get("env", "none"),
+                  "paging": e.get("request", {}).get("paging", {}).get("style", "-")}
+    return {"version": VERSION, "stamp": stamp,
+            "started": time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(stamp, "%Y%m%dT%H%M%S")),
+            "duration_s": round(time.time() - t_start, 1),
+            "query_file": str(args.queries or "queries.json"),
+            "blocks": list(args.blocks), "backends": list(backends),
+            "counts_only": bool(args.counts_only), "limit": args.limit,
+            "keep_junk": bool(args.keep_junk), "pdfs": bool(args.pdfs),
+            "interrupted": interrupted, "backend_config": cfg,
+            "environment": {"python": sys.version.split()[0],
+                            "platform": f"{sys.platform}"}}
+
+
 # ---------------------------------------------------------------------------
 
 def main() -> int:
@@ -705,6 +730,14 @@ def main() -> int:
                     help="do not filter out non-scholarly venues (Zenodo, Figshare, SSRN...). "
                          "OpenAlex indexes these uncurated; they were 15%% of its records "
                          "on 2026-08-15 and are why its counts exceeded Scopus's.")
+    ap.add_argument("--report-level", choices=("simple", "intermediate", "full"),
+                    default="simple",
+                    help="detail of the generated report (default: simple)")
+    ap.add_argument("--report-format", nargs="+", default=["md"],
+                    choices=("md", "html", "tex", "pdf", "txt"),
+                    help="report formats to write (default: md). pdf uses LaTeX/pandoc "
+                         "if installed, else a built-in plain-text writer")
+    ap.add_argument("--no-report", action="store_true", help="skip report generation")
     args = ap.parse_args()
 
     TIMEOUT = args.timeout
@@ -792,7 +825,8 @@ def main() -> int:
     run = OUTDIR / "runs" / stamp
     (run / "records").mkdir(parents=True, exist_ok=True)
     (run / "ris").mkdir(exist_ok=True)
-    log_lines, counts, queries, everything = [], {}, {}, []
+    log_lines, counts, queries, everything, junk_all = [], {}, {}, [], []
+    t_start = time.time()
 
     def log(s=""):
         print(s, flush=True)          # flush: otherwise Windows buffers and it LOOKS hung
@@ -827,6 +861,9 @@ def main() -> int:
                         dropped = [r for r in recs if is_junk(r)]
                         recs = [r for r in recs if not is_junk(r)]
                         if dropped:
+                            for r in dropped:
+                                r["block"], r["backend"] = name, bk
+                            junk_all.extend(dropped)
                             log(f"    {'':16s} (filtered {len(dropped)} non-scholarly: "
                                 f"{', '.join(sorted({d['journal'].split('(')[0].strip() for d in dropped}))[:60]})")
                     if recs:
@@ -885,6 +922,12 @@ def main() -> int:
     # ---- always persist ----
     (run / "counts.json").write_text(json.dumps(counts, indent=2), encoding="utf-8")
     (run / "queries.json").write_text(json.dumps(queries, indent=2, ensure_ascii=False), encoding="utf-8")
+    (run / "blocks.json").write_text(
+        json.dumps({n: BLOCKS[n] for n in args.blocks if n in BLOCKS}, indent=2,
+                   ensure_ascii=False), encoding="utf-8")
+    if junk_all:
+        (run / "junk.json").write_text(json.dumps(junk_all, indent=1, ensure_ascii=False),
+                                       encoding="utf-8")
 
     done = [n for n in args.blocks if n in counts]
     hdr = "| Block | " + " | ".join(backends) + " | Title |"
@@ -920,8 +963,18 @@ def main() -> int:
                 w.writerow([stamp, n, b, counts[n].get(b, "")])
 
     (run / "run.log").write_text("\n".join(log_lines), encoding="utf-8")
+    (run / "meta.json").write_text(json.dumps(run_meta(
+        stamp, args, backends, t_start, interrupted), indent=2), encoding="utf-8")
     if interrupted:
         print(f"\nPARTIAL RUN: {len(done)}/{len(args.blocks)} blocks completed.")
+    if not args.no_report:
+        try:
+            import report
+            report.write_reports(run, args.report_level, args.report_format)
+        except ImportError:
+            print("report.py not found next to librarian.py -- no report written")
+        except Exception as e:  # noqa: BLE001
+            print(f"report generation failed: {e}")
     print(f"\nAll output saved to: {run}")
     print(f"Counts history appended to: {hist}")
     print("\nNOTE: proximity operators are dropped in the generated queries, so counts")

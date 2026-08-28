@@ -347,6 +347,157 @@ finally:
         os.environ.pop(k, None)
 
 # ---------------------------------------------------------------------------
+print("\nreport generation (report.py against a synthetic run directory)")
+import report  # noqa: E402
+
+with tempfile.TemporaryDirectory() as td:
+    lit = Path(td) / "lit"
+    run = lit / "runs" / "20260101T120000"
+    (run / "records").mkdir(parents=True)
+    R1 = _rec("Paper One", 2020, "10.1/one", "J. Phys.", ["A. One", "B. Two"],
+              "https://x/1", "Abstract one.", 12)
+    R2 = _rec("Paper Two", 2021, "10.1/two", "Nature", ["C. Three"], "https://x/2", "", 3)
+    R1oa = dict(R1, block="A", backend="openalex")
+    R1ads = dict(R1, block="A", backend="ads")
+    R2oa = dict(R2, block="B", backend="openalex")
+    (run / "records" / "A_openalex.json").write_text(json.dumps([R1oa]), encoding="utf-8")
+    (run / "records" / "A_ads.json").write_text(json.dumps([R1ads]), encoding="utf-8")
+    (run / "records" / "B_openalex.json").write_text(json.dumps([R2oa]), encoding="utf-8")
+    (run / "all_records.json").write_text(json.dumps([R1oa, R2oa]), encoding="utf-8")
+    (run / "junk.json").write_text(json.dumps(
+        [dict(_rec("Junk", 2019, "10.1/j", "Zenodo (CERN)", [], ""), block="A", backend="openalex")]),
+        encoding="utf-8")
+    (run / "counts.json").write_text(json.dumps(
+        {"A": {"openalex": 3, "ads": 5}, "B": {"openalex": 4000, "ads": "ERR"}}), encoding="utf-8")
+    (run / "queries.json").write_text(json.dumps(
+        {"A": {"openalex": "(a) AND (b)", "ads": 'abs:"a" AND abs:"b"'},
+         "B": {"openalex": "(c)", "ads": 'abs:"c"'}}), encoding="utf-8")
+    (run / "blocks.json").write_text(json.dumps(
+        {"A": {"title": "Block A title", "note": "small is good", "groups": [["a"], ["b"]]},
+         "B": {"title": "Block B", "note": "", "groups": [["c"]]}}), encoding="utf-8")
+    (run / "meta.json").write_text(json.dumps(
+        {"version": "3.1", "stamp": "20260101T120000", "started": "2026-01-01 12:00:00",
+         "blocks": ["A", "B"], "backends": ["openalex", "ads"], "limit": 300,
+         "counts_only": False, "keep_junk": False, "pdfs": False, "interrupted": False,
+         "backend_config": {"openalex": {"url": "https://api.openalex.org/works",
+                                         "auth": "none", "paging": "cursor"}}}),
+        encoding="utf-8")
+    (run / "run.log").write_text("line 1\n    ads   ERROR: boom\n", encoding="utf-8")
+    (lit / "counts_history.csv").write_text(
+        "timestamp,block,backend,count\n20251201T000000,A,openalex,1\n"
+        "20260101T120000,A,openalex,3\n20260101T120000,A,ads,5\n", encoding="utf-8")
+
+    d = report.load_run(run)
+    s = report.stats(d)
+    check("identified sums integer counts and skips ERR",
+          s["identified"] == {"openalex": 4003, "ads": 5} and s["errors"] == [("B", "ads")])
+    check("retrieved counted per backend from raw records",
+          s["retrieved"] == {"openalex": 2, "ads": 1})
+    check("duplicates = fetched - unique", s["n_fetched"] == 3 and s["n_dupes"] == 1)
+    check("exclusive contribution ignores records found by two backends",
+          s["exclusive"] == {"openalex": 1})
+    check("junk counted per backend", s["junk_by"] == {"openalex": 1})
+
+    pn = report.prisma_numbers(d, s)
+    check("prisma: retrieved includes filtered records", pn["retrieved"] == 4)
+    check("prisma: automation removed = junk", pn["automation_removed"] == 1)
+    check("prisma: manual stages None without prisma.json", pn["excluded"] is None)
+    (run / "prisma.json").write_text(json.dumps(
+        {"records_screened": 2, "records_excluded": 1, "reports_sought": 1,
+         "reports_assessed": 1, "excluded_reasons": {"off topic": 1},
+         "studies_included": 0}), encoding="utf-8")
+    pn = report.prisma_numbers(report.load_run(run), s)
+    check("prisma: manual stages read from prisma.json",
+          pn["excluded"] == 1 and pn["excluded_reasons"] == {"off topic": 1}
+          and pn["screened_manual"])
+
+    sug = report.suggest(d, s)
+    joined = " ".join(sug)
+    check("suggests rerunning the failed backend", "ads" in joined and "failed" in joined)
+    check("flags the >2000-hit block", "Block B" in joined and "generic term" in joined)
+    check("flags the small block as novelty territory", "Block A" in joined and "novelty" in joined)
+    check("flags the unfinished PRISMA manual stages", "prisma.json" in joined)
+
+    title, nodes = report.build(d, "simple")
+    kinds = [n[0] for n in nodes]
+    check("simple level has prisma node and suggestions", "prisma" in kinds and kinds[-1] == "ul")
+    n_simple = len(nodes)
+    n_inter = len(report.build(d, "intermediate")[1])
+    n_full = len(report.build(d, "full")[1])
+    check("levels strictly add content", n_simple < n_inter < n_full)
+    full_txt = report.render_txt(*report.build(d, "full"))
+    check("full level carries the abstract and the run log",
+          "Abstract one." in full_txt and "ERROR: boom" in full_txt)
+    inter_txt = report.render_txt(*report.build(d, "intermediate"))
+    check("intermediate level has overlap + history, no abstract",
+          "Found only here" in inter_txt and "Count history" in inter_txt
+          and "Abstract one." not in inter_txt)
+    try:
+        report.build(d, "verbose")
+        check("unknown level rejected", False)
+    except ValueError:
+        check("unknown level rejected", True)
+
+    md = report.render_md(title, nodes)
+    check("md: heading, table and ASCII flow present",
+          md.startswith("# Literature search report") and "| Block |" in md
+          and "IDENTIFICATION" in md)
+    check("md: DOI rendered as link", "[10.1/one](https://doi.org/10.1/one)" in md)
+    check("md: exact query strings reported", 'abs:"a" AND abs:"b"' in md)
+    ht = report.render_html(title, nodes)
+    check("html: svg flow + escaped content", "<svg" in ht and "&quot;a&quot;" in ht)
+    tx = report.render_tex(title, nodes)
+    check("tex: tikz flow, longtable, special chars escaped",
+          "\\begin{tikzpicture}" in tx and "\\begin{longtable}" in tx and "\\_" in tx)
+    txt = report.render_txt(title, nodes)
+    check("txt: flow and PRISMA-S checklist", "Records screened" in txt
+          and "Deduplication" in txt)
+
+    pdf = run / "builtin.pdf"
+    report._pdf_builtin(txt, pdf)
+    data = pdf.read_bytes()
+    check("builtin pdf writer: valid header, trailer and pages",
+          data.startswith(b"%PDF-1.4") and b"%%EOF" in data and b"/Type /Page " in data)
+
+    real_which = report.shutil.which
+    report.shutil.which = lambda name: None       # no LaTeX, no pandoc
+    try:
+        (run / "prisma.json").unlink()
+        out = report.write_reports(run, "simple", ["md", "pdf", "html"], quiet=True)
+    finally:
+        report.shutil.which = real_which
+    check("write_reports writes every requested format",
+          set(out) == {"md", "pdf", "html"} and all(p.exists() for p in out.values()))
+    check("pdf falls back to the builtin writer without LaTeX/pandoc",
+          (run / "report.pdf").read_bytes().startswith(b"%PDF"))
+    check("intermediate .tex is removed when not requested", not (run / "report.tex").exists())
+    check("prisma.json template written on first report",
+          json.loads((run / "prisma.json").read_text())["records_screened"] is None)
+
+    # a legacy run directory (no meta/blocks/junk) still renders
+    old = lit / "runs" / "20250101T000000"
+    (old / "records").mkdir(parents=True)
+    (old / "counts.json").write_text(json.dumps({"A": {"openalex": 1}}), encoding="utf-8")
+    (old / "queries.json").write_text(json.dumps({"A": {"openalex": "(a)"}}), encoding="utf-8")
+    d_old = report.load_run(old)
+    check("legacy run: backends/blocks inferred from counts",
+          d_old["backends"] == ["openalex"] and d_old["block_names"] == ["A"])
+    check("legacy run: date recovered from the directory stamp",
+          d_old["meta"]["started"] == "2025-01-01 00:00:00")
+    check("legacy run renders", "PRISMA" in report.render_md(*report.build(d_old, "full")))
+
+# ---------------------------------------------------------------------------
+print("\nlibrarian -> report wiring")
+import argparse as _ap  # noqa: E402
+_ns = _ap.Namespace(queries=None, blocks=["X"], counts_only=False, limit=7,
+                    keep_junk=False, pdfs=True)
+_m = litscan.run_meta("20260102T030405", _ns, ["openalex"], 0.0, False)
+check("run_meta records limit, flags and backend endpoint",
+      _m["limit"] == 7 and _m["pdfs"] and _m["started"] == "2026-01-02 03:04:05"
+      and _m["backend_config"]["openalex"]["url"].startswith("https://api.openalex.org"))
+check("run_meta reports the tool version", _m["version"] == litscan.VERSION)
+
+# ---------------------------------------------------------------------------
 print("\nsummary")
 if FAILED:
     print(f"  {len(FAILED)} FAILED: {', '.join(FAILED)}")
