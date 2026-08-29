@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Fabio Campolim
 """Offline test suite for librarian + wos_manual. Stdlib only, no network, no keys.
 
     python tests/test_librarian.py
@@ -923,12 +925,29 @@ check("docs guard: every CLI flag appears in USER_MANUAL.md and AGENTS.md", not 
 # survive every rewrite -- in LICENSE and, visibly, in the README.
 _licence = (HERE.parent / "LICENSE").read_text(encoding="utf-8", errors="replace")
 _readme = (HERE.parent / "README.md").read_text(encoding="utf-8", errors="replace")
-check("LICENSE disclaims warranty and liability",
-      "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND" in _licence and "Limitation of Liability" in _licence, "clause missing")
+check("LICENSE disclaims warranty and liability (operative clauses, not just headings)",
+      "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND" in _licence and "Limitation of Liability" in _licence
+      and "liable to You for damages" in _licence, "clause missing")
 check("README carries a visible Disclaimer under Licence",
       "### Disclaimer" in _readme and "without warrant" in _readme
       and "liable" in _readme and _readme.index("## Licence") < _readme.index("### Disclaimer"),
       "disclaimer missing")
+
+# release metadata and licence hygiene (post-3.2.3 code review)
+_cff = (HERE.parent / "CITATION.cff").read_text(encoding="utf-8")
+check("CITATION.cff version equals librarian.VERSION",
+      f'version: "{lib.VERSION}"' in _cff, f"CITATION.cff does not say {lib.VERSION}")
+_aff = _readme[_readme.index("This is an independent project."):].split("\n\n")[0]
+_bk = {b for b in lib.DEFAULT_BACKENDS}
+_names = {"openalex": "OpenAlex", "ads": "NASA ADS", "arxiv": "arXiv", "inspire": "INSPIRE-HEP",
+          "scopus": "Elsevier", "semanticscholar": "Semantic Scholar", "crossref": "Crossref",
+          "wos": "Clarivate"}
+_absent = [n for b, n in _names.items() if b in _bk and n not in _aff]
+check("README non-affiliation note names every built-in backend", not _absent, f"missing: {_absent}")
+_nospdx = [f for f in ("librarian.py", "project.py", "report.py", "render.py", "journals.py", "wos_manual.py",
+                       "tests/test_librarian.py", "docs/build_manual.py")
+           if "SPDX-License-Identifier: Apache-2.0" not in (HERE.parent / f).read_text(encoding="utf-8")[:300]]
+check("every tracked .py carries the SPDX header", not _nospdx, f"missing: {_nospdx}")
 
 
 def test_offline_suite():

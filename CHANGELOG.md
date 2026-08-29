@@ -4,6 +4,11 @@ All notable changes to scitech-librarian. Dates are release dates.
 
 ## 3.2.3 — 2026-08-29
 
+- Post-release code-review fixes (same day): `CITATION.cff` at 3.2.3; the
+  non-affiliation note names Crossref; SPDX headers on the test suite and
+  `docs/build_manual.py`; the suite now guards CITATION↔VERSION, the
+  backend list in the note, the headers, and the operative liability clause.
+
 - Licence: MIT → **Apache License 2.0** (`LICENSE`, `NOTICE`, SPDX headers,
   `CITATION.cff`). Same freedoms for users; adds an explicit patent grant, a
   contributor licence and a fuller limitation of liability. The README's
