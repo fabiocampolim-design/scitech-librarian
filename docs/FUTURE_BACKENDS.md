@@ -29,8 +29,10 @@ Google Scholar (no API; scraping breaches ToS — against this tool's stance).
 
 ## Features assessed as feasible (roadmap candidates)
 
-- **Zotero Web API push** (a run straight into a collection). Done in
-  3.2.1: `project.py oa`, BibTeX / CSL-JSON output, block keywords.
+- **Zotero Web API push** (a run straight into a collection) -- still open.
+  What 3.2.1 shipped instead: `project.py oa` (post-hoc Unpaywall pass),
+  BibTeX / CSL-JSON output, and `block:<name>` keywords so imports arrive
+  pre-tagged.
 - **Post-hoc de-duplication rule for repeated searches** — collapse runs with
   identical query strings in PRISMA "identified" instead of summing them
   (today: `project.py exclude` the reconnaissance run by hand).

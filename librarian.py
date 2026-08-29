@@ -51,7 +51,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.2.1"
+VERSION = "3.2.2"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -284,7 +284,10 @@ _ATOM, _OS, _ARX = ("{http://www.w3.org/2005/Atom}",
 
 def bk_arxiv(q, want):
     recs, start, total, pages = [], 0, 0, 0
-    while pages < 3:                       # hard page cap: arXiv is the slow one
+    # as many 100-record pages as --limit asks for (a hard 3-page cap used to
+    # silently truncate --limit > 300); the 3 s sleep between pages keeps it polite
+    max_pages = max(1, -(-want // 100)) if want else 1
+    while pages < max_pages:
         pages += 1
         p = urllib.parse.urlencode({"search_query": q, "start": start,
                                     "max_results": 100 if want else 1})
@@ -847,7 +850,7 @@ def main() -> int:
                          "on the embedded defaults)")
     ap.add_argument("--init-backends", action="store_true",
                     help="write the embedded backend definitions to backends.json "
-                         "for editing, then exit")
+                         "(next to .env / queries.json) for editing, then exit")
     ap.add_argument("--blocks", nargs="+", default=None)
     ap.add_argument("--backends", nargs="+", default=None,
                     help=f"default: every configured backend. choices: {list(BACKENDS)}")
@@ -892,7 +895,7 @@ def main() -> int:
         _project.setup_logging("librarian", args, OUTDIR)
 
     if args.init_backends:
-        out = HERE / "backends.json"
+        out = ROOT / "backends.json"        # next to .env and queries.json (project root for a tools/ drop-in)
         if out.exists():
             print(f"{out} already exists -- not overwriting.", file=sys.stderr)
             return 2

@@ -246,13 +246,16 @@ def main() -> int:
     if args.queries:
         BLOCKS = _LazyBlocks(load_blocks(args.queries))
         BLOCKS._loaded = True
+    log = None
     try:
         import project
-        project.setup_logging("wos_manual", args, outdir)
+        log = project.setup_logging("wos_manual", args, outdir)
     except ImportError:
-        pass
+        project = None
     globals()["OUTDIR"] = outdir
     {"prep": prep, "walk": walk, "ingest": ingest, "status": status}[args.cmd]()
+    if log is not None:
+        project.close_logging(log)
     return 0
 
 

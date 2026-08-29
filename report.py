@@ -365,6 +365,7 @@ def stats(d: dict) -> dict:
             retrieved[b] = retrieved.get(b, 0) + 1
             retrieved_block[r.get("block") or stem.rsplit("_", 1)[0]] += 1
     junk_by = Counter(r.get("backend", "?") for r in d["junk"])
+    junk_pair = Counter((r.get("block", "?"), r.get("backend", "?")) for r in d["junk"])
     n_fetched = sum(retrieved.values())
     uniq = d["unique"]
     n_unique = len(uniq)
@@ -387,7 +388,7 @@ def stats(d: dict) -> dict:
         for stem, recs in d["raw"].items():
             n, b = stem.rsplit("_", 1)
             tot = _int(counts.get(n, {}).get(b))
-            if tot and tot > limit and len(recs) + junk_by.get(b, 0) >= limit:
+            if tot and tot > limit and len(recs) + junk_pair.get((n, b), 0) >= limit:
                 capped.append((n, b, tot))
     # identification via other methods: manual members whose method is not "database"
     other_by = Counter()

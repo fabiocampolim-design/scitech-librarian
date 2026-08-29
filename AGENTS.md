@@ -152,7 +152,7 @@ Project reports go to `lit/reports/<stamp>-<level>/`. `--diff` with
 python journals.py fetch [--providers openalex scopus] [--refresh]
 python journals.py import-scimago FILE.csv --year 2024 [--all]
 python journals.py import-jcr FILE... [--year Y]      Journal Citation Reports downloads (see docs/JCR_IMPORT.md)
-python journals.py import-csv FILE --provider NAME --year Y --name-col C --value-col C [--issn-col C]
+python journals.py import-csv FILE --provider NAME --year Y --name-col C --value-col C [--issn-col C] [--delimiter D]
 python journals.py list [--missing METRIC]            journals seen in the directory; --missing = manual look-up list
 python journals.py show [--metric openalex_2yr] [--limit 50]
 ```
@@ -173,6 +173,7 @@ python wos_manual.py prep      query files + CHECKLIST.md in WoS grammar
 python wos_manual.py walk      copies each query to the clipboard in turn
 python wos_manual.py ingest    parses lit/manual_wos/ris/<BLOCK>.ris and registers manual sources
 python wos_manual.py status
+python wos_manual.py prep --queries other.json   (default ./queries.json)
 ```
 
 ## Record schema (every JSON record everywhere)
@@ -222,7 +223,8 @@ merge (by design: different questions, different blocks).
 - Scopus needs institutional entitlement (campus network/VPN); a 401/403
   is a network problem before it is a key problem.
 - Web of Science API is rarely licensed; the manual path is the norm.
-- arXiv receives at most two groups per block.
+- arXiv receives at most two groups per block; it is paged 100 records at a
+  time with a 3 s pause, so large `--limit` values are slow there.
 - `--limit` caps records per block and backend; large blocks are the
   most-cited slice, not the complete set.
 - OpenAlex indexes non-curated repositories; ~15 % of its records are

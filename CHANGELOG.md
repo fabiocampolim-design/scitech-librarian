@@ -2,6 +2,26 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.2 — 2026-08-29 (whole-project review)
+
+- arXiv driver pages as far as `--limit` asks (a hard 3-page cap silently
+  truncated `--limit` > 300).
+- The "hit the `--limit` cap" suggestion counts filtered venues per
+  block/backend pair, not per backend.
+- `--init-backends` writes `backends.json` next to `.env`/`queries.json`
+  (the project root for a `tools/` drop-in); `wos_manual.py` closes its
+  audit log; CI lints `render.py` too.
+- `.env.example` rewritten (no stale script name or consortium-specific
+  wording; `S2_API_KEY` / `CORE_API_KEY` placeholders); `.gitignore` covers
+  `queries*.json` except the example, `.pytest_cache/`,
+  `.claude/settings.local.json`.
+- Docs: manual lists every CLI flag (`--queries`, `--backends-file`,
+  `--timeout`, `--list`, `oa --members`, `import-csv --issn-col/--delimiter`,
+  `wos_manual --queries`), sample sizes corrected to the CC0 sample,
+  FUTURE_BACKENDS no longer claims the Zotero push is done. A docs-guard
+  test now fails when a `--help` flag is missing from the manual or
+  AGENTS.md. Samples regenerated under one version.
+
 ## 3.2.1 — 2026-08-28 (review follow-up)
 
 - Code-review pass: BibTeX keys survive malformed author names and >26

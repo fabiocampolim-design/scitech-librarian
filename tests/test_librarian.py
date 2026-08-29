@@ -27,7 +27,7 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         FAILED.append(name)
 
 
-import librarian as litscan  # noqa: E402
+import librarian as lib  # noqa: E402
 from librarian import (_q, _rec, is_junk, load_blocks, load_env,  # noqa: E402
                      q_ads, q_arxiv, q_crossref, q_inspire, q_openalex,
                      q_s2, q_scopus, q_wos, q_wos_bare, write_csv, write_ris)
@@ -93,16 +93,16 @@ check("example carries an arxiv_groups demonstration",
 print("\n.env loading (load_env)")
 with tempfile.TemporaryDirectory() as td:
     envf = Path(td) / ".env"
-    envf.write_text("# comment\n\nLITSCAN_TEST_A=hello\nLITSCAN_TEST_B=a=b\n", encoding="utf-8")
-    os.environ.pop("LITSCAN_TEST_A", None)
-    os.environ["LITSCAN_TEST_PRESET"] = "keep"
-    envf.write_text(envf.read_text() + "LITSCAN_TEST_PRESET=clobber\n", encoding="utf-8")
+    envf.write_text("# comment\n\nLIB_TEST_A=hello\nLIB_TEST_B=a=b\n", encoding="utf-8")
+    os.environ.pop("LIB_TEST_A", None)
+    os.environ["LIB_TEST_PRESET"] = "keep"
+    envf.write_text(envf.read_text() + "LIB_TEST_PRESET=clobber\n", encoding="utf-8")
     load_env(envf)
-    check("key=value parsed", os.environ.get("LITSCAN_TEST_A") == "hello")
-    check("value containing '=' survives", os.environ.get("LITSCAN_TEST_B") == "a=b")
+    check("key=value parsed", os.environ.get("LIB_TEST_A") == "hello")
+    check("value containing '=' survives", os.environ.get("LIB_TEST_B") == "a=b")
     check("existing environment is not overridden",
-          os.environ.get("LITSCAN_TEST_PRESET") == "keep")
-    for k in ("LITSCAN_TEST_A", "LITSCAN_TEST_B", "LITSCAN_TEST_PRESET"):
+          os.environ.get("LIB_TEST_PRESET") == "keep")
+    for k in ("LIB_TEST_A", "LIB_TEST_B", "LIB_TEST_PRESET"):
         os.environ.pop(k, None)
 
 # ---------------------------------------------------------------------------
@@ -120,7 +120,7 @@ check("real journal is not junk", not is_junk({"journal": "Physical Review B"}))
 check("missing journal is not junk", not is_junk({"journal": None}))
 
 # ---------------------------------------------------------------------------
-print("\nRIS write -> parse round-trip (litscan.write_ris vs wos_manual.parse_ris)")
+print("\nRIS write -> parse round-trip (lib.write_ris vs wos_manual.parse_ris)")
 import wos_manual  # noqa: E402
 
 recs = [_rec("Title One", 2020, "10.1/a", "J. One", ["Alpha, A.", "Beta, B."],
@@ -150,7 +150,7 @@ check("wos_manual blocks carry groups",
       all("groups" in b for b in wos_manual.BLOCKS.values()))
 
 # ---------------------------------------------------------------------------
-print("\nbackends against canned responses (litscan._get monkeypatched, no network)")
+print("\nbackends against canned responses (lib._get monkeypatched, no network)")
 
 CANNED = {}
 
@@ -162,8 +162,8 @@ def fake_get(url, headers=None, tries=3, timeout=None):
     raise AssertionError(f"unexpected URL in offline test: {url}")
 
 
-real_get = litscan._get
-litscan._get = fake_get
+real_get = lib._get
+lib._get = fake_get
 try:
     CANNED["api.openalex.org"] = json.dumps({
         "meta": {"count": 2, "next_cursor": None},
@@ -175,15 +175,15 @@ try:
             "authorships": [{"author": {"display_name": "A. Author"}}],
             "id": "https://openalex.org/W1", "cited_by_count": 5}],
     }).encode()
-    total, recs = litscan.bk_openalex("q", 10)
+    total, recs = lib.bk_openalex("q", 10)
     check("openalex total parsed", total == 2)
     check("openalex abstract rebuilt from inverted index",
           recs[0]["abstract"] == "Hello world")
     check("openalex doi normalised", recs[0]["doi"] == "10.1/oa")
     check("inverted index keeps repeated words (regression: telegram abstracts)",
-          litscan.TRANSFORMS["inverted_abstract"](
+          lib.TRANSFORMS["inverted_abstract"](
               {"the": [0, 2], "cat": [1], "hat": [3]}) == "the cat the hat")
-    total, recs = litscan.bk_openalex("q", 0)
+    total, recs = lib.bk_openalex("q", 0)
     check("openalex counts-only fetches no records", total == 2 and recs == [])
 
     CANNED["export.arxiv.org"] = (
@@ -194,7 +194,7 @@ try:
         b'<entry><title>ArXiv paper</title><published>2022-01-01</published>'
         b'<id>http://arxiv.org/abs/2201.00001</id><summary>S</summary>'
         b'<author><name>B. Author</name></author></entry></feed>')
-    total, recs = litscan.bk_arxiv("q", 10)
+    total, recs = lib.bk_arxiv("q", 10)
     check("arxiv total parsed from Atom", total == 1)
     check("arxiv preprint journal label", recs[0]["journal"] == "arXiv preprint")
     check("arxiv year from published date", recs[0]["year"] == "2022")
@@ -202,17 +202,17 @@ try:
     for var in ("ADS_TOKEN", "SCOPUS_API_KEY"):
         os.environ.pop(var, None)
     try:
-        litscan.bk_ads("q", 0)
+        lib.bk_ads("q", 0)
         check("ads without token raises with pointer", False, "no exception")
     except RuntimeError as e:
         check("ads without token raises with pointer", "ADS_TOKEN" in str(e))
     try:
-        litscan.bk_scopus("q", 0)
+        lib.bk_scopus("q", 0)
         check("scopus without key raises", False, "no exception")
     except RuntimeError as e:
         check("scopus without key raises", "SCOPUS_API_KEY" in str(e))
 finally:
-    litscan._get = real_get
+    lib._get = real_get
 
 # ---------------------------------------------------------------------------
 print("\ndeclarative machinery: path DSL, syntax builder, config overlay")
@@ -253,13 +253,13 @@ with tempfile.TemporaryDirectory() as td:
           len(compiled["mybase"]) == 3 and callable(compiled["mybase"][0]))
     CANNED.clear()
     CANNED["https://x"] = json.dumps({"n": 1, "r": [{"t": "Hello"}]}).encode()
-    litscan._get = fake_get
+    lib._get = fake_get
     try:
         total, recs = compiled["mybase"][0]("q", 5)
         check("added backend fetches via generic runner",
               total == 1 and recs[0]["title"] == "Hello")
     finally:
-        litscan._get = real_get
+        lib._get = real_get
 
 check("every embedded default compiles",
       all(callable(v[0]) and callable(v[1])
@@ -276,7 +276,7 @@ def recording_get(url, headers=None, tries=3, timeout=None):
     return fake_get(url, headers, tries, timeout)
 
 
-litscan._get = recording_get
+lib._get = recording_get
 try:
     # cursor paging: two OpenAlex pages, cursor * -> NEXT -> exhausted
     CANNED.clear()
@@ -286,7 +286,7 @@ try:
              "results": [{"display_name": "P2", "cited_by_count": 0}]}
     CANNED["cursor=%2A"] = json.dumps(page).encode()
     CANNED["cursor=NEXT"] = json.dumps(page2).encode()
-    total, recs = litscan.bk_openalex("q", 10)
+    total, recs = lib.bk_openalex("q", 10)
     check("cursor paging walks both pages",
           [r["title"] for r in recs] == ["P1", "P2"])
 
@@ -300,7 +300,7 @@ try:
     CANNED["start=0"] = json.dumps(sp1).encode()
     CANNED["start=25"] = json.dumps(sp2).encode()
     SEEN_HEADERS.clear()
-    total, recs = litscan.bk_scopus("q", 30)
+    total, recs = lib.bk_scopus("q", 30)
     check("offset paging requests the next page then stops on empty",
           total == 30 and len(recs) == 1)
     check("error entries are dropped", recs[0]["title"] == "S1")
@@ -317,7 +317,7 @@ try:
     CANNED["adsabs"] = json.dumps({"response": {"numFound": 1, "docs": [
         {"title": ["T"], "bibcode": "2020ApJ...1B", "author": ["A"]}]}}).encode()
     SEEN_HEADERS.clear()
-    total, recs = litscan.bk_ads("q", 5)
+    total, recs = lib.bk_ads("q", 5)
     check("Bearer auth format applied",
           SEEN_HEADERS.get("Authorization") == "Bearer tok123")
     check("ads url templated from bibcode",
@@ -328,7 +328,7 @@ try:
     CANNED["inspirehep"] = json.dumps({"hits": {"total": 1, "hits": [
         {"id": "12345", "metadata": {"titles": [{"title": "I1"}],
                                      "earliest_date": "2019-07-01"}}]}}).encode()
-    total, recs = litscan.bk_inspire("q", 5)
+    total, recs = lib.bk_inspire("q", 5)
     check("inspire url falls back to template from id",
           recs[0]["url"] == "https://inspirehep.net/literature/12345")
     check("inspire default journal applied", recs[0]["journal"] == "INSPIRE record")
@@ -340,12 +340,12 @@ try:
         {"title": ["C", "One"], "DOI": "10.1/c",
          "issued": {"date-parts": [[2018, 3]]},
          "author": [{"given": "Ada", "family": "Lovelace"}]}]}}).encode()
-    total, recs = litscan.bk_crossref("q", 5)
+    total, recs = lib.bk_crossref("q", 5)
     check("crossref multi-part title joined", recs[0]["title"] == "C One")
     check("crossref given_family transform", recs[0]["authors"] == ["Ada Lovelace"])
     check("crossref year from nested date-parts", recs[0]["year"] == "2018")
 finally:
-    litscan._get = real_get
+    lib._get = real_get
     for k in ("SCOPUS_API_KEY", "SCOPUS_INSTTOKEN", "ADS_TOKEN"):
         os.environ.pop(k, None)
 
@@ -498,11 +498,11 @@ print("\nlibrarian -> report wiring")
 import argparse as _ap  # noqa: E402
 _ns = _ap.Namespace(queries=None, blocks=["X"], counts_only=False, limit=7,
                     keep_junk=False, pdfs=True)
-_m = litscan.run_meta("20260102T030405", _ns, ["openalex"], 0.0, False)
+_m = lib.run_meta("20260102T030405", _ns, ["openalex"], 0.0, False)
 check("run_meta records limit, flags and backend endpoint",
       _m["limit"] == 7 and _m["pdfs"] and _m["started"] == "2026-01-02 03:04:05"
       and _m["backend_config"]["openalex"]["url"].startswith("https://api.openalex.org"))
-check("run_meta reports the tool version", _m["version"] == litscan.VERSION)
+check("run_meta reports the tool version", _m["version"] == lib.VERSION)
 
 import time
 
@@ -678,13 +678,13 @@ with tempfile.TemporaryDirectory() as td:
         {"SJRList": {"SJR": [{"@year": "2023", "$": "1.5"}]}, "SNIPList": {"SNIP": [{"@year": "2023", "$": "1.1"}]},
          "citeScoreYearInfoList": {"citeScoreYearInfo": [{"@year": "2023", "citeScoreInformationList": [
              {"citeScoreInfo": [{"citeScore": "6.0"}]}]}]}}]}}).encode()
-    litscan._get = fake_get
+    lib._get = fake_get
     os.environ["SCOPUS_API_KEY"] = "k"
     try:
         journals.save_store(od, {})
         st = journals.fetch(od, ("openalex", "scopus"), log=_lg.getLogger("t"))
     finally:
-        litscan._get = real_get
+        lib._get = real_get
         os.environ.pop("SCOPUS_API_KEY", None)
     store = journals.load_store(od)
     jp = journals.lookup(store, {"journal": "J. Phys."})
@@ -729,16 +729,16 @@ with tempfile.TemporaryDirectory() as td:
             _rec("Bib Two", 2020, "", "arXiv preprint", ["Alpha, A."], "http://arxiv.org/abs/x", "", 0)]
     for r in recs:
         r["block"] = "X"
-    litscan.write_bibtex(recs, tdp / "r.bib")
+    lib.write_bibtex(recs, tdp / "r.bib")
     bib = (tdp / "r.bib").read_text(encoding="utf-8")
     weird = [_rec("10% of H_2O & $x$", 2020, "", "J", [", A.", "  "], ""),
              _rec("No author", "", "", "", [], "")]
-    litscan.write_bibtex(weird, tdp / "w.bib")
+    lib.write_bibtex(weird, tdp / "w.bib")
     wb = (tdp / "w.bib").read_text(encoding="utf-8")
     check("bibtex: malformed author names do not crash; specials escaped",
           "@article{anon2020," in wb and "@misc{anonnd," in wb and "10\\% of H\\_2O \\& \\$x\\$" in wb)
     seen_ = set()
-    keys = [litscan._bib_key({"authors": [], "year": ""}, seen_) for _ in range(30)]
+    keys = [lib._bib_key({"authors": [], "year": ""}, seen_) for _ in range(30)]
     check("bibtex: 30 colliding keys stay legal (a..z then -27, -28 ...)",
           keys[1] == "anonnda" and keys[26] == "anonndz" and keys[27] == "anonnd-28" and len(set(keys)) == 30
           and all(ch not in "{}|" for k in keys for ch in k))
@@ -750,12 +750,12 @@ with tempfile.TemporaryDirectory() as td:
     back = project.parse_bibtex(bib)
     check("bibtex round-trips through project.parse_bibtex",
           len(back) == 2 and back[0]["doi"] == "10.1/b1" and back[0]["authors"] == ["Alpha, A.", "Beta, B."])
-    litscan.write_csl(recs, tdp / "r.csl.json")
+    lib.write_csl(recs, tdp / "r.csl.json")
     csl = json.loads((tdp / "r.csl.json").read_text(encoding="utf-8"))
     check("csl-json: author family/given split, issued date-parts, DOI",
           csl[0]["author"][0] == {"family": "Alpha", "given": "A."} and csl[0]["issued"] == {"date-parts": [[2020]]}
           and csl[0]["DOI"] == "10.1/b1")
-    litscan.write_ris(recs, tdp / "r.ris")
+    lib.write_ris(recs, tdp / "r.ris")
     check("ris carries the block as a keyword", "KW  - block:X" in (tdp / "r.ris").read_text(encoding="utf-8"))
 
     # inbox: a malformed file stays put, the good one is ingested
@@ -773,11 +773,11 @@ with tempfile.TemporaryDirectory() as td:
     CANNED.clear()
     CANNED["api.unpaywall.org"] = json.dumps({"is_oa": True, "best_oa_location": {"url_for_pdf": "http://pdf", "url": "http://u", "version": "publishedVersion"}}).encode()
     (od / "manual" / "good" / "records.json").write_text(json.dumps([dict(_rec("Good", 2020, "10.1/oa", "J", [], ""), block="X", backend="manual:good")]), encoding="utf-8")
-    litscan._get = fake_get
+    lib._get = fake_get
     try:
         st = project.oa_pass(od, log=_lg2.getLogger("t2"))
     finally:
-        litscan._get = real_get
+        lib._get = real_get
     got = json.loads((od / "manual" / "good" / "records.json").read_text(encoding="utf-8"))[0]
     check("oa pass: manual records enriched and cached",
           st["oa"] == 1 and got.get("is_oa") is True and got.get("oa_pdf") == "http://pdf"
@@ -789,11 +789,11 @@ with tempfile.TemporaryDirectory() as td:
     def failing_get(url, headers=None, tries=3, timeout=None):
         raise RuntimeError("Unpaywall down")
     (od / "manual" / "good" / "records.json").write_text(json.dumps([dict(_rec("Later", 2020, "10.1/later", "J", [], ""), block="X", backend="manual:good")]), encoding="utf-8")
-    litscan._get = failing_get
+    lib._get = failing_get
     try:
         project.oa_pass(od, log=_lg2.getLogger("t2"))
     finally:
-        litscan._get = real_get
+        lib._get = real_get
     cache_after = json.loads((od / "unpaywall_cache.json").read_text(encoding="utf-8"))
     check("oa pass: a failed lookup is not cached (will be retried)", "10.1/later" not in cache_after)
     # merge keeps provenance of already-merged records
@@ -816,14 +816,14 @@ with tempfile.TemporaryDirectory() as td:
     (od / "runs" / "20260101T000000" / "records" / "X_openalex.json").write_text(json.dumps(
         [dict(_rec("P1", 2020, "10.1/p1", "J. A", [], ""), block="X", backend="openalex"),
          dict(_rec("P2", 2020, "10.1/p2", "J. B", [], ""), block="X", backend="openalex")]), encoding="utf-8")
-    litscan._get = budget_get
+    lib._get = budget_get
     calls = []
     real_fo = journals.fetch_openalex
     journals.fetch_openalex = lambda name, issns: calls.append(name) or real_fo(name, issns)
     try:
         st3 = journals.fetch(od, ("openalex",), log=_lg2.getLogger("t2"))
     finally:
-        litscan._get = real_get
+        lib._get = real_get
         journals.fetch_openalex = real_fo
     check("journals: after the budget error OpenAlex is not asked again", len(calls) == 1 and st3["openalex"] == 0)
 
@@ -861,6 +861,63 @@ with tempfile.TemporaryDirectory() as td:
           "; ".join((r.stderr or "")[-200:] for r in (r1, r2, r3, r4, r5) if r.returncode))
     check("CLI: audit logs written for each invocation",
           len(list((Path(td) / "logs").glob("*.log"))) >= 5)
+
+# ---------------------------------------------------------------------------
+print("\nreview 2026-08-28: arXiv cap, capped heuristic, docs guard")
+
+# arXiv: --limit above 300 must page on (regression: hard 3-page cap ignored --limit)
+_arx_calls = []
+
+
+def arx_get(url, headers=None, tries=3, timeout=None):
+    _arx_calls.append(url)
+    import urllib.parse as _up
+    start = int(_up.parse_qs(_up.urlparse(url).query).get("start", ["0"])[0])
+    entries = "".join(f"<entry><title>P{start + i}</title><published>2020-01-01</published>"
+                      f"<id>http://arxiv.org/abs/{start + i}</id></entry>" for i in range(100))
+    return (b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" '
+            b'xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" '
+            b'xmlns:arxiv="http://arxiv.org/schemas/atom">'
+            b'<opensearch:totalResults>1000</opensearch:totalResults>' + entries.encode() + b'</feed>')
+
+
+real_sleep = lib.time.sleep
+lib._get, lib.time.sleep = arx_get, lambda s: None
+try:
+    total, recs = lib.bk_arxiv("q", 450)
+finally:
+    lib._get, lib.time.sleep = real_get, real_sleep
+check("arxiv: --limit 450 fetches five pages, not three", len(recs) == 450 and len(_arx_calls) == 5,
+      f"{len(recs)} records over {len(_arx_calls)} calls")
+
+# capped heuristic: junk from another block must not mark this pair as capped
+_d = {"counts": {"A": {"openalex": 500}, "B": {"openalex": 500}}, "backends": ["openalex"],
+      "block_names": ["A", "B"], "meta": {"limit": 3},
+      "raw": {"A_openalex": [dict(_rec(f"a{i}", 2020, f"10.1/a{i}", "J", [], ""), block="A", backend="openalex") for i in range(3)],
+              "B_openalex": [dict(_rec("b0", 2020, "10.1/b0", "J", [], ""), block="B", backend="openalex")]},
+      "junk": [dict(_rec("j", 2020, "10.1/j", "Zenodo", [], ""), block="A", backend="openalex")] * 2,
+      "unique": [], "project": None}
+check("capped heuristic counts junk per block/backend (B is not capped by A's junk)",
+      sorted(n for n, _, _ in report.stats(_d)["capped"]) == ["A"])
+
+# docs guard: every CLI flag of every script (and subcommand) is in the manual and AGENTS.md
+import re as _re
+_MAN = (HERE.parent / "docs" / "USER_MANUAL.md").read_text(encoding="utf-8")
+_AG = (HERE.parent / "AGENTS.md").read_text(encoding="utf-8")
+_SUBS = {"project.py": ["init", "status", "ingest", "oa", "exclude", "include", "label", "alias"],
+         "journals.py": ["fetch", "import-scimago", "import-csv", "import-jcr", "list", "show"]}
+_missing = []
+for script in ("librarian.py", "project.py", "report.py", "journals.py", "wos_manual.py"):
+    for sub in [[]] + [[c] for c in _SUBS.get(script, [])]:
+        h = subprocess.run([sys.executable, str(HERE.parent / script), *sub, "--help"],
+                           capture_output=True, text=True).stdout
+        for fl in sorted(set(_re.findall(r"(?<![\w-])--[a-z][a-z-]+", h))):
+            if fl in ("--help", "--version"):
+                continue
+            for doc, name in ((_MAN, "manual"), (_AG, "AGENTS")):
+                if fl not in doc:
+                    _missing.append(f"{name}:{script}{' ' + sub[0] if sub else ''} {fl}")
+check("docs guard: every CLI flag appears in USER_MANUAL.md and AGENTS.md", not _missing, "; ".join(_missing))
 
 
 def test_offline_suite():

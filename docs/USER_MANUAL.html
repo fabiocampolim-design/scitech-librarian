@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-08-28" />
+  <meta name="dcterms.date" content="2026-08-29" />
   <title>scitech-librarian - User Manual</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian - User Manual</h1>
-<p class="subtitle">version 3.2</p>
-<p class="date">2026-08-28</p>
+<p class="subtitle">version 3.2.2</p>
+<p class="date">2026-08-29</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -324,8 +324,9 @@ grammar.</li>
 <code>system</code>) in its own group is the usual cause of counts in
 the tens of thousands.</li>
 <li><code>arxiv_groups</code> names which (at most two) groups arXiv
-receives; arXiv hangs on deeply nested booleans. Default: the first
-two.</li>
+receives; arXiv hangs on deeply nested booleans. Default: the first two.
+arXiv is paged 100 records at a time with a 3 s pause, so a large
+<code>--limit</code> is slow there.</li>
 <li>The most informative block is a deliberate intersection of two
 literatures you suspect do not talk to each other. A near-zero result is
 a finding — <em>if</em> you then read every hit.</li>
@@ -344,7 +345,12 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --no-report</code></pre>
+python librarian.py --no-report
+python librarian.py --queries other.json      # another query file (default ./queries.json)
+python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
+python librarian.py --timeout 60              # per-request timeout in seconds (default 45)
+python librarian.py --list                    # blocks and backend readiness, then exit
+python librarian.py --selftest                # ping every backend, then exit</code></pre>
 <p>Complete parameter list: <code>python librarian.py --help</code>.
 Every option has a default; <code>--outdir</code>,
 <code>--verbose</code>, <code>--quiet</code> and <code>--log-dir</code>
@@ -435,7 +441,8 @@ discovered:</p>
 <pre><code>python project.py exclude 20260814T223331      # a test run you do not want in reports
 python project.py label 20260828T095041 &quot;August full scan&quot;
 python project.py alias X CD                    # block renamed between runs
-python project.py oa                            # Unpaywall pass over every member that lacks OA data</code></pre>
+python project.py oa                            # Unpaywall pass over every member that lacks OA data
+python project.py oa --members 20260828T095041  # restrict the pass to these member ids</code></pre>
 <p><code>oa</code> is the post-hoc open-access lookup: runs made without
 <code>--pdfs</code> and manual sources get <code>is_oa</code> /
 <code>oa_pdf</code> fields (legal copies only, cached in
@@ -538,8 +545,8 @@ run log; environment</td>
 </tr>
 </tbody>
 </table>
-<p>Sizes, from the shipped sample (four blocks, six databases, 2,216
-unique records): 5, 106 and 702 PDF pages.</p>
+<p>Sizes, from the shipped sample (four blocks, three CC0 databases,
+1,226 unique records): 6, 68 and 427 PDF pages.</p>
 <h2 id="formats">7.4 Formats</h2>
 <p><code>md</code> (Markdown; renders on GitHub), <code>html</code>
 (self-contained, light/dark, printable, SVG diagram), <code>tex</code>
@@ -655,7 +662,7 @@ project mode — the absence of any manual source.</p>
 python journals.py fetch --providers openalex --refresh
 python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
 python journals.py import-jcr JCR_JournalResults_*.csv       # Journal Citation Reports downloads
-python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value
+python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value        [--issn-col ISSN] [--delimiter &quot;;&quot;]                  # any name/value table; ISSN column improves matching
 python journals.py list --missing jcr_if                      # journals still to look up by hand
 python journals.py show --metric scopus_citescore</code></pre>
 <p>Store: <code>lit/journals/metrics.json</code>, one entry per journal
@@ -730,7 +737,8 @@ booleans. Web of Science is therefore a manual job, made small:</p>
 <pre><code>python wos_manual.py prep      # query files + CHECKLIST.md in WoS grammar
 python wos_manual.py walk      # copies each query to the clipboard in turn
 python wos_manual.py ingest    # RIS exports -&gt; records, registered as manual sources
-python wos_manual.py status</code></pre>
+python wos_manual.py status
+python wos_manual.py prep --queries other.json   # a different query file (default ./queries.json)</code></pre>
 <p>The checklist encodes the UI settings that silently break queries
 (Core Collection, Advanced search, editions, tagged vs bare form).</p>
 <h1 id="logs-and-audit">10. Logs and audit</h1>
@@ -780,7 +788,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (178 checks) and CI.</p>
+logs; an offline test suite (181 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are

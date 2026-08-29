@@ -20,6 +20,6 @@ jobs:
       - name: Static check (pyflakes)
         run: |
           python -m pip install --quiet pyflakes
-          python -m pyflakes librarian.py project.py report.py journals.py wos_manual.py tests docs
+          python -m pyflakes librarian.py project.py report.py render.py journals.py wos_manual.py tests docs
       - name: Run offline test suite (stdlib only, no network, no keys)
         run: python tests/test_librarian.py

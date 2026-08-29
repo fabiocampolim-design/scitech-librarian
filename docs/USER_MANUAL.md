@@ -1,7 +1,7 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.2"
-date: "2026-08-28"
+subtitle: "version 3.2.2"
+date: "2026-08-29"
 ---
 
 # 1. What it is
@@ -126,7 +126,8 @@ Rules of thumb:
 - A lone generic word (`model`, `structure`, `system`) in its own group is
   the usual cause of counts in the tens of thousands.
 - `arxiv_groups` names which (at most two) groups arXiv receives; arXiv
-  hangs on deeply nested booleans. Default: the first two.
+  hangs on deeply nested booleans. Default: the first two. arXiv is paged
+  100 records at a time with a 3 s pause, so a large `--limit` is slow there.
 - The most informative block is a deliberate intersection of two
   literatures you suspect do not talk to each other. A near-zero result is
   a finding — *if* you then read every hit.
@@ -148,6 +149,11 @@ python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SS
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
 python librarian.py --no-report
+python librarian.py --queries other.json      # another query file (default ./queries.json)
+python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
+python librarian.py --timeout 60              # per-request timeout in seconds (default 45)
+python librarian.py --list                    # blocks and backend readiness, then exit
+python librarian.py --selftest                # ping every backend, then exit
 ```
 
 Complete parameter list: `python librarian.py --help`. Every option has a
@@ -205,6 +211,7 @@ python project.py exclude 20260814T223331      # a test run you do not want in r
 python project.py label 20260828T095041 "August full scan"
 python project.py alias X CD                    # block renamed between runs
 python project.py oa                            # Unpaywall pass over every member that lacks OA data
+python project.py oa --members 20260828T095041  # restrict the pass to these member ids
 ```
 
 `oa` is the post-hoc open-access lookup: runs made without `--pdfs` and
@@ -288,8 +295,8 @@ project), a PRISMA flow with both identification columns, and, when
 | `intermediate` | + every unique record; source overlap ("found only here"); year / venue / author distributions; journal metrics; filtered venues; errors; open-access stats; count history |
 | `full` | + every record with full abstract, author list and which sources found it; per-source raw lists before deduplication; the filtered records; backend configuration; project.json and source.json files; the run log; environment |
 
-Sizes, from the shipped sample (four blocks, six databases, 2,216 unique
-records): 5, 106 and 702 PDF pages.
+Sizes, from the shipped sample (four blocks, three CC0 databases, 1,226
+unique records): 6, 68 and 427 PDF pages.
 
 ## 7.4 Formats
 
@@ -363,7 +370,7 @@ python journals.py fetch                          # every journal seen in the di
 python journals.py fetch --providers openalex --refresh
 python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
 python journals.py import-jcr JCR_JournalResults_*.csv       # Journal Citation Reports downloads
-python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value
+python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value        [--issn-col ISSN] [--delimiter ";"]                  # any name/value table; ISSN column improves matching
 python journals.py list --missing jcr_if                      # journals still to look up by hand
 python journals.py show --metric scopus_citescore
 ```
@@ -405,6 +412,7 @@ python wos_manual.py prep      # query files + CHECKLIST.md in WoS grammar
 python wos_manual.py walk      # copies each query to the clipboard in turn
 python wos_manual.py ingest    # RIS exports -> records, registered as manual sources
 python wos_manual.py status
+python wos_manual.py prep --queries other.json   # a different query file (default ./queries.json)
 ```
 
 The checklist encodes the UI settings that silently break queries (Core
@@ -456,7 +464,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (178 checks) and
+with a per-year series; audit logs; an offline test suite (181 checks) and
 CI.
 
 Limitations, all by design or by the world:

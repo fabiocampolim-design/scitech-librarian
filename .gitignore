@@ -4,7 +4,8 @@
 
 # Your real research queries (the repo ships queries.example.json only --
 # your query blocks can reveal unpublished research directions)
-queries.json
+queries*.json
+!queries.example.json
 
 # All run output -- every research directory, whatever it is called
 lit/
@@ -19,3 +20,7 @@ scimagojr*.csv
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Claude Code per-machine permissions
+.claude/settings.local.json

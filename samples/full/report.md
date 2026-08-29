@@ -7367,7 +7367,7 @@ Mivehvar, Farokh; Piazza, Francesco; Donner, Tobias; Ritsch, Helmut. Adv.Phys. (
 
 ## Journal metrics
 
-Metric: OpenAlex 2-yr mean citedness (openalex_2yr), from lit/journals/metrics.json (journals.py). Values are kept per year; the evolution table shows every year on file for venues that appear in this record set.
+Metric: OpenAlex 2-yr mean citedness (openalex_2yr), from lit/journals/metrics.json (journals.py). Values are kept per year; OpenAlex figures are snapshots taken in the fetch year (the API serves only current values); the evolution table shows every year on file for venues that appear in this record set.
 
 ### Venues in this set by OpenAlex 2-yr mean citedness
 
@@ -8869,7 +8869,7 @@ mode:     full fetch (limit 300)
 | Python | 3.13.11 |
 | Platform | win32 |
 | Tool version | 3.2 |
-| Report generated | 2026-08-28 16:08 |
+| Report generated | 2026-08-29 17:05 |
 
 ## Suggestions
 
