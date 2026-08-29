@@ -919,6 +919,17 @@ for script in ("librarian.py", "project.py", "report.py", "journals.py", "wos_ma
                     _missing.append(f"{name}:{script}{' ' + sub[0] if sub else ''} {fl}")
 check("docs guard: every CLI flag appears in USER_MANUAL.md and AGENTS.md", not _missing, "; ".join(_missing))
 
+# githubify rule 17: the warranty disclaimer and limitation of liability must
+# survive every rewrite -- in LICENSE and, visibly, in the README.
+_licence = (HERE.parent / "LICENSE").read_text(encoding="utf-8", errors="replace")
+_readme = (HERE.parent / "README.md").read_text(encoding="utf-8", errors="replace")
+check("LICENSE disclaims warranty and liability",
+      "WITHOUT WARRANTY OF ANY KIND" in _licence and "BE LIABLE" in _licence, "clause missing")
+check("README carries a visible Disclaimer under Licence",
+      "### Disclaimer" in _readme and "without warranty of any kind" in _readme
+      and "liable" in _readme and _readme.index("## Licence") < _readme.index("### Disclaimer"),
+      "disclaimer missing")
+
 
 def test_offline_suite():
     """pytest entry point: the module body above is the suite."""

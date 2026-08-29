@@ -144,7 +144,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 181 checks run with no network and no keys (backends
+- **Offline-testable.** 183 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux and Windows, Python 3.9 and 3.13.
@@ -539,7 +539,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-181 checks, stdlib only, no network and no keys — backends run against
+183 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -562,7 +562,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 181-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 183-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |
@@ -571,3 +571,15 @@ August 28, 2026. In
 
 MIT — see `LICENSE`. And respect the terms of service of every database you
 query; this tool is built to make that the easy path.
+
+### Disclaimer
+
+This software is provided **as is**, without warranty of any kind, express
+or implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and non-infringement. In no event shall the
+author be liable for any claim, damages or other liability — whether in
+contract, tort or otherwise — arising from, out of or in connection with the
+software or its use. You alone are responsible for using it lawfully, for
+the queries you run and the records you keep, and for complying with the
+terms of service and licence of every database, API and dataset it touches
+on your behalf.
