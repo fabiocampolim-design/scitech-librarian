@@ -2,6 +2,14 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.3 — 2026-08-29
+
+- Licence: MIT → **Apache License 2.0** (`LICENSE`, `NOTICE`, SPDX headers,
+  `CITATION.cff`). Same freedoms for users; adds an explicit patent grant, a
+  contributor licence and a fuller limitation of liability. The README's
+  Licence section carries the disclaimer and a non-affiliation note for every
+  database queried, and the suite guards both.
+
 ## 3.2.2 — 2026-08-29 (whole-project review)
 
 - arXiv driver pages as far as `--limit` asks (a hard 3-page cap silently

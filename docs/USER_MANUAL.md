@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.2.2"
+subtitle: "version 3.2.3"
 date: "2026-08-29"
 ---
 
@@ -504,6 +504,6 @@ Windows under Python 3.9 and 3.13.
 
 # 14. Licence and conduct
 
-MIT. The tool is built to make respecting each database's terms of
+Apache License 2.0. The tool is built to make respecting each database's terms of
 service the easy path: documented APIs only, rate limits honoured, a
 contact address in every request, no scraping, no paywall circumvention.

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Fabio Campolim
 """
 librarian.py -- automated multi-database literature scan.
 
@@ -51,7 +53,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.2.2"
+VERSION = "3.2.3"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that

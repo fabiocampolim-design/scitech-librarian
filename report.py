@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Fabio Campolim
 """
 report.py -- literature-search reports for one run or a whole research
 directory, with a PRISMA 2020 flow.

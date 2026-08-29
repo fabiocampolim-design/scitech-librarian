@@ -924,9 +924,9 @@ check("docs guard: every CLI flag appears in USER_MANUAL.md and AGENTS.md", not 
 _licence = (HERE.parent / "LICENSE").read_text(encoding="utf-8", errors="replace")
 _readme = (HERE.parent / "README.md").read_text(encoding="utf-8", errors="replace")
 check("LICENSE disclaims warranty and liability",
-      "WITHOUT WARRANTY OF ANY KIND" in _licence and "BE LIABLE" in _licence, "clause missing")
+      "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND" in _licence and "Limitation of Liability" in _licence, "clause missing")
 check("README carries a visible Disclaimer under Licence",
-      "### Disclaimer" in _readme and "without warranty of any kind" in _readme
+      "### Disclaimer" in _readme and "without warrant" in _readme
       and "liable" in _readme and _readme.index("## Licence") < _readme.index("### Disclaimer"),
       "disclaimer missing")
 

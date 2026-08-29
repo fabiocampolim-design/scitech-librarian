@@ -4,7 +4,7 @@ title: "scitech-librarian: a reproducible literature-search instrument with rese
 type: software
 version: "3.2.2"
 date-released: "2026-08-29"
-license: MIT
+license: Apache-2.0
 repository-code: "https://github.com/fabiocampolim-design/scitech-librarian"
 authors:
   - family-names: Campolim

@@ -4,7 +4,7 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![Dependencies: stdlib only](https://img.shields.io/badge/dependencies-stdlib%20only-brightgreen)](librarian.py)
 [![Plays by the rules](https://img.shields.io/badge/APIs-documented%20%26%20ToS--compliant-blueviolet)](#plays-by-the-rules)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 **One query, every scholarly database — and a research directory that
 remembers every search, every record you brought in by hand, and writes the
@@ -569,17 +569,27 @@ August 28, 2026. In
 
 ## Licence
 
-MIT — see `LICENSE`. And respect the terms of service of every database you
-query; this tool is built to make that the easy path.
+Apache License 2.0 — see `LICENSE` and `NOTICE`. You may use, modify and
+redistribute it, including commercially, provided the licence and notice
+travel with it; contributions are accepted under the same terms (section 5).
+And respect the terms of service of every database you query; this tool is
+built to make that the easy path.
 
 ### Disclaimer
 
-This software is provided **as is**, without warranty of any kind, express
-or implied, including but not limited to the warranties of merchantability,
-fitness for a particular purpose and non-infringement. In no event shall the
-author be liable for any claim, damages or other liability — whether in
-contract, tort or otherwise — arising from, out of or in connection with the
-software or its use. You alone are responsible for using it lawfully, for
-the queries you run and the records you keep, and for complying with the
-terms of service and licence of every database, API and dataset it touches
-on your behalf.
+This software is provided **as is**, without warranties or conditions of any
+kind, express or implied, including but not limited to any warranty of
+merchantability, fitness for a particular purpose, title or non-infringement.
+In no event shall the author be liable for any damages of any character —
+direct, indirect, special, incidental or consequential — or for any other
+claim or liability, whether in contract, tort or otherwise, arising from,
+out of or in connection with the software or its use, even if advised of the
+possibility of such damages (Apache License 2.0, sections 7 and 8).
+You alone are responsible for using it lawfully, for the queries you run
+and the records you keep, and for complying with the terms of service and
+licence of every database, API and dataset it touches on your behalf.
+
+This is an independent project. It is not affiliated with, endorsed by or
+supported by OpenAlex, NASA ADS, arXiv, INSPIRE-HEP, Elsevier (Scopus),
+Clarivate (Web of Science, JCR), Semantic Scholar, CORE, Unpaywall or
+SCImago; their names are used only to identify the services it queries.

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Fabio Campolim
 """
 journals.py -- journal metrics for a research directory (impact-factor-like
 figures, kept by year so their evolution is visible).
