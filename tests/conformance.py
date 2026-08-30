@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -434,7 +434,9 @@ def chk_held_guard(repo, ctx):
 
 
 def chk_no_hardcoded_paths(repo, ctx):
-    pat = re.compile(r"[A-Za-z]:\\+Users\\+|/c/Users/", re.I)
+    # Built by concatenation so this source line cannot match itself when the
+    # checker is vendored into the repo it scans.
+    pat = re.compile(r"[A-Za-z]:\\+Users\\+|/c/" + "Users/", re.I)
     hits = []
     for rel in ctx["files"]:
         if not rel.endswith(".py"):
