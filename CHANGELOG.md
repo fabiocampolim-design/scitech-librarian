@@ -2,6 +2,20 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.8 — 2026-08-31
+
+- Check-count guard hardened end to end: `build_manual.py` refuses to sync
+  the count from a suite run that crashed before its summary (a red but
+  *complete* run still syncs); the count phrase pattern lives once, in
+  `build_manual.CHECK_COUNT_RE`, and the suite imports it; the guard runs in
+  the summary block (no "keep this last" fragility), holds each doc
+  separately to the real count — README, manual, `AGENTS.md` (which now
+  quotes the count) and the built `USER_MANUAL.html` — and a doc with no
+  count sentence at all now fails instead of passing silently.
+- The no-pandoc HTML fallback keeps the manual's front-matter title,
+  subtitle and date, so the "HTML carries the version" guard holds on
+  machines without pandoc too; guarded by the suite.
+
 ## 3.2.7 — 2026-08-31
 
 - The v3.2.6 README quoted "189 checks" while the manual and the suite said

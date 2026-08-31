@@ -909,6 +909,8 @@ check("capped heuristic counts junk per block/backend (B is not capped by A's ju
 import re as _re
 _MAN = (HERE.parent / "docs" / "USER_MANUAL.md").read_text(encoding="utf-8")
 _AG = (HERE.parent / "AGENTS.md").read_text(encoding="utf-8")
+sys.path.insert(0, str(HERE.parent / "docs"))
+import build_manual as _bm  # noqa: E402
 _SUBS = {"project.py": ["init", "status", "ingest", "oa", "exclude", "include", "label", "alias"],
          "journals.py": ["fetch", "import-scimago", "import-csv", "import-jcr", "list", "show"]}
 _missing = []
@@ -942,6 +944,13 @@ check("CITATION.cff version equals librarian.VERSION",
       f'version: "{lib.VERSION}"' in _cff, f"CITATION.cff does not say {lib.VERSION}")
 check("USER_MANUAL.md subtitle equals librarian.VERSION",
       f'subtitle: "version {lib.VERSION}"' in _MAN, f"manual subtitle does not say {lib.VERSION}")
+check("count_checks refuses a truncated suite run and counts a complete one",
+      _bm.count_checks("  PASS  a\n  PASS  b\n") == 0
+      and _bm.count_checks("  PASS  a\n  FAIL  b  -- x\n\nsummary\n  1 FAILED: b\n") == 2,
+      "a crashed suite must not rewrite the docs' check count")
+check("builtin (no-pandoc) HTML fallback carries the manual's subtitle version",
+      f"version {lib.VERSION}" in _bm._wrap(_bm.md_to_html_min(_MAN)),
+      "md_to_html_min/_wrap drop the front-matter subtitle")
 check("built USER_MANUAL.html carries librarian.VERSION (build_manual.py was run)",
       f"version {lib.VERSION}" in (HERE.parent / "docs" / "USER_MANUAL.html").read_text(encoding="utf-8", errors="replace"),
       f"USER_MANUAL.html does not say {lib.VERSION}")
@@ -993,13 +1002,6 @@ if (HERE.parent / ".git").exists():
 check("vendored checker files are pinned to LF in this checkout (git check-attr eol)",
       not _unpinned, f"unpinned: {_unpinned}")
 
-# the check count quoted in README, manual and AGENTS.md is the real one
-# (docs/build_manual.py syncs it; this guard catches an unsynced or unstaged doc).
-# Keep this the LAST check() in the module: it counts itself.
-_quoted = {int(x) for d in (_readme, _MAN, _AG)
-           for x in _re.findall(r"\b(\d+)(?: checks\b|-check offline suite)", d)}
-check("README, manual and AGENTS.md quote the actual check count",
-      _quoted == {CHECKS + 1}, f"docs say {sorted(_quoted)}, suite has {CHECKS + 1}")
 
 
 def test_offline_suite():
@@ -1007,7 +1009,20 @@ def test_offline_suite():
     assert not FAILED, FAILED
 
 # ---------------------------------------------------------------------------
+# check-count guard -- deliberately NOT a check(): it runs when the total is
+# final, so there is no "keep this last" fragility and no +1. Every doc that
+# quotes the count (build_manual.py syncs the first three; the HTML is built
+# from the manual) must say exactly CHECKS, at least once each.
+_htmldoc = (HERE.parent / "docs" / "USER_MANUAL.html").read_text(encoding="utf-8", errors="replace")
+_badcnt = [n for n, d in (("README.md", _readme), ("USER_MANUAL.md", _MAN),
+                          ("AGENTS.md", _AG), ("USER_MANUAL.html", _htmldoc))
+           if {int(m.group(1)) for m in _bm.CHECK_COUNT_RE.finditer(d)} != {CHECKS}]
+if _badcnt:
+    FAILED.append("docs quote the actual check count")
 print("\nsummary")
+if _badcnt:
+    print(f"  count guard: {', '.join(_badcnt)} do not quote exactly {CHECKS}"
+          " (run docs/build_manual.py, restage README/manual/AGENTS/HTML)")
 if FAILED:
     print(f"  {len(FAILED)} FAILED: {', '.join(FAILED)}")
     sys.exit(1)

@@ -25,6 +25,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 SRC = HERE / "USER_MANUAL.md"
+# The one pattern for every doc phrase quoting the suite's check count.
+# tests/test_librarian.py imports this; sync_check_count() rewrites with it.
+CHECK_COUNT_RE = re.compile(r"\b(\d+)(?: checks\b|-check offline suite)")
 OUT_HTML, OUT_PDF = HERE / "USER_MANUAL.html", HERE / "USER_MANUAL.pdf"
 
 CSS = """body{font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:860px;
@@ -46,8 +49,17 @@ def _run(cmd, cwd):
 def md_to_html_min(text: str) -> str:
     """Just enough Markdown for the manual: headings, paragraphs, lists,
     fenced code, pipe tables, inline code/links/bold. Used only without pandoc."""
-    text = re.sub(r"^---\n.*?\n---\n", "", text, count=1, flags=re.S)   # front matter
-    out, lines, i = [], text.splitlines(), 0
+    out = []
+    m = re.match(r"^---\n(.*?)\n---\n", text, flags=re.S)          # front matter
+    if m:
+        meta = dict(re.findall(r'^([\w-]+):\s*"?([^"\n]*)"?\s*$', m.group(1), flags=re.M))
+        text = text[m.end():]
+        if meta.get("title"):
+            out.append(f"<h1>{html.escape(meta['title'])}</h1>")
+        sub = " -- ".join(v for v in (meta.get("subtitle"), meta.get("date")) if v)
+        if sub:
+            out.append(f"<p><i>{html.escape(sub)}</i></p>")
+    lines, i = text.splitlines(), 0
 
     def inline(s):
         s = html.escape(s)
@@ -102,23 +114,31 @@ def md_to_html_min(text: str) -> str:
     return "\n".join(out)
 
 
+def count_checks(stdout: str) -> int:
+    """PASS/FAIL lines of a *complete* suite run -- 0 when the run never
+    reached its summary block, so a crashed suite (as opposed to a red but
+    finished one) can never write a truncated count into the docs."""
+    if "\nsummary" not in stdout:
+        return 0
+    return sum(1 for ln in stdout.splitlines() if ln.startswith(("  PASS", "  FAIL")))
+
+
 def sync_check_count() -> int:
-    """Run the offline suite, count its PASS lines, and write that number
+    """Run the offline suite, count its checks, and write that number
     wherever the docs quote it -- so the figure can never drift."""
     r = subprocess.run([sys.executable, str(HERE.parent / "tests" / "test_librarian.py")],
                        capture_output=True, text=True, encoding="utf-8", errors="replace")
-    # count PASS and FAIL lines: the suite's own count guard fails until the
-    # docs are synced, so a red suite must not block the sync
-    n = sum(1 for ln in r.stdout.splitlines() if ln.startswith(("  PASS", "  FAIL")))
+    n = count_checks(r.stdout)
     if n == 0:
-        print("test suite produced no checks -- check count not synced")
+        print("test suite did not complete -- check count not synced")
         return 0
     if r.returncode != 0:
+        # a red-but-complete suite still syncs: its own count guard is red
+        # exactly until the docs carry the new number
         print("note: test suite is red; syncing the check count anyway")
     for f in (HERE.parent / "README.md", SRC, HERE.parent / "AGENTS.md"):
         t = f.read_text(encoding="utf-8")
-        t2 = re.sub(r"\b\d+ checks\b", f"{n} checks", t)
-        t2 = re.sub(r"\b\d+-check offline suite", f"{n}-check offline suite", t2)
+        t2 = CHECK_COUNT_RE.sub(lambda m: m.group(0).replace(m.group(1), str(n), 1), t)
         if t2 != t:
             f.write_text(t2, encoding="utf-8")
     print(f"check count synced: {n}")

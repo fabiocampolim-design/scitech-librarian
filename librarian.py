@@ -53,7 +53,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.2.7"
+VERSION = "3.2.8"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
