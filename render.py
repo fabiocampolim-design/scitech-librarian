@@ -156,7 +156,7 @@ def _svg_flow(pn: dict) -> str:
     lefts = [k for k, _ in order]
     for a, b in zip(lefts, lefts[1:]):
         xa, ya, ha = positions[a]
-        xb, yb, _ = positions[b]
+        xb, yb, _h = positions[b]              # not `_`: that is the translator
         els.append(f'<line x1="{xa + bw // 2}" y1="{ya + ha}" x2="{xb + bw // 2}" y2="{yb}" '
                    f'stroke="var(--line)" marker-end="url(#arr)"/>')
     width = x_right + bw + 20
@@ -361,7 +361,10 @@ def _tex_inline(s: str) -> str:
                    else _tex(p) for p in parts)
 
 
-def render_tex(title: str, nodes: list, version: str = "") -> str:
+def render_tex(title: str, nodes: list, version: str = "", lang: str = "en") -> str:
+    # English keeps \today (byte-identical to earlier releases); the other
+    # languages get the date written out, since no babel package is loaded.
+    date = "\\today" if _i18n.normalize(lang) == "en" else _tex(_i18n.date(lang))
     out = [
         "\\documentclass[10pt,a4paper]{article}",
         "\\usepackage{iftex}",
@@ -372,7 +375,7 @@ def render_tex(title: str, nodes: list, version: str = "") -> str:
         "\\usepackage{xurl}\\usepackage[hidelinks]{hyperref}\\usepackage{fancyvrb}",
         "\\setlength{\\parskip}{4pt}\\setlength{\\parindent}{0pt}\\setlength{\\tabcolsep}{3pt}",
         "\\tikzset{>={Latex}}",
-        f"\\title{{{_tex(title)}}}\\author{{{VERSION_LABEL} {version}}}\\date{{\\today}}",
+        f"\\title{{{_tex(title)}}}\\author{{{VERSION_LABEL} {version}}}\\date{{{date}}}",
         "\\begin{document}\\maketitle",
     ]
     sec = {1: None, 2: "section", 3: "subsection", 4: "subsubsection"}
@@ -451,7 +454,9 @@ def _pdf_builtin(text: str, path: Path) -> None:
         objs.append(body)
         return len(objs)
 
-    font = add(b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>")
+    # WinAnsiEncoding: the Latin-1 bytes below render as accented letters
+    # (StandardEncoding, the default, leaves é ç ã ü blank or wrong)
+    font = add(b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>")
     page_ids = []
     kids_placeholder = add(b"")
     for pg in pages:

@@ -2,6 +2,21 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.3.1 — 2026-08-31
+
+- The 3.3.0 post-release review, all five findings: the dependency-free PDF
+  writer (no TeX, no pandoc) now declares `WinAnsiEncoding`, so accented
+  letters in the four new languages render instead of showing as blanks or
+  wrong glyphs; `librarian.py --report-lang` takes `choices` from
+  `i18n.LANGS`, so a typo is refused by argparse before any backend is
+  queried (previously it surfaced only after the whole search, as "report
+  generation failed"); an invalid or `null` `defaults.lang` in
+  `project.json` warns on stderr and writes English instead of crashing;
+  the LaTeX/PDF title block dates a translated report in its own language
+  (`31 de agosto de 2026`; English keeps `\today`) via `render_tex(...,
+  lang)` and `i18n.date`; a `_` rebinding in `_svg_flow` renamed so the
+  translator cannot be shadowed. All suite-guarded.
+
 ## 3.3.0 — 2026-08-31
 
 - Report languages: `report.py --lang` and `librarian.py --report-lang`

@@ -53,7 +53,12 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.3.0"
+VERSION = "3.3.1"
+try:                                     # report languages, for --report-lang choices only:
+    from i18n import LANGS as _LANGS     # nothing in this script is ever translated
+    REPORT_LANGS = tuple(_LANGS)
+except ImportError:                      # librarian.py copied alone
+    REPORT_LANGS = ("en", "pt-BR", "es", "de", "fr")
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -880,8 +885,8 @@ def main() -> int:
                     choices=("md", "html", "tex", "pdf", "txt"),
                     help="report formats to write (default: md). pdf uses LaTeX/pandoc "
                          "if installed, else a built-in plain-text writer")
-    ap.add_argument("--report-lang", default=None, metavar="LANG",
-                    help="report language: en, pt-BR, es, de, fr (default: project.json "
+    ap.add_argument("--report-lang", default=None, choices=REPORT_LANGS, metavar="LANG",
+                    help=f"report language: {', '.join(REPORT_LANGS)} (default: project.json "
                          "defaults.lang, else en); logs and console stay English")
     ap.add_argument("--no-report", action="store_true", help="skip report generation")
     ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")

@@ -501,6 +501,7 @@ with tempfile.TemporaryDirectory() as td:
     # --- 3.3.0: report language (scaffolding translated, data and logs intact) ---
     import contextlib
     import io
+    import subprocess
     import i18n  # noqa: E402
     d = report.load_run(run)
     _no_tr = {lg: i18n.missing(lg) for lg in i18n.LANGS if lg != "en"}
@@ -572,9 +573,50 @@ with tempfile.TemporaryDirectory() as td:
     check("write_reports: explicit lang wins over the project default",
           out["md"].read_text(encoding="utf-8").startswith("# Rapport de recherche bibliographique"))
     (lit / "project.json").unlink()
-    check("run.log written by librarian.py is not translated (no i18n import in librarian/project)",
+    check("run.log written by librarian.py is not translated (librarian/project never call a translator)",
           "i18n" not in (HERE.parent / "project.py").read_text(encoding="utf-8")
-          and "import i18n" not in (HERE.parent / "librarian.py").read_text(encoding="utf-8"))
+          and "translator(" not in (HERE.parent / "librarian.py").read_text(encoding="utf-8")
+          and "_i18n.tr(" not in (HERE.parent / "librarian.py").read_text(encoding="utf-8"))
+
+    # --- 3.3.1: the post-release review of 3.3.0 ---------------------------------
+    # (1) the dependency-free PDF writer must draw accented letters: a Type1
+    # standard font without /Encoding uses StandardEncoding, where 0xE7/0xF3
+    # are blank or wrong glyphs.
+    _pdf2 = run / "builtin_pt.pdf"
+    report._pdf_builtin("Relatório -- Identificação (n = 1 234) ç ñ ü", _pdf2)
+    _pb = _pdf2.read_bytes()
+    check("builtin PDF: WinAnsi encoding declared and Latin-1 bytes kept for accented text",
+          b"/Encoding /WinAnsiEncoding" in _pb and b"Relat\xf3rio" in _pb and b"Identifica\xe7\xe3o" in _pb,
+          "no /Encoding or accented bytes replaced")
+    # (2) a bad --report-lang is refused by argparse, before any backend call
+    _bad = subprocess.run([sys.executable, str(HERE.parent / "librarian.py"), "--report-lang", "pt-PT",
+                           "--list"], capture_output=True, text=True, cwd=str(lit))
+    check("librarian.py --report-lang rejects an unknown language at parse time (exit 2)",
+          _bad.returncode == 2 and "pt-PT" in _bad.stderr and "invalid choice" in _bad.stderr,
+          f"rc={_bad.returncode} stderr={_bad.stderr[-160:]!r}")
+    # (3) an invalid or null project default degrades to English with a warning, never a traceback
+    for _pj in ({"defaults": {"lang": "pt-PT"}}, {"defaults": None}):
+        (lit / "project.json").write_text(json.dumps(_pj), encoding="utf-8")
+        _err = io.StringIO()
+        with contextlib.redirect_stderr(_err):
+            out = report.write_reports(run, "simple", ["md"], quiet=True)
+        _md = out["md"].read_text(encoding="utf-8")
+        check(f"write_reports: project default {json.dumps(_pj)} -> English report"
+              + (" + warning" if _pj["defaults"] else ", no crash"),
+              _md.startswith("# Literature search report")
+              and (not _pj["defaults"] or "pt-PT" in _err.getvalue()), _err.getvalue()[-120:])
+    (lit / "project.json").unlink()
+    # (4) the TeX title block dates the report in the report's language
+    check("i18n.date: localized dates",
+          i18n.date("pt-BR", (2026, 8, 31)) == "31 de agosto de 2026"
+          and i18n.date("es", (2026, 8, 31)) == "31 de agosto de 2026"
+          and i18n.date("de", (2026, 8, 31)) == "31. August 2026"
+          and i18n.date("fr", (2026, 8, 31)) == "31 août 2026"
+          and i18n.date("en", (2026, 8, 31)) == "31 August 2026")
+    _tx_pt = report.render_tex(pt_title, pt_nodes, lang="pt-BR")
+    check("tex: pt-BR report carries a Portuguese date, English keeps \\today",
+          "\\today" not in _tx_pt and "\\date{" in _tx_pt and " de " in _tx_pt.split("\\date{", 1)[1][:40]
+          and "\\date{\\today}" in report.render_tex(title, nodes))
 
 # ---------------------------------------------------------------------------
 print("\nlibrarian -> report wiring")

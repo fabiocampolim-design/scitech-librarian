@@ -1032,11 +1032,18 @@ _REEXPORTED = (_ascii_flow, _cell_text, _flow_boxes, _pdf_builtin, _run, _svg_fl
 # ---------------------------------------------------------------------------
 
 def default_lang(d: dict) -> str:
-    """The research directory's `defaults.lang` (project.json), else 'en'."""
+    """The research directory's `defaults.lang` (project.json), else 'en'.
+    project.json is data, not a flag: an unknown value warns and degrades to
+    English rather than losing the report."""
     proj = d.get("project")
     if proj is None and _project is not None and d.get("outdir"):
         proj = _project.load_project(Path(d["outdir"]))
-    return _i18n.normalize((proj or {}).get("defaults", {}).get("lang"))
+    want = ((proj or {}).get("defaults") or {}).get("lang")
+    try:
+        return _i18n.normalize(want)
+    except ValueError as e:
+        print(f"warning: project.json defaults.lang ignored -- {e}; writing English", file=sys.stderr)
+        return "en"
 
 
 def write_reports(run: Path | None = None, level: str = "simple", formats=("md",),
@@ -1071,7 +1078,7 @@ def write_reports(run: Path | None = None, level: str = "simple", formats=("md",
     if "html" in need:
         rendered["html"] = render_html(title, nodes, lang)
     if "tex" in need:
-        rendered["tex"] = render_tex(title, nodes, VERSION)
+        rendered["tex"] = render_tex(title, nodes, VERSION, lang)
     if "txt" in need:
         rendered["txt"] = render_txt(title, nodes)
     for f, text in rendered.items():

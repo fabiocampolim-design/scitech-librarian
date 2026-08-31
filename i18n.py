@@ -27,6 +27,8 @@ languages. Stdlib only; not a command-line tool.
 
 from __future__ import annotations
 
+import time as _time
+
 LANGS = {"en": "English", "pt-BR": "Português (Brasil)", "es": "Español",
          "de": "Deutsch", "fr": "Français"}
 _ALIASES = {"pt": "pt-BR", "pt_br": "pt-BR", "pt-br": "pt-BR", "ptbr": "pt-BR",
@@ -55,6 +57,35 @@ def normalize(lang) -> str:
 
 def html_lang(lang: str) -> str:
     return normalize(lang)
+
+
+_MONTHS = {
+    "en": ("January", "February", "March", "April", "May", "June", "July", "August",
+           "September", "October", "November", "December"),
+    "pt-BR": ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
+              "setembro", "outubro", "novembro", "dezembro"),
+    "es": ("enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+           "septiembre", "octubre", "noviembre", "diciembre"),
+    "de": ("Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August",
+           "September", "Oktober", "November", "Dezember"),
+    "fr": ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
+           "septembre", "octobre", "novembre", "décembre"),
+}
+
+
+def date(lang, ymd=None) -> str:
+    """A date written out in the language ('31 de agosto de 2026'); today by
+    default, or (year, month, day)."""
+    lang = normalize(lang)
+    if ymd is None:
+        ymd = _time.localtime()[:3]
+    y, m, d = ymd
+    month = _MONTHS[lang][m - 1]
+    if lang in ("pt-BR", "es"):
+        return f"{d} de {month} de {y}"
+    if lang == "de":
+        return f"{d}. {month} {y}"
+    return f"{d} {month} {y}"                      # en, fr
 
 
 class Translator:
