@@ -135,7 +135,9 @@ def rewrite_count(path, n: int) -> None:
         lambda m: m.group(0) if _is_quoted(t, m.start(), m.end())
         else m.group(0).replace(m.group(1), str(n), 1), t)
     if t2 != t:
-        path.write_text(t2, encoding="utf-8", newline="\n")
+        # not Path.write_text(newline=...): that keyword is Python 3.10+
+        with open(path, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(t2)
 
 
 def count_checks(stdout: str) -> int:

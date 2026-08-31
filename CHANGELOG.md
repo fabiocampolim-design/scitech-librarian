@@ -2,6 +2,13 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.10 — 2026-08-31
+
+- Hotfix: 3.2.9's `rewrite_count` used `Path.write_text(newline=...)`, a
+  Python 3.10+ keyword, so the suite crashed on Python 3.9 (caught by CI's
+  3.9 jobs on all three platforms). Now written via `open(..., newline="\n")`,
+  which works on every supported Python.
+
 ## 3.2.9 — 2026-08-31
 
 - Check-count sync hygiene (the 3.2.8 review's three notes): the sync writes

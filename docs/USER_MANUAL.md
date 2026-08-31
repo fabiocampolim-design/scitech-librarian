@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.2.9"
+subtitle: "version 3.2.10"
 date: "2026-08-31"
 ---
 
