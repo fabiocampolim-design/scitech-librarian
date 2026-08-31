@@ -955,18 +955,21 @@ check("every tracked .py carries the SPDX header", not _nospdx, f"missing: {_nos
 _ci = (HERE.parent / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
 _no_os = [o for o in ("ubuntu-latest", "windows-latest", "macos-latest") if o not in _ci]
 check("CI matrix covers Linux, Windows and macOS", not _no_os, f"missing: {_no_os}")
-check("README states the CI platforms as Linux, Windows and macOS",
-      _readme.count("Linux, Windows and macOS") >= 2 and "on Linux and Windows" not in _readme,
-      "README still says 'Linux and Windows'")
+_stale = [n for n, d in (("README", _readme), ("manual", _MAN), ("AGENTS", _AG))
+          if not _re.search(r"Linux,\s+Windows and macOS", d) or _re.search(r"Linux and\s+Windows", d)]
+check("README, manual and AGENTS.md state the CI platforms as Linux, Windows and macOS",
+      not _stale, f"stale platform wording in: {_stale}")
 
 # the vendored checker must stay byte-identical to the canonical copy on every
 # platform: a Windows checkout with core.autocrlf=true would turn it CRLF
 # unless .gitattributes pins it to LF.
-_gaf = HERE.parent / ".gitattributes"
-_ga = _gaf.read_text(encoding="utf-8") if _gaf.exists() else ""
-_unpinned = [f for f in ("tests/conformance.py", "tests/test_githubify_conformance.py")
-             if f"{f} text eol=lf" not in _ga]
-check("vendored checker files are pinned to LF in .gitattributes", not _unpinned, f"unpinned: {_unpinned}")
+# read the *effective* attribute, not the .gitattributes text (spelling-proof);
+# outside a git checkout (tarball) there is nothing to pin, so the check passes.
+_vend = ("tests/conformance.py", "tests/test_githubify_conformance.py")
+_attr = subprocess.run(["git", "check-attr", "eol", *_vend], cwd=HERE.parent,
+                       capture_output=True, text=True)
+_unpinned = [] if _attr.returncode != 0 else [f for f in _vend if f"{f}: eol: lf" not in _attr.stdout]
+check("vendored checker files are pinned to LF (git check-attr eol)", not _unpinned, f"unpinned: {_unpinned}")
 
 
 def test_offline_suite():

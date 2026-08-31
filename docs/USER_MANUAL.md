@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.2.4"
+subtitle: "version 3.2.5"
 date: "2026-08-31"
 ---
 
@@ -499,8 +499,8 @@ python tests/test_librarian.py
 Offline, stdlib only, no keys: backends run against canned API responses,
 the report generator against synthetic run and research directories, and
 every script's command line is exercised end to end. The file is also a
-pytest module (`pytest tests/`). CI runs pyflakes and the suite on Linux and
-Windows under Python 3.9 and 3.13.
+pytest module (`pytest tests/`). CI runs pyflakes and the suite on Linux,
+Windows and macOS under Python 3.9 and 3.13.
 
 # 14. Licence and conduct
 

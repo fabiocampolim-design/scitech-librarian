@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If scitech-librarian helped your literature search, please cite it."
 title: "scitech-librarian: a reproducible literature-search instrument with research directories and PRISMA reports"
 type: software
-version: "3.2.4"
+version: "3.2.5"
 date-released: "2026-08-31"
 license: Apache-2.0
 repository-code: "https://github.com/fabiocampolim-design/scitech-librarian"

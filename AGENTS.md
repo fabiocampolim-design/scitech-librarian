@@ -238,5 +238,5 @@ merge (by design: different questions, different blocks).
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys; must pass
-before any change is proposed. CI runs it on Linux and Windows, Python 3.9
-and 3.13.
+before any change is proposed. CI runs it on Linux, Windows and macOS,
+Python 3.9 and 3.13.

@@ -2,6 +2,14 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.5 — 2026-08-31
+
+- Post-release code-review fixes (same day): the manual and `AGENTS.md` still
+  described CI as "Linux and Windows"; corrected, and the platform guard now
+  covers README, manual and `AGENTS.md`. The LF-pin guard reads the effective
+  attribute (`git check-attr eol`) instead of matching `.gitattributes` text,
+  and passes outside a git checkout.
+
 ## 3.2.4 — 2026-08-31
 
 - CI now runs the suite on macOS as well as Linux and Windows (Python 3.9
