@@ -26,6 +26,8 @@ import subprocess
 import textwrap
 from pathlib import Path
 
+import i18n as _i18n
+
 VERSION_LABEL = "scitech-librarian"
 
 
@@ -33,39 +35,48 @@ VERSION_LABEL = "scitech-librarian"
 # PRISMA flow diagram helpers
 # ---------------------------------------------------------------------------
 
+def _tr(pn: dict):
+    """The translator for a PRISMA-numbers dict (report.build stores the
+    report language under pn['lang']; absent = English)."""
+    return _i18n.translator(pn.get("lang"))
+
+
 def _flow_boxes(pn: dict) -> list[tuple[str, list[str]]]:
     """(key, lines) for the ASCII / TikZ / SVG renderers. The 'other' boxes
     exist only when records came in via other methods."""
-    m = lambda v: "--" if v is None else f"{v:,}"  # noqa: E731
-    ident = [f"{b}: {k:,}" for b, k in pn["identified_by"].items()]
+    _ = _tr(pn)
+    m = _.num                                   # None -> '--'
+    ident = [f"{b}: {m(k)}" for b, k in pn["identified_by"].items()]
     boxes = [
-        ("id-left", ["Records identified from databases", f"(n = {pn['identified']:,})"] + ident),
-        ("id-right", ["Records removed before screening:",
-                      f"automation tools (venue filter) (n = {pn['automation_removed']:,})",
-                      f"duplicates removed (n = {pn['duplicates_removed']:,})"]),
-        ("sc-left", [f"Records screened (n = {m(pn['screened'])})"]),
-        ("sc-right", [f"Records excluded (n = {m(pn['excluded'])})"]),
-        ("sc-left2", [f"Reports sought for retrieval (n = {m(pn['sought'])})"]),
-        ("sc-right2", [f"Reports not retrieved (n = {m(pn['not_retrieved'])})"]),
-        ("sc-left3", [f"Reports assessed for eligibility (n = {m(pn['assessed'])})"]),
-        ("sc-right3", ["Reports excluded:"] + (
+        ("id-left", [_("Records identified from databases"), _("(n = {n})", n=m(pn["identified"]))] + ident),
+        ("id-right", [_("Records removed before screening:"),
+                      _("automation tools (venue filter) (n = {n})", n=m(pn["automation_removed"])),
+                      _("duplicates removed (n = {n})", n=m(pn["duplicates_removed"]))]),
+        ("sc-left", [_("Records screened (n = {n})", n=m(pn["screened"]))]),
+        ("sc-right", [_("Records excluded (n = {n})", n=m(pn["excluded"]))]),
+        ("sc-left2", [_("Reports sought for retrieval (n = {n})", n=m(pn["sought"]))]),
+        ("sc-right2", [_("Reports not retrieved (n = {n})", n=m(pn["not_retrieved"]))]),
+        ("sc-left3", [_("Reports assessed for eligibility (n = {n})", n=m(pn["assessed"]))]),
+        ("sc-right3", [_("Reports excluded:")] + (
             [f"{r} (n = {m(k)})" for r, k in pn["excluded_reasons"].items()] or ["(n = --)"])),
-        ("in-left", [f"Studies included in review (n = {m(pn['studies_included'])})",
-                     f"Reports of included studies (n = {m(pn['reports_included'])})"]),
+        ("in-left", [_("Studies included in review (n = {n})", n=m(pn["studies_included"])),
+                     _("Reports of included studies (n = {n})", n=m(pn["reports_included"]))]),
     ]
     if pn.get("other_by"):
         boxes += [
-            ("ot-id", ["Records identified via other methods", f"(n = {pn['other']:,})"]
-                      + [f"{k}: {v:,}" for k, v in pn["other_by"].items()]),
-            ("ot-sought", [f"Reports sought for retrieval (n = {m(pn['other_sought'])})",
-                           f"not retrieved (n = {m(pn['other_not_retrieved'])})"]),
-            ("ot-assessed", [f"Reports assessed for eligibility (n = {m(pn['other_assessed'])})"]
-                            + [f"excluded: {r} (n = {m(k)})" for r, k in pn["other_excluded_reasons"].items()]),
+            ("ot-id", [_("Records identified via other methods"), _("(n = {n})", n=m(pn["other"]))]
+                      + [f"{k}: {m(v)}" for k, v in pn["other_by"].items()]),
+            ("ot-sought", [_("Reports sought for retrieval (n = {n})", n=m(pn["other_sought"])),
+                           _("not retrieved (n = {n})", n=m(pn["other_not_retrieved"]))]),
+            ("ot-assessed", [_("Reports assessed for eligibility (n = {n})", n=m(pn["other_assessed"]))]
+                            + [_("excluded: {r} (n = {n})", r=r, n=m(k))
+                               for r, k in pn["other_excluded_reasons"].items()]),
         ]
     return boxes
 
 
 def _ascii_flow(pn: dict) -> str:
+    _ = _tr(pn)
     boxes = dict(_flow_boxes(pn))
     W = 44
 
@@ -87,24 +98,25 @@ def _ascii_flow(pn: dict) -> str:
         return out
 
     arrow = [" " * (W // 2) + "|", " " * (W // 2) + "v"]
-    lines = ["IDENTIFICATION"]
+    lines = [_("IDENTIFICATION")]
     lines += pair(boxes["id-left"], boxes["id-right"])
     if "ot-id" in boxes:
-        lines += ["", "IDENTIFICATION VIA OTHER METHODS"]
+        lines += ["", _("IDENTIFICATION VIA OTHER METHODS")]
         lines += pair(boxes["ot-id"], boxes["ot-sought"])
         lines += pair(boxes["ot-assessed"], None, arrow=False)
-    lines += arrow + ["SCREENING"]
+    lines += arrow + [_("SCREENING")]
     lines += pair(boxes["sc-left"], boxes["sc-right"])
     lines += arrow
     lines += pair(boxes["sc-left2"], boxes["sc-right2"])
     lines += arrow
     lines += pair(boxes["sc-left3"], boxes["sc-right3"])
-    lines += arrow + ["INCLUDED"]
+    lines += arrow + [_("INCLUDED")]
     lines += pair(boxes["in-left"], None, arrow=False)
     return "\n".join(ln.rstrip() for ln in lines)
 
 
 def _svg_flow(pn: dict) -> str:
+    _ = _tr(pn)
     boxes = dict(_flow_boxes(pn))
     bw, lh, pad, gap = 300, 15, 10, 60
     x_left, x_right = 110, 110 + bw + gap
@@ -115,8 +127,8 @@ def _svg_flow(pn: dict) -> str:
         order += [("ot-id", "ot-sought"), ("ot-assessed", None)]
     order += [("sc-left", "sc-right"), ("sc-left2", "sc-right2"),
               ("sc-left3", "sc-right3"), ("in-left", None)]
-    labels = {"id-left": "Identification", "ot-id": "Other methods",
-              "sc-left": "Screening", "in-left": "Included"}
+    labels = {"id-left": _("Identification"), "ot-id": _("Other methods"),
+              "sc-left": _("Screening"), "in-left": _("Included")}
 
     def draw(key, x, y0):
         lines = [w for ln in boxes[key] for w in textwrap.wrap(ln, 42) or [""]]
@@ -156,7 +168,9 @@ def _svg_flow(pn: dict) -> str:
 
 
 def _tikz_flow(pn: dict) -> str:
+    _ = _tr(pn)
     boxes = dict(_flow_boxes(pn))
+    lab = {k: _tex(_(k)) for k in ("Identification", "Other methods", "Screening", "Included")}
 
     def node(key):
         return " \\\\ ".join(_tex(w) for ln in boxes[key] for w in textwrap.wrap(ln, 40))
@@ -173,7 +187,7 @@ def _tikz_flow(pn: dict) -> str:
         out += [f"\\node[box, below=of id] (ot) {{{node('ot-id')}}};",
                 f"\\node[box, right=of ot] (otr) {{{node('ot-sought')}}};",
                 f"\\node[box, below=of ot] (ota) {{{node('ot-assessed')}}};",
-                "\\node[lab, left=3mm of ot] {Other methods};",
+                f"\\node[lab, left=3mm of ot] {{{lab['Other methods']}}};",
                 "\\draw[->] (ot) -- (otr); \\draw[->] (ot) -- (ota); \\draw[->] (id) -- (ot);"]
         prev = "ota"
     out += [
@@ -184,9 +198,9 @@ def _tikz_flow(pn: dict) -> str:
         f"\\node[box, below=of sc2] (sc3) {{{node('sc-left3')}}};",
         f"\\node[box, right=of sc3] (sc3r) {{{node('sc-right3')}}};",
         f"\\node[box, below=of sc3] (inc) {{{node('in-left')}}};",
-        "\\node[lab, left=3mm of id] {Identification};",
-        "\\node[lab, left=3mm of sc2] {Screening};",
-        "\\node[lab, left=3mm of inc] {Included};",
+        f"\\node[lab, left=3mm of id] {{{lab['Identification']}}};",
+        f"\\node[lab, left=3mm of sc2] {{{lab['Screening']}}};",
+        f"\\node[lab, left=3mm of inc] {{{lab['Included']}}};",
         "\\draw[->] (id) -- (idr); \\draw[->] (sc) -- (scr); \\draw[->] (sc2) -- (sc2r);",
         "\\draw[->] (sc3) -- (sc3r);",
         f"\\draw[->] ({prev}) -- (sc); \\draw[->] (sc) -- (sc2); \\draw[->] (sc2) -- (sc3);",
@@ -293,9 +307,9 @@ a{color:var(--acc)}.wrap{overflow-x:auto}.meta{color:var(--muted)}
 """
 
 
-def render_html(title: str, nodes: list) -> str:
+def render_html(title: str, nodes: list, lang: str = "en") -> str:
     e = html.escape
-    out = [f"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
+    out = [f"<!doctype html><html lang=\"{_i18n.html_lang(lang)}\"><head><meta charset=\"utf-8\">"
            f"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
            f"<title>{e(title)}</title><style>{_CSS}</style></head><body>"]
     for nd in nodes:

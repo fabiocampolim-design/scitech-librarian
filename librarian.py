@@ -53,7 +53,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.2.10"
+VERSION = "3.3.0"
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -880,6 +880,9 @@ def main() -> int:
                     choices=("md", "html", "tex", "pdf", "txt"),
                     help="report formats to write (default: md). pdf uses LaTeX/pandoc "
                          "if installed, else a built-in plain-text writer")
+    ap.add_argument("--report-lang", default=None, metavar="LANG",
+                    help="report language: en, pt-BR, es, de, fr (default: project.json "
+                         "defaults.lang, else en); logs and console stay English")
     ap.add_argument("--no-report", action="store_true", help="skip report generation")
     ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")
     try:
@@ -1141,7 +1144,8 @@ def main() -> int:
     if not args.no_report:
         try:
             import report
-            report.write_reports(run, args.report_level, args.report_format)
+            report.write_reports(run, args.report_level, args.report_format,
+                                 lang=args.report_lang)
         except ImportError:
             print("report.py not found next to librarian.py -- no report written")
         except Exception as e:  # noqa: BLE001

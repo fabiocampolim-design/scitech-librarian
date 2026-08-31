@@ -2,6 +2,25 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.3.0 — 2026-08-31
+
+- Report languages: `report.py --lang` and `librarian.py --report-lang`
+  (or `"defaults": {"lang": ...}` in `project.json`) write the report in
+  English (default), Brazilian Portuguese (`pt-BR`), Spanish (`es`), German
+  (`de`) or French (`fr`). Only the report's own wording is translated —
+  headings, table headers, the PRISMA 2020 stages and flow diagram (ASCII,
+  SVG and TikZ), the PRISMA-S checklist, explanatory paragraphs and
+  suggestions — with the language's thousands separator. Everything the
+  tool found or was given stays exactly as it is: record titles, abstracts,
+  authors, venues, block names and notes, the exact query strings, backend
+  names, flags quoted in prose, file names, JSON dumps and the embedded run
+  log. `run.log`, the audit logs and console output remain English.
+  New stdlib module `i18n.py` (catalogue keyed by the English text, so the
+  English report is byte-identical to 3.2.10). Suite-guarded: every
+  catalogue entry has all four translations, no English scaffolding leaks
+  into a translated report, data survives untranslated, the project default
+  is honoured and an explicit `--lang` wins.
+
 ## 3.2.10 — 2026-08-31
 
 - Hotfix: 3.2.9's `rewrite_count` used `Path.write_text(newline=...)`, a

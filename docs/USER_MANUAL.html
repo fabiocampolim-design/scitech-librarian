@@ -96,7 +96,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian - User Manual</h1>
-<p class="subtitle">version 3.2.10</p>
+<p class="subtitle">version 3.3.0</p>
 <p class="date">2026-08-31</p>
 </header>
 <nav id="TOC" role="doc-toc">
@@ -128,6 +128,7 @@ directory</a></li>
 <li><a href="#filters" id="toc-filters">7.5 Filters</a></li>
 <li><a href="#prisma" id="toc-prisma">7.6 PRISMA</a></li>
 <li><a href="#suggestions" id="toc-suggestions">7.7 Suggestions</a></li>
+<li><a href="#languages" id="toc-languages">7.8 Languages</a></li>
 </ul></li>
 <li><a href="#journal-metrics" id="toc-journal-metrics">8. Journal
 metrics</a></li>
@@ -153,10 +154,10 @@ the runs, plus records you obtained by other means, accumulate in a
 <strong>research directory</strong> that the same report can describe as
 a whole — what each search added, what each database contributed, how
 counts drifted, which venues matter.</p>
-<p>It is five Python scripts plus one shared module
-(<code>render.py</code>), with no dependencies beyond the standard
-library. There is nothing to install: copy the files, fill
-<code>.env</code>, write <code>queries.json</code>, run.</p>
+<p>It is five Python scripts plus two shared modules
+(<code>render.py</code>, <code>i18n.py</code>), with no dependencies
+beyond the standard library. There is nothing to install: copy the
+files, fill <code>.env</code>, write <code>queries.json</code>, run.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -193,6 +194,11 @@ library. There is nothing to install: copy the files, fill
 <td><code>render.py</code></td>
 <td>Markdown / HTML / LaTeX / text renderers and the PDF chain (imported
 by <code>report.py</code>)</td>
+</tr>
+<tr>
+<td><code>i18n.py</code></td>
+<td>report languages: the en / pt-BR / es / de / fr catalogue (imported
+by <code>report.py</code>; §7.8)</td>
 </tr>
 </tbody>
 </table>
@@ -265,7 +271,7 @@ python librarian.py --selftest</code></pre>
 </table>
 <p>Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
 Crossref) need no key and no institution.</p>
-<p><strong>Drop-in use inside another project.</strong> Put the six
+<p><strong>Drop-in use inside another project.</strong> Put the seven
 files in a <code>tools/</code> subdirectory; <code>.env</code>,
 <code>queries.json</code> and <code>lit/</code> are then looked for in
 the parent directory.</p>
@@ -345,6 +351,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -657,6 +664,26 @@ with thousands of hits, novelty-sized blocks (read every hit),
 venues, no citation-grade backend, open-access lookup not run, PRISMA
 stages unfilled, no journal metrics, count drift between runs, and — in
 project mode — the absence of any manual source.</p>
+<h2 id="languages">7.8 Languages</h2>
+<pre><code>python report.py --latest --lang pt-BR
+python report.py --project --lang de --format pdf
+python librarian.py --report-lang fr            # the report written at the end of a run</code></pre>
+<p><code>--lang</code> (<code>report.py</code>) and
+<code>--report-lang</code> (<code>librarian.py</code>) take
+<code>en</code> (default), <code>pt-BR</code>, <code>es</code>,
+<code>de</code> or <code>fr</code>; a research directory can fix its own
+default with <code>&quot;defaults&quot;: {&quot;lang&quot;: &quot;es&quot;}</code> in
+<code>project.json</code>, and an explicit flag wins over it. Only the
+report’s own wording changes — headings, table headers, the PRISMA 2020
+stages and the flow diagram in every format, the PRISMA-S checklist, the
+explanatory paragraphs and the suggestions — together with the
+language’s thousands separator. What the tool found or was given is
+reproduced exactly as it is, whatever the language: record titles,
+abstracts, authors and venues, your block names and notes, the exact
+query strings, backend names, the flags quoted in the text, file names,
+the JSON dumps and the embedded run log. Console output,
+<code>run.log</code> and the audit logs are always English, so runs made
+in different languages stay searchable together.</p>
 <h1 id="journal-metrics">8. Journal metrics</h1>
 <pre><code>python journals.py fetch                          # every journal seen in the directory
 python journals.py fetch --providers openalex --refresh
@@ -788,7 +815,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (195 checks) and CI.</p>
+logs; an offline test suite (211 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are

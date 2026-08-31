@@ -28,9 +28,9 @@ A reproducible literature-search instrument for science and engineering:
 5. `wos_manual.py` handles Web of Science, which has no usable free API, as
    a paste-and-export routine, and registers the exports as manual sources.
 
-Standard library only. Python 3.9+. No install step: copy the six `.py`
-files (five scripts plus `render.py`, which `report.py` imports) or clone,
-and run.
+Standard library only. Python 3.9+. No install step: copy the seven `.py`
+files (five scripts plus `render.py` and `i18n.py`, which `report.py`
+imports) or clone, and run.
 
 ## Hard rules
 
@@ -100,6 +100,7 @@ python librarian.py --pdfs [--pdf-blocks A]       legal OA-PDF lookup via Unpayw
 python librarian.py --keep-junk                   do not filter non-curated venues (Zenodo, SSRN, Figshare…)
 python librarian.py --queries other.json --backends-file b.json --timeout 60
 python librarian.py --report-level simple|intermediate|full --report-format md html tex pdf txt
+python librarian.py --report-lang en|pt-BR|es|de|fr   report wording only; logs and console stay English
 python librarian.py --no-report
 python librarian.py --list | --selftest | --init-backends
 ```
@@ -141,10 +142,18 @@ filters:  --since YYYY-MM-DD --until YYYY-MM-DD --latest --diff
           --metric NAME --min-metric X --min-citations N --oa-only
           --top N --sort cited|year|metric
 output:   --basename NAME --out DIR
+language: --lang en|pt-BR|es|de|fr   (default: project.json "defaults": {"lang": ...}, else en)
 ```
 
 Project reports go to `lit/reports/<stamp>-<level>/`. `--diff` with
 `--since` answers "what did the searches since DATE add".
+
+`--lang` translates the report's own wording only (headings, PRISMA stages
+and diagram, PRISMA-S checklist, explanations, suggestions, thousands
+separator). Record data, block names and notes, query strings, backend
+names, flags, file names, JSON dumps and the embedded run log are never
+translated, and `run.log`, the audit logs and console output stay English
+whatever the report language. Do not translate them yourself either.
 
 ### journals.py — venue metrics
 
@@ -238,6 +247,6 @@ merge (by design: different questions, different blocks).
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys,
-195 checks; must pass
+211 checks; must pass
 before any change is proposed. CI runs it on Linux, Windows and macOS,
 Python 3.9 and 3.13.

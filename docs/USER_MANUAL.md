@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.2.10"
+subtitle: "version 3.3.0"
 date: "2026-08-31"
 ---
 
@@ -16,8 +16,8 @@ by other means, accumulate in a **research directory** that the same report
 can describe as a whole — what each search added, what each database
 contributed, how counts drifted, which venues matter.
 
-It is five Python scripts plus one shared module (`render.py`), with no
-dependencies beyond the standard library. There is nothing to install: copy
+It is five Python scripts plus two shared modules (`render.py`, `i18n.py`),
+with no dependencies beyond the standard library. There is nothing to install: copy
 the files, fill `.env`, write `queries.json`, run.
 
 | File | Role |
@@ -28,6 +28,7 @@ the files, fill `.env`, write `queries.json`, run.
 | `journals.py` | journal metrics (impact-factor-like figures) per year |
 | `wos_manual.py` | Web of Science by hand (no usable free API) |
 | `render.py` | Markdown / HTML / LaTeX / text renderers and the PDF chain (imported by `report.py`) |
+| `i18n.py` | report languages: the en / pt-BR / es / de / fr catalogue (imported by `report.py`; §7.8) |
 
 **For AI agents.** `AGENTS.md` at the repository root is the complete
 machine-oriented description of the tool. If you work with a coding agent
@@ -64,7 +65,7 @@ python librarian.py --selftest
 Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
 need no key and no institution.
 
-**Drop-in use inside another project.** Put the six files in a `tools/`
+**Drop-in use inside another project.** Put the seven files in a `tools/`
 subdirectory; `.env`, `queries.json` and `lit/` are then looked for in the
 parent directory.
 
@@ -148,6 +149,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -363,6 +365,28 @@ backend, open-access lookup not run, PRISMA stages unfilled, no journal
 metrics, count drift between runs, and — in project mode — the absence of
 any manual source.
 
+## 7.8 Languages
+
+```
+python report.py --latest --lang pt-BR
+python report.py --project --lang de --format pdf
+python librarian.py --report-lang fr            # the report written at the end of a run
+```
+
+`--lang` (`report.py`) and `--report-lang` (`librarian.py`) take `en`
+(default), `pt-BR`, `es`, `de` or `fr`; a research directory can fix its
+own default with `"defaults": {"lang": "es"}` in `project.json`, and an
+explicit flag wins over it. Only the report's own wording changes —
+headings, table headers, the PRISMA 2020 stages and the flow diagram in
+every format, the PRISMA-S checklist, the explanatory paragraphs and the
+suggestions — together with the language's thousands separator. What the
+tool found or was given is reproduced exactly as it is, whatever the
+language: record titles, abstracts, authors and venues, your block names
+and notes, the exact query strings, backend names, the flags quoted in the
+text, file names, the JSON dumps and the embedded run log. Console output,
+`run.log` and the audit logs are always English, so runs made in different
+languages stay searchable together.
+
 # 8. Journal metrics
 
 ```
@@ -464,7 +488,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (195 checks) and
+with a per-year series; audit logs; an offline test suite (211 checks) and
 CI.
 
 Limitations, all by design or by the world:

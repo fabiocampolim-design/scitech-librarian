@@ -70,6 +70,7 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
+import i18n as _i18n
 try:
     import project as _project
     import journals as _journals
@@ -436,14 +437,15 @@ def prisma_numbers(d: dict, s: dict) -> dict:
 # Suggestions
 # ---------------------------------------------------------------------------
 
-def suggest(d: dict, s: dict) -> list[str]:
+def suggest(d: dict, s: dict, lang: str = "en") -> list[str]:
+    _ = _i18n.translator(lang)
     out = []
     counts, blocks, backends, meta = d["counts"], d["block_names"], d["backends"], d["meta"]
     if s["errors"]:
         bad = sorted({b for _, b in s["errors"]})
-        out.append(f"{len(s['errors'])} backend call(s) failed ({', '.join(bad)}); "
-                   f"rerun those with `--backends {' '.join(bad)}` or exclude them "
-                   f"with `--skip` so the counts table is complete.")
+        out.append(_("{n} backend call(s) failed ({bad}); rerun those with `--backends {flags}` "
+                     "or exclude them with `--skip` so the counts table is complete.",
+                     n=len(s["errors"]), bad=", ".join(bad), flags=" ".join(bad)))
     for n in blocks:
         vals = {b: _int(v) for b, v in counts.get(n, {}).items()
                 if _int(v) is not None and not b.startswith("manual:")}
@@ -452,51 +454,52 @@ def suggest(d: dict, s: dict) -> list[str]:
         tot = sum(vals.values())
         big = [b for b, v in vals.items() if v > 2000]
         if big:
-            out.append(f"Block {n}: {', '.join(f'{b} {vals[b]:,}' for b in big)} hits -- "
-                       f"a generic term is probably driving this; tighten a group or add "
-                       f"a more specific one before reading.")
+            out.append(_("Block {n}: {big} hits -- a generic term is probably driving this; "
+                         "tighten a group or add a more specific one before reading.",
+                         n=n, big=", ".join(f"{b} {_.num(vals[b])}" for b in big)))
         if tot == 0:
-            out.append(f"Block {n}: zero hits on every backend. Either the intersection "
-                       f"is genuinely empty (a finding -- check the synonyms first) or one "
-                       f"group is too narrow; try dropping one group and rerunning.")
+            out.append(_("Block {n}: zero hits on every backend. Either the intersection is "
+                         "genuinely empty (a finding -- check the synonyms first) or one group "
+                         "is too narrow; try dropping one group and rerunning.", n=n))
         elif tot <= 10:
-            out.append(f"Block {n}: only {tot} hit(s) in total -- novelty-check territory. "
-                       f"Read every record by hand before claiming a gap, and quote the "
-                       f"Scopus / Web of Science count in the paper.")
+            out.append(_("Block {n}: only {tot} hit(s) in total -- novelty-check territory. Read "
+                         "every record by hand before claiming a gap, and quote the Scopus / Web "
+                         "of Science count in the paper.", n=n, tot=tot))
         nz = [v for v in vals.values() if v > 0]
         if len(nz) >= 2 and max(nz) / max(min(nz), 1) > 20:
-            out.append(f"Block {n}: counts differ >20x across backends "
-                       f"({min(nz):,} to {max(nz):,}); grammar and coverage diverge, so "
-                       f"do not compare these numbers -- discover here, quote one source.")
+            out.append(_("Block {n}: counts differ >20x across backends ({lo} to {hi}); grammar "
+                         "and coverage diverge, so do not compare these numbers -- discover "
+                         "here, quote one source.", n=n, lo=_.num(min(nz)), hi=_.num(max(nz))))
     if meta.get("counts_only"):
-        out.append("This was a counts-only run: no records were fetched, so the record "
-                   "sections and the deduplicated set are empty. Rerun without "
-                   "`--counts-only` for records, RIS and PRISMA numbers.")
+        out.append(_("This was a counts-only run: no records were fetched, so the record "
+                     "sections and the deduplicated set are empty. Rerun without "
+                     "`--counts-only` for records, RIS and PRISMA numbers."))
     if s["capped"]:
-        worst = max(t for _, _, t in s["capped"])
-        out.append(f"{len(s['capped'])} block/backend pair(s) hit the `--limit` cap "
-                   f"({meta.get('limit')}); raise it (largest total {worst:,}) if you need "
-                   f"the complete record set rather than the most-cited slice.")
+        worst = max(t for _x, _y, t in s["capped"])
+        out.append(_("{n} block/backend pair(s) hit the `--limit` cap ({limit}); raise it "
+                     "(largest total {worst}) if you need the complete record set rather than "
+                     "the most-cited slice.", n=len(s["capped"]), limit=meta.get("limit"),
+                     worst=_.num(worst)))
     for b, k in s["junk_by"].items():
         r = s["retrieved"].get(b, 0)
         if r + k and k / (r + k) > 0.10:
-            out.append(f"{b}: {k} of {r + k} records ({100 * k / (r + k):.0f}%) came from "
-                       f"non-curated venues and were filtered; its raw count overstates "
-                       f"the curated literature by about that much.")
+            out.append(_("{b}: {k} of {tot} records ({pct}%) came from non-curated venues and "
+                         "were filtered; its raw count overstates the curated literature by "
+                         "about that much.", b=b, k=k, tot=r + k, pct=f"{100 * k / (r + k):.0f}"))
     citation_grade = {"scopus", "wos", "ads"}
     if not citation_grade & set(backends) and not any(b.startswith("manual:wos") for b in backends):
-        out.append("No citation-grade backend (Scopus, Web of Science, NASA ADS) was in "
-                   "this search; add ADS (free token) or Scopus before quoting counts.")
+        out.append(_("No citation-grade backend (Scopus, Web of Science, NASA ADS) was in this "
+                     "search; add ADS (free token) or Scopus before quoting counts."))
     if d["unique"] and not s["oa_checked"]:
-        out.append("Open-access status was not looked up; rerun with `--pdfs` (optionally "
-                   "`--pdf-blocks`) to collect legal OA PDF links via Unpaywall.")
+        out.append(_("Open-access status was not looked up; rerun with `--pdfs` (optionally "
+                     "`--pdf-blocks`) to collect legal OA PDF links via Unpaywall."))
     if d["unique"] and d["prisma"].get("records_screened") is None:
-        out.append(f"The PRISMA flow's manual stages are empty: fill in "
-                   f"{Path(d['prisma_file']).name} (screened / excluded / assessed / included) "
-                   f"and rerun report.py to complete the diagram.")
+        out.append(_("The PRISMA flow's manual stages are empty: fill in {file} (screened / "
+                     "excluded / assessed / included) and rerun report.py to complete the "
+                     "diagram.", file=Path(d["prisma_file"]).name))
     if d["unique"] and not d.get("journals"):
-        out.append("No journal metrics on file; run `python journals.py fetch` (OpenAlex, no "
-                   "key) to add impact-factor-like figures and enable `--min-metric`.")
+        out.append(_("No journal metrics on file; run `python journals.py fetch` (OpenAlex, no "
+                     "key) to add impact-factor-like figures and enable `--min-metric`."))
     runs = [m for m in d.get("members") or [] if m["kind"] == "run" and m.get("queries")]
     dup = []
     for i, a in enumerate(runs):
@@ -505,21 +508,22 @@ def suggest(d: dict, s: dict) -> list[str]:
             if same and len(same) == len(a["queries"]):
                 dup.append((a["id"], b["id"]))
     for a, b in dup[:3]:
-        out.append(f"Runs {a} and {b} sent identical query strings; PRISMA 'identified' sums "
-                   f"both. If one was a reconnaissance of the same search, hide it with "
-                   f"`python project.py exclude {a}` so hits are not counted twice.")
+        out.append(_("Runs {a} and {b} sent identical query strings; PRISMA 'identified' sums "
+                     "both. If one was a reconnaissance of the same search, hide it with "
+                     "`python project.py exclude {a}` so hits are not counted twice.", a=a, b=b))
     if d.get("project") and not any(m["kind"] == "manual" for m in d["members"]):
-        out.append("Every source is an automated run. Records you obtained by hand -- a "
-                   "Zotero export, a reference list, a Web of Science session -- go in with "
-                   "`python project.py ingest FILE --method citation|database|...` and then "
-                   "appear in the PRISMA flow's other-methods column.")
+        out.append(_("Every source is an automated run. Records you obtained by hand -- a "
+                     "Zotero export, a reference list, a Web of Science session -- go in with "
+                     "`python project.py ingest FILE --method citation|database|...` and then "
+                     "appear in the PRISMA flow's other-methods column."))
     for n, prev, now, when in _drift(d):
-        out.append(f"Block {n}: total hits changed from {prev:,} (run {when}) to {now:,}; "
-                   f"count drift is expected as indexes grow, but a large jump usually "
-                   f"means the query changed -- diff queries.json between the runs.")
+        out.append(_("Block {n}: total hits changed from {prev} (run {when}) to {now}; count "
+                     "drift is expected as indexes grow, but a large jump usually means the "
+                     "query changed -- diff queries.json between the runs.",
+                     n=n, prev=_.num(prev), when=when, now=_.num(now)))
     if not out:
-        out.append("Nothing flagged: counts are in a sensible range on every backend and "
-                   "every call succeeded. Next step is reading the small blocks by hand.")
+        out.append(_("Nothing flagged: counts are in a sensible range on every backend and "
+                     "every call succeeded. Next step is reading the small blocks by hand."))
     return out
 
 
@@ -587,53 +591,62 @@ def _sorted(recs, sort, d, metric):
 
 
 def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "cited",
-          metric: str | None = None) -> tuple[str, list]:
-    """-> (title, nodes)"""
+          metric: str | None = None, lang: str = "en") -> tuple[str, list]:
+    """-> (title, nodes). `lang` translates the scaffolding only (i18n.py):
+    data, query strings, backend names, flags, file names and the run log
+    are reproduced as they are."""
     if level not in LEVELS:
         raise ValueError(f"level must be one of {LEVELS}")
     lvl = LEVELS.index(level)
+    _ = _i18n.translator(lang)
+    lang = _.lang
     s = stats(d)
     meta, blocks, backends = d["meta"], d["block_names"], d["backends"]
     proj = d.get("project")
     metric = metric or (proj or {}).get("defaults", {}).get("metric") or "openalex_2yr"
     have_metrics = bool(d.get("journals"))
-    rec_hdr = REC_HDR + ([_journals.METRICS.get(metric, metric)] if have_metrics and _journals else [])
-    title = (f"Literature search report -- {proj['name']}" if proj
-             else f"Literature search report -- run {d['stamp']}")
+    rec_hdr = [_(h) for h in REC_HDR] + ([_journals.METRICS.get(metric, metric)]
+                                         if have_metrics and _journals else [])
+    title = (_("Literature search report -- {name}", name=proj["name"]) if proj
+             else _("Literature search report -- run {stamp}", stamp=d["stamp"]))
     N = []
 
     # --- 1. metadata --------------------------------------------------------
     N.append(("h", 1, title))
-    N.append(("p", f"Generated by scitech-librarian {meta.get('version', VERSION)} "
-                   f"(report level: {level}). Every number below is reproducible from "
-                   f"the archived {'research directory' if proj else 'run directory'} "
-                   f"`{Path(d['run']).name}`."))
-    mode = "counts only (no records fetched)" if meta.get("counts_only") \
-        else f"full fetch, up to {meta.get('limit') or 'n/a'} records per block and backend"
-    rows = [["Search dates" if proj else "Run started", meta.get("started", d["stamp"])]]
+    N.append(("p", _("Generated by scitech-librarian {version} (report level: {level}). Every "
+                     "number below is reproducible from the archived {what} `{dir}`.",
+                     version=meta.get("version", VERSION), level=level,
+                     what=_("research directory") if proj else _("run directory"),
+                     dir=Path(d["run"]).name)))
+    mode = _("counts only (no records fetched)") if meta.get("counts_only") \
+        else _("full fetch, up to {limit} records per block and backend",
+               limit=meta.get("limit") or _("n/a"))
+    rows = [[_("Search dates") if proj else _("Run started"), meta.get("started", d["stamp"])]]
     if proj:
-        rows += [["Project", proj["name"]], ["Description", proj.get("description") or "-"],
-                 ["Sources", f"{sum(1 for m in d['members'] if m['kind'] == 'run')} automated run(s), "
-                             f"{sum(1 for m in d['members'] if m['kind'] == 'manual')} manual source(s)"]]
+        rows += [[_("Project"), proj["name"]], [_("Description"), proj.get("description") or "-"],
+                 [_("Sources"), _("{runs} automated run(s), {manual} manual source(s)",
+                                  runs=sum(1 for m in d["members"] if m["kind"] == "run"),
+                                  manual=sum(1 for m in d["members"] if m["kind"] == "manual"))]]
     else:
-        rows += [["Duration", f"{meta.get('duration_s', 0):.0f} s" if meta.get("duration_s") else "n/a"],
-                 ["Query file", meta.get("query_file", "queries.json")]]
-    rows += [["Blocks", ", ".join(blocks)],
-             ["Backends / sources", ", ".join(backends)],
-             ["Mode", mode],
-             ["Non-curated venue filter", "off (--keep-junk)" if meta.get("keep_junk") else "on"],
-             ["Open-access lookup", "Unpaywall" if meta.get("pdfs") else "not run"],
-             ["Journal metrics", f"on file for {len(d['journals'])} journals" if have_metrics else "none (journals.py fetch)"],
-             ["Filters", ", ".join(f"{k}={v}" for k, v in d["filters"].items()) or "none"]]
+        rows += [[_("Duration"), f"{meta.get('duration_s', 0):.0f} s" if meta.get("duration_s") else _("n/a")],
+                 [_("Query file"), meta.get("query_file", "queries.json")]]
+    rows += [[_("Blocks"), ", ".join(blocks)],
+             [_("Backends / sources"), ", ".join(backends)],
+             [_("Mode"), mode],
+             [_("Non-curated venue filter"), _("off (--keep-junk)") if meta.get("keep_junk") else _("on")],
+             [_("Open-access lookup"), "Unpaywall" if meta.get("pdfs") else _("not run")],
+             [_("Journal metrics"), _("on file for {n} journals", n=len(d["journals"])) if have_metrics
+              else _("none (journals.py fetch)")],
+             [_("Filters"), ", ".join(f"{k}={v}" for k, v in d["filters"].items()) or _("none")]]
     if not proj:
-        rows.append(["Interrupted", "yes -- partial run" if meta.get("interrupted") else "no"])
-    N.append(("table", ["Item", "Value"], rows))
+        rows.append([_("Interrupted"), _("yes -- partial run") if meta.get("interrupted") else _("no")])
+    N.append(("table", [_("Item"), _("Value")], rows))
 
     # --- 2. sources (project) -------------------------------------------------
     if proj:
-        N.append(("h", 2, "Sources"))
-        N.append(("p", "Every search that feeds this report, oldest first. 'New here' counts "
-                       "unique records that no earlier source had found -- what each search added."))
+        N.append(("h", 2, _("Sources")))
+        N.append(("p", _("Every search that feeds this report, oldest first. 'New here' counts "
+                         "unique records that no earlier source had found -- what each search added.")))
         first = Counter()
         for r in d["unique"]:
             fb = [x.split("@", 1)[1] for x in r.get("found_by", []) if "@" in x]
@@ -647,32 +660,33 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
             rows.append([m["id"], m["kind"], m["date"][:16], m.get("method", ""),
                          str(m.get("n_records", 0)), str(first.get(m["id"], 0)),
                          m.get("label") or desc])
-        N.append(("table", ["Source", "Kind", "Date", "Method", "Records", "New here", "Label / origin"], rows))
+        N.append(("table", [_("Source"), _("Kind"), _("Date"), _("Method"), _("Records"),
+                            _("New here"), _("Label / origin")], rows))
 
     # --- 3. search strategy ---------------------------------------------------
-    N.append(("h", 2, "Search strategy"))
-    N.append(("p", "Each block is one structural query -- a conjunction of synonym groups, "
-                   "(a OR b) AND (c OR d) -- rendered into every backend's native grammar. "
-                   "The strings below are exactly what was sent (PRISMA-S item 8)"
-                   + (", from the most recent run of each block." if proj else ".")))
+    N.append(("h", 2, _("Search strategy")))
+    N.append(("p", _("Each block is one structural query -- a conjunction of synonym groups, "
+                     "(a OR b) AND (c OR d) -- rendered into every backend's native grammar. "
+                     "The strings below are exactly what was sent (PRISMA-S item 8){tail}",
+                     tail=_(", from the most recent run of each block.") if proj else ".")))
     for n in blocks:
         b = d["blocks"].get(n, {})
-        N.append(("h", 3, f"Block {n}: {b.get('title', n)}"))
+        N.append(("h", 3, _("Block {n}: {title}", n=n, title=b.get("title", n))))
         if b.get("note"):
-            N.append(("p", f"Purpose: {b['note']}"))
+            N.append(("p", _("Purpose: {note}", note=b["note"])))
         if b.get("groups"):
             N.append(("code", _groups_text(b["groups"])))
             if b.get("arxiv_groups"):
-                N.append(("p", f"arXiv receives groups {b['arxiv_groups']} only "
-                               f"(nested-boolean limitation)."))
+                N.append(("p", _("arXiv receives groups {groups} only (nested-boolean limitation).",
+                                 groups=b["arxiv_groups"])))
         qrows = [[bk, d["queries"].get(n, {}).get(bk, "")] for bk in backends
                  if not bk.startswith("manual:")]
         if qrows:
-            N.append(("table", ["Backend", "Query string sent"], qrows))
+            N.append(("table", [_("Backend"), _("Query string sent")], qrows))
 
     # --- 4. results summary ---------------------------------------------------
-    N.append(("h", 2, "Results summary"))
-    hdr = ["Block"] + backends + ["Identified", "Retrieved", "Unique"]
+    N.append(("h", 2, _("Results summary")))
+    hdr = [_("Block")] + backends + [_("Identified"), _("Retrieved"), _("Unique")]
     rows = []
     uniq_block = Counter()
     for r in d["unique"]:
@@ -682,27 +696,28 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
         c = d["counts"].get(n, {})
         ident = sum(_int(v) or 0 for v in c.values())
         rows.append([n] + [str(c.get(bk, "-")) for bk in backends]
-                    + [f"{ident:,}", str(s["retrieved_block"].get(n, 0)), str(uniq_block.get(n, 0))])
-    rows.append(["Total"] + [f"{s['identified'][bk]:,}" for bk in backends]
-                + [f"{s['n_identified'] + s['n_other']:,}", str(s["n_fetched"]), str(s["n_unique"])])
+                    + [_.num(ident), str(s["retrieved_block"].get(n, 0)), str(uniq_block.get(n, 0))])
+    rows.append([_("Total")] + [_.num(s["identified"][bk]) for bk in backends]
+                + [_.num(s["n_identified"] + s["n_other"]), str(s["n_fetched"]), str(s["n_unique"])])
     N.append(("table", hdr, rows))
-    N.append(("p", "Identified = database hit counts (not comparable across backends: "
-                   "proximity operators are dropped and stemming differs)"
-                   + ("; summed over runs, and for manual sources the number of records ingested"
-                      if proj else "")
-                   + ". Retrieved = records actually downloaded after the venue filter, capped "
-                     "by `--limit`. Unique = after DOI/title deduplication across all sources."))
+    N.append(("p", _("Identified = database hit counts (not comparable across backends: "
+                     "proximity operators are dropped and stemming differs){proj}. Retrieved = "
+                     "records actually downloaded after the venue filter, capped by `--limit`. "
+                     "Unique = after DOI/title deduplication across all sources.",
+                     proj=_("; summed over runs, and for manual sources the number of records "
+                            "ingested") if proj else "")))
     if s["errors"]:
-        N.append(("p", "Failed calls: " + ", ".join(f"{n}/{b}" for n, b in s["errors"]) + "."))
+        N.append(("p", _("Failed calls: {calls}.",
+                         calls=", ".join(f"{n}/{b}" for n, b in s["errors"]))))
 
     # --- 5. timeline (project) ------------------------------------------------
     if proj:
         runs = [m for m in d["members"] if m["kind"] == "run"]
         if len(runs) >= 1:
-            N.append(("h", 2, "Timeline"))
-            N.append(("p", "Per-block hit totals in each automated run (sum over backends), "
-                           "oldest first; drift shows how the indexes -- or the queries -- changed."))
-            hdr = ["Block"] + [m["id"] for m in runs]
+            N.append(("h", 2, _("Timeline")))
+            N.append(("p", _("Per-block hit totals in each automated run (sum over backends), "
+                             "oldest first; drift shows how the indexes -- or the queries -- changed.")))
+            hdr = [_("Block")] + [m["id"] for m in runs]
             rows = []
             for n in blocks:
                 row = [n]
@@ -710,76 +725,78 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
                     c = _json(m["path"] / "counts.json", {})
                     al = proj["block_aliases"]
                     vals = [v for k, v in c.items() if al.get(k, k) == n]
-                    row.append(f"{sum(_int(x) or 0 for c_ in vals for x in c_.values()):,}" if vals else "-")
+                    row.append(_.num(sum(_int(x) or 0 for c_ in vals for x in c_.values())) if vals else "-")
                 rows.append(row)
             N.append(("table", hdr, rows))
         fs = Counter((r.get("first_seen") or "")[:7] for r in d["unique"] if r.get("first_seen"))
         if fs:
-            N.append(("h", 3, "When records entered the project"))
-            N.append(("table", ["Month", "Records first seen"],
+            N.append(("h", 3, _("When records entered the project")))
+            N.append(("table", [_("Month"), _("Records first seen")],
                       [[k, str(v)] for k, v in sorted(fs.items())]))
 
     # --- 6. PRISMA -----------------------------------------------------------
-    N.append(("h", 2, "PRISMA 2020 flow"))
+    N.append(("h", 2, _("PRISMA 2020 flow")))
     pn = prisma_numbers(d, s)
+    pn["lang"] = lang                     # render.py draws the flow in the same language
     N.append(("prisma", pn))
-    man = lambda v: "--" if v is None else f"{v:,}"  # noqa: E731
-    frows = [["Records identified from databases", f"{pn['identified']:,}"]]
-    frows += [[f"  {bk}", f"{v:,}"] for bk, v in pn["identified_by"].items()]
+    man = _.num                           # None -> '--'
+    frows = [[_("Records identified from databases"), man(pn["identified"])]]
+    frows += [[f"  {bk}", man(v)] for bk, v in pn["identified_by"].items()]
     if pn["other_by"]:
-        frows.append(["Records identified via other methods", f"{pn['other']:,}"])
-        frows += [[f"  {k}", f"{v:,}"] for k, v in pn["other_by"].items()]
-    frows += [["Records retrieved (downloaded / ingested)", f"{pn['retrieved']:,}"],
-              ["Removed before screening: automation (non-curated venues)",
-               f"{pn['automation_removed']:,}"],
-              ["Removed before screening: duplicates", f"{pn['duplicates_removed']:,}"],
-              ["Records to screen (unique)", f"{pn['to_screen']:,}"],
-              ["Records screened", man(pn["screened"]) + ("" if pn["screened_manual"] else " (assumed = unique)")],
-              ["Records excluded at screening", man(pn["excluded"])],
-              ["Reports sought for retrieval", man(pn["sought"])],
-              ["Reports not retrieved", man(pn["not_retrieved"])],
-              ["Reports assessed for eligibility", man(pn["assessed"])]]
+        frows.append([_("Records identified via other methods"), man(pn["other"])])
+        frows += [[f"  {k}", man(v)] for k, v in pn["other_by"].items()]
+    frows += [[_("Records retrieved (downloaded / ingested)"), man(pn["retrieved"])],
+              [_("Removed before screening: automation (non-curated venues)"),
+               man(pn["automation_removed"])],
+              [_("Removed before screening: duplicates"), man(pn["duplicates_removed"])],
+              [_("Records to screen (unique)"), man(pn["to_screen"])],
+              [_("Records screened"), man(pn["screened"]) + ("" if pn["screened_manual"] else _(" (assumed = unique)"))],
+              [_("Records excluded at screening"), man(pn["excluded"])],
+              [_("Reports sought for retrieval"), man(pn["sought"])],
+              [_("Reports not retrieved"), man(pn["not_retrieved"])],
+              [_("Reports assessed for eligibility"), man(pn["assessed"])]]
     for reason, k in pn["excluded_reasons"].items():
-        frows.append([f"  excluded: {reason}", man(k)])
+        frows.append([_("  excluded: {reason}", reason=reason), man(k)])
     if pn["other_by"]:
-        frows += [["Other methods: reports sought", man(pn["other_sought"])],
-                  ["Other methods: reports not retrieved", man(pn["other_not_retrieved"])],
-                  ["Other methods: reports assessed", man(pn["other_assessed"])]]
+        frows += [[_("Other methods: reports sought"), man(pn["other_sought"])],
+                  [_("Other methods: reports not retrieved"), man(pn["other_not_retrieved"])],
+                  [_("Other methods: reports assessed"), man(pn["other_assessed"])]]
         for reason, k in pn["other_excluded_reasons"].items():
-            frows.append([f"  other methods, excluded: {reason}", man(k)])
-    frows += [["Studies included", man(pn["studies_included"])],
-              ["Reports of included studies", man(pn["reports_included"])]]
-    N.append(("table", ["Stage", "n"], frows))
-    N.append(("p", f"Automation stages are computed from the data; '--' marks manual stages "
-                   f"not yet recorded in {Path(d['prisma_file']).name}. Note that 'identified' "
-                   f"counts hits reported by each database while 'retrieved' is what was "
-                   f"downloaded within `--limit`, so the two differ on large blocks."))
+            frows.append([_("  other methods, excluded: {reason}", reason=reason), man(k)])
+    frows += [[_("Studies included"), man(pn["studies_included"])],
+              [_("Reports of included studies"), man(pn["reports_included"])]]
+    N.append(("table", [_("Stage"), "n"], frows))
+    N.append(("p", _("Automation stages are computed from the data; '--' marks manual stages not "
+                     "yet recorded in {file}. Note that 'identified' counts hits reported by each "
+                     "database while 'retrieved' is what was downloaded within `--limit`, so the "
+                     "two differ on large blocks.", file=Path(d["prisma_file"]).name)))
 
-    N.append(("h", 3, "PRISMA-S search-reporting checklist"))
-    N.append(("table", ["Item", "Requirement", "This search"], _prisma_s_rows(d, s)))
+    N.append(("h", 3, _("PRISMA-S search-reporting checklist")))
+    N.append(("table", [_("Item"), _("Requirement"), _("This search")], _prisma_s_rows(d, s, lang)))
 
     # --- 7. records ----------------------------------------------------------
     if d["unique"]:
         top_n = top if top is not None else (10 if lvl == 0 else None)
-        N.append(("h", 2, "Records" if not top_n else f"Top {top_n} records per block"))
-        N.append(("p", f"Deduplicated across sources, sorted by {sort}."
-                       + ("" if not top_n else " The complete set is in all_records.csv / .ris"
-                          + (" of each run." if proj else "."))))
+        N.append(("h", 2, _("Records") if not top_n else _("Top {n} records per block", n=top_n)))
+        N.append(("p", _("Deduplicated across sources, sorted by {sort}.{tail}", sort=sort,
+                         tail="" if not top_n else
+                         (_(" The complete set is in all_records.csv / .ris of each run.") if proj
+                          else _(" The complete set is in all_records.csv / .ris.")))))
         for n in blocks:
             recs = [r for r in d["unique"] if n in (r.get("blocks") or [r.get("block")])]
             if not recs:
                 continue
             recs = _sorted(recs, sort, d, metric)
-            N.append(("h", 3, f"Block {n} ({len(recs)} unique)"))
+            N.append(("h", 3, _("Block {n} ({k} unique)", n=n, k=len(recs))))
             sel = recs[:top_n] if top_n else recs
             if lvl == 2:
                 for r in sel:
                     N.append(("h", 4, r.get("title", "")))
-                    au = "; ".join(r.get("authors") or []) or "(no authors)"
+                    au = "; ".join(r.get("authors") or []) or _("(no authors)")
                     line = f"{au}. {r.get('journal', '')} ({r.get('year', '')}). " \
-                           f"Cited by {r.get('cited_by', 0)}."
+                           + _("Cited by {k}.", k=r.get("cited_by", 0))
                     found = r.get("found_by") or sorted(s["found_by"].get(_key(r), {r.get('backend', '?')}))
-                    line += f" Found by: {', '.join(found)}."
+                    line += _(" Found by: {who}.", who=", ".join(found))
                     if have_metrics:
                         v, y = _metric_of(d, r, metric)
                         if v is not None:
@@ -789,30 +806,30 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
                     elif r.get("url"):
                         line += f" URL: {r['url']}"
                     if "is_oa" in r:
-                        line += f" OA: {'yes' if r.get('is_oa') else 'no'}" \
+                        line += _(" OA: {yn}", yn=_("yes") if r.get("is_oa") else _("no")) \
                                 + (f" ({r['oa_pdf']})" if r.get("oa_pdf") else "")
                     N.append(("p", line))
                     if r.get("abstract"):
-                        N.append(("p", "Abstract: " + r["abstract"]))
+                        N.append(("p", _("Abstract: ") + r["abstract"]))
             else:
                 N.append(("table", rec_hdr, _rec_rows(d, sel, metric=metric if have_metrics else None)))
 
     # --- 8. intermediate analyses ---------------------------------------------
     if lvl >= 1 and d["unique"]:
-        N.append(("h", 2, "Source overlap"))
+        N.append(("h", 2, _("Source overlap")))
         rows = [[bk, str(s["retrieved"].get(bk, 0)), str(s["exclusive"].get(bk, 0)),
                  str(s["junk_by"].get(bk, 0))] for bk in backends]
-        N.append(("table", ["Source", "Retrieved", "Found only here", "Filtered venues"], rows))
-        N.append(("p", "'Found only here' counts unique records no other source returned "
-                       "-- a measure of each database's marginal contribution."))
+        N.append(("table", [_("Source"), _("Retrieved"), _("Found only here"), _("Filtered venues")], rows))
+        N.append(("p", _("'Found only here' counts unique records no other source returned "
+                         "-- a measure of each database's marginal contribution.")))
 
-        N.append(("h", 2, "Distributions"))
+        N.append(("h", 2, _("Distributions")))
         ys = sorted(s["years"].items())
         if ys:
-            N.append(("h", 3, "Publication year"))
-            N.append(("table", ["Year", "Records"], [[y, str(k)] for y, k in ys]))
+            N.append(("h", 3, _("Publication year")))
+            N.append(("table", [_("Year"), _("Records")], [[y, str(k)] for y, k in ys]))
         if s["journals"]:
-            N.append(("h", 3, "Top venues"))
+            N.append(("h", 3, _("Top venues")))
             rows = []
             for j, k in s["journals"].most_common(15):
                 row = [j, str(k)]
@@ -820,28 +837,28 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
                     v, y = _metric_of(d, {"journal": j}, metric)
                     row.append(f"{v:g} ({y})" if v is not None else "")
                 rows.append(row)
-            N.append(("table", ["Venue", "Records"] + ([_journals.METRICS.get(metric, metric)]
-                                                       if have_metrics else []), rows))
+            N.append(("table", [_("Venue"), _("Records")] + ([_journals.METRICS.get(metric, metric)]
+                                                             if have_metrics else []), rows))
         if s["authors"]:
-            N.append(("h", 3, "Most frequent authors"))
-            N.append(("table", ["Author", "Records"],
+            N.append(("h", 3, _("Most frequent authors")))
+            N.append(("table", [_("Author"), _("Records")],
                       [[a, str(k)] for a, k in s["authors"].most_common(15)]))
         if s["oa_checked"]:
-            N.append(("h", 3, "Open access"))
-            N.append(("p", f"{s['n_oa']} of {s['oa_checked']} records with a DOI have a legal "
-                           f"open-access copy per Unpaywall "
-                           f"({100 * s['n_oa'] / s['oa_checked']:.0f}%)."))
+            N.append(("h", 3, _("Open access")))
+            N.append(("p", _("{oa} of {n} records with a DOI have a legal open-access copy per "
+                             "Unpaywall ({pct}%).", oa=s["n_oa"], n=s["oa_checked"],
+                             pct=f"{100 * s['n_oa'] / s['oa_checked']:.0f}")))
         if have_metrics:
-            N.extend(_metrics_section(d, s, metric))
+            N.extend(_metrics_section(d, s, metric, lang))
         if d["junk"]:
-            N.append(("h", 2, "Filtered non-curated venues"))
+            N.append(("h", 2, _("Filtered non-curated venues")))
             vc = Counter((r.get("journal") or "?").split("(")[0].strip() for r in d["junk"])
-            N.append(("table", ["Venue", "Records removed"],
+            N.append(("table", [_("Venue"), _("Records removed")],
                       [[v, str(k)] for v, k in vc.most_common(20)]))
         if d["history"] and not proj:
-            N.append(("h", 2, "Count history"))
-            N.append(("p", "Per-block totals across archived runs (counts_history.csv); "
-                           "drift shows how the indexes -- or your queries -- changed."))
+            N.append(("h", 2, _("Count history")))
+            N.append(("p", _("Per-block totals across archived runs (counts_history.csv); "
+                             "drift shows how the indexes -- or your queries -- changed.")))
             rows = []
             stamps = sorted({r["timestamp"] for r in d["history"]})[-6:]
             for n in blocks:
@@ -849,33 +866,34 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
                 for st in stamps:
                     tot = [_int(r["count"]) for r in d["history"]
                            if r["timestamp"] == st and r["block"] == n]
-                    row.append(f"{sum(t for t in tot if t is not None):,}" if tot else "-")
+                    row.append(_.num(sum(t for t in tot if t is not None)) if tot else "-")
                 rows.append(row)
-            N.append(("table", ["Block"] + stamps, rows))
+            N.append(("table", [_("Block")] + stamps, rows))
         errs = [ln for ln in d["log"].splitlines() if "ERROR" in ln]
         if errs:
-            N.append(("h", 2, "Errors"))
+            N.append(("h", 2, _("Errors")))
             N.append(("code", "\n".join(errs)))
 
     # --- 9. full dumps --------------------------------------------------------
     if lvl == 2:
+        raw_hdr = [_(h) for h in REC_HDR]
         if d["raw"]:
-            N.append(("h", 2, "Per-source raw results (before deduplication)"))
+            N.append(("h", 2, _("Per-source raw results (before deduplication)")))
             for stem, recs in d["raw"].items():
                 if not recs:
                     continue
-                N.append(("h", 3, f"{stem} ({len(recs)} records)"))
-                N.append(("table", REC_HDR, _rec_rows(d, recs, full=True)))
+                N.append(("h", 3, _("{stem} ({n} records)", stem=stem, n=len(recs))))
+                N.append(("table", raw_hdr, _rec_rows(d, recs, full=True)))
         if d["junk"]:
-            N.append(("h", 2, "Filtered records"))
-            N.append(("table", REC_HDR + ["Source"],
+            N.append(("h", 2, _("Filtered records")))
+            N.append(("table", raw_hdr + [_("Source")],
                       [row + [r.get("backend", "")] for row, r in
                        zip(_rec_rows(d, d["junk"], full=True), d["junk"])]))
         if meta.get("backend_config"):
-            N.append(("h", 2, "Backend configuration"))
+            N.append(("h", 2, _("Backend configuration")))
             rows = [[b, c.get("url", "(driver)"), c.get("auth", "none"),
                      c.get("paging", "-")] for b, c in meta["backend_config"].items()]
-            N.append(("table", ["Backend", "Endpoint", "Auth", "Paging"], rows))
+            N.append(("table", [_("Backend"), _("Endpoint"), _("Auth"), _("Paging")], rows))
         if proj:
             N.append(("h", 2, "project.json"))
             N.append(("code", json.dumps(proj, indent=2)))
@@ -887,31 +905,33 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
             N.append(("h", 2, Path(d["prisma_file"]).name))
             N.append(("code", json.dumps(d["prisma"], indent=2)))
         if d["log"]:
-            N.append(("h", 2, "Run log"))
+            N.append(("h", 2, _("Run log")))
             N.append(("code", d["log"]))
-        N.append(("h", 2, "Environment"))
+        N.append(("h", 2, _("Environment")))
         env = meta.get("environment", {})
-        rows = [["Python", env.get("python", platform.python_version())],
-                ["Platform", env.get("platform", platform.platform())],
-                ["Tool version", meta.get("version", VERSION)],
-                ["Report generated", time.strftime("%Y-%m-%d %H:%M")]]
-        N.append(("table", ["Item", "Value"], rows))
+        rows = [[_("Python"), env.get("python", platform.python_version())],
+                [_("Platform"), env.get("platform", platform.platform())],
+                [_("Tool version"), meta.get("version", VERSION)],
+                [_("Report generated"), time.strftime("%Y-%m-%d %H:%M")]]
+        N.append(("table", [_("Item"), _("Value")], rows))
 
     # --- 10. suggestions ------------------------------------------------------
-    N.append(("h", 2, "Suggestions"))
-    N.append(("ul", suggest(d, s)))
+    N.append(("h", 2, _("Suggestions")))
+    N.append(("ul", suggest(d, s, lang)))
     return title, N
 
 
-def _metrics_section(d, s, metric) -> list:
+def _metrics_section(d, s, metric, lang: str = "en") -> list:
     """Top venues by the chosen metric among venues in the record set, and the
     evolution table for venues with two or more years on file."""
-    N = [("h", 2, "Journal metrics")]
+    _ = _i18n.translator(lang)
+    N = [("h", 2, _("Journal metrics"))]
     label = _journals.METRICS.get(metric, metric)
-    N.append(("p", f"Metric: {label} ({metric}), from {Path(d['outdir']).name}/journals/metrics.json "
-                   f"(journals.py). Values are kept per year; OpenAlex figures are snapshots "
-                   f"taken in the fetch year (the API serves only current values); the evolution table shows every "
-                   f"year on file for venues that appear in this record set."))
+    N.append(("p", _("Metric: {label} ({metric}), from {dir}/journals/metrics.json (journals.py). "
+                     "Values are kept per year; OpenAlex figures are snapshots taken in the fetch "
+                     "year (the API serves only current values); the evolution table shows every "
+                     "year on file for venues that appear in this record set.",
+                     label=label, metric=metric, dir=Path(d["outdir"]).name)))
     idx = d.setdefault("_jidx", _journals.alias_index(d["journals"]))
     seen, rows, evo = set(), [], []
     for j, k in s["journals"].most_common():
@@ -929,22 +949,23 @@ def _metrics_section(d, s, metric) -> list:
                        [", ".join(sorted(series))])
     rows.sort(key=lambda x: -x[0])
     if rows:
-        N.append(("h", 3, f"Venues in this set by {label}"))
-        N.append(("table", ["Venue", "Records", label, "Year", "Q"], [r for _, r in rows[:25]]))
+        N.append(("h", 3, _("Venues in this set by {label}", label=label)))
+        N.append(("table", [_("Venue"), _("Records"), label, _("Year"), _("Q")], [r for _r, r in rows[:25]]))
     if evo:
-        N.append(("h", 3, f"{label}: evolution"))
+        N.append(("h", 3, _("{label}: evolution", label=label)))
         width = max(len(r) for r in evo)
-        N.append(("table", ["Venue"] + [f"y{i}" for i in range(1, width - 1)] + ["Years"],
+        N.append(("table", [_("Venue")] + [f"y{i}" for i in range(1, width - 1)] + [_("Years")],
                   [r[:-1] + [""] * (width - len(r)) + [r[-1]] for r in evo]))
     return N
 
 
-def _prisma_s_rows(d, s) -> list:
+def _prisma_s_rows(d, s, lang: str = "en") -> list:
+    _ = _i18n.translator(lang)
     meta, backends = d["meta"], d["backends"]
     started = meta.get("started", d["stamp"])
     limit = meta.get("limit")
-    filt = "off" if meta.get("keep_junk") else "on: records from non-curated repositories " \
-                                              "(Zenodo, Figshare, SSRN...) removed"
+    filt = _("off") if meta.get("keep_junk") else \
+        _("on: records from non-curated repositories (Zenodo, Figshare, SSRN...) removed")
     prev = sorted({r["timestamp"] for r in d["history"] if r["timestamp"] != d["stamp"]})
     p = d["prisma"]
     manual = [m for m in d.get("members") or [] if m["kind"] == "manual"]
@@ -952,40 +973,44 @@ def _prisma_s_rows(d, s) -> list:
     for m in manual:
         by_method[m.get("method", "other")].append(m["id"])
     dbs = [b for b in backends if not b.startswith("manual:")]
+    n_runs = sum(1 for m in d.get("members") or [] if m["kind"] == "run")
     auto = {
-        "1": ", ".join(dbs) + " (documented public APIs)"
-             + (f"; manual database exports: {', '.join(by_method['database'])}" if by_method["database"] else ""),
-        "2": f"{len(dbs)} database{'s' if len(dbs) != 1 else ''}, one structural query per block "
-             f"rendered into each native grammar; see Search strategy",
-        "4": ", ".join(by_method["website"]) if by_method["website"] else "none recorded",
-        "5": ", ".join(by_method["citation"]) or p.get("citation_searching") or "not performed",
-        "6": ", ".join(by_method["expert"]) if by_method["expert"] else "none recorded",
-        "7": ", ".join(by_method["organisation"] + by_method["other"]) or p.get("other_methods") or "none",
-        "8": "reported verbatim per backend under Search strategy; archived in queries.json"
-             + (" of each run" if d.get("project") else ""),
-        "9": ("counts only, no records" if meta.get("counts_only") else
-              f"record download capped at {limit or 'n/a'} per block and backend, most-cited "
-              f"first") + "; no date, language or document-type limits applied"
-             + (f"; report filters: {', '.join(f'{k}={v}' for k, v in d['filters'].items())}"
-                if d["filters"] else ""),
-        "10": f"venue filter {filt}",
-        "11": p.get("prior_work") or "none",
-        "12": (f"{len(prev)} earlier run(s) archived; counts tracked in counts_history.csv"
+        "1": _("{dbs} (documented public APIs)", dbs=", ".join(dbs))
+             + (_("; manual database exports: {names}", names=", ".join(by_method["database"]))
+                if by_method["database"] else ""),
+        "2": (_("1 database, one structural query per block rendered into each native grammar; "
+                "see Search strategy") if len(dbs) == 1 else
+              _("{n} databases, one structural query per block rendered into each native "
+                "grammar; see Search strategy", n=len(dbs))),
+        "4": ", ".join(by_method["website"]) if by_method["website"] else _("none recorded"),
+        "5": ", ".join(by_method["citation"]) or p.get("citation_searching") or _("not performed"),
+        "6": ", ".join(by_method["expert"]) if by_method["expert"] else _("none recorded"),
+        "7": ", ".join(by_method["organisation"] + by_method["other"]) or p.get("other_methods") or _("none"),
+        "8": _("reported verbatim per backend under Search strategy; archived in queries.json{tail}",
+               tail=_(" of each run") if d.get("project") else ""),
+        "9": (_("counts only, no records") if meta.get("counts_only") else
+              _("record download capped at {limit} per block and backend, most-cited first",
+                limit=limit or _("n/a"))) + _("; no date, language or document-type limits applied")
+             + (_("; report filters: {filters}",
+                  filters=", ".join(f"{k}={v}" for k, v in d["filters"].items())) if d["filters"] else ""),
+        "10": _("venue filter {filt}", filt=filt),
+        "11": p.get("prior_work") or _("none"),
+        "12": (_("{n} earlier run(s) archived; counts tracked in counts_history.csv", n=len(prev))
                if prev and not d.get("project") else
-               f"{sum(1 for m in d.get('members') or [] if m['kind'] == 'run')} run(s) combined; see Timeline"
-               if d.get("project") else "first run of these blocks"),
-        "13": f"searched on {started}",
-        "14": p.get("peer_review") or "none",
-        "15": f"{s['n_identified']:,} identified from databases"
-              + (f", {s['n_other']:,} via other methods" if s["n_other"] else "")
-              + f"; {s['n_fetched'] + s['n_junk']:,} retrieved; {s['n_unique']:,} unique",
-        "16": f"exact DOI match, else first 90 characters of the lower-cased title; "
-              f"{s['n_dupes']:,} duplicates removed",
+               _("{n} run(s) combined; see Timeline", n=n_runs)
+               if d.get("project") else _("first run of these blocks")),
+        "13": _("searched on {date}", date=started),
+        "14": p.get("peer_review") or _("none"),
+        "15": _("{n} identified from databases", n=_.num(s["n_identified"]))
+              + (_(", {n} via other methods", n=_.num(s["n_other"])) if s["n_other"] else "")
+              + _("; {r} retrieved; {u} unique", r=_.num(s["n_fetched"] + s["n_junk"]), u=_.num(s["n_unique"])),
+        "16": _("exact DOI match, else first 90 characters of the lower-cased title; {n} duplicates "
+                "removed", n=_.num(s["n_dupes"])),
     }
     rows = []
     for num, name, kind in PRISMA_S_ITEMS:
-        val = auto.get(num, "not applicable" if kind == "na" else "to be completed")
-        rows.append([num, name, val])
+        val = auto.get(num, _("not applicable") if kind == "na" else _("to be completed"))
+        rows.append([num, _(name), val])
     return rows
 
 
@@ -1006,24 +1031,36 @@ _REEXPORTED = (_ascii_flow, _cell_text, _flow_boxes, _pdf_builtin, _run, _svg_fl
 # Entry points
 # ---------------------------------------------------------------------------
 
+def default_lang(d: dict) -> str:
+    """The research directory's `defaults.lang` (project.json), else 'en'."""
+    proj = d.get("project")
+    if proj is None and _project is not None and d.get("outdir"):
+        proj = _project.load_project(Path(d["outdir"]))
+    return _i18n.normalize((proj or {}).get("defaults", {}).get("lang"))
+
+
 def write_reports(run: Path | None = None, level: str = "simple", formats=("md",),
                   basename: str = "report", quiet: bool = False, d: dict | None = None,
-                  out_dir: Path | None = None, **build_kw) -> dict:
+                  out_dir: Path | None = None, lang: str | None = None, **build_kw) -> dict:
     """Render one run (or a prepared data dict) at one level into every
-    requested format. -> {format: path}. Writes the PRISMA template if absent."""
+    requested format. -> {format: path}. Writes the PRISMA template if absent.
+    `lang` (en, pt-BR, es, de, fr) translates the report scaffolding; None
+    means the research directory's default, else English. Console output and
+    logs stay English regardless."""
     formats = list(dict.fromkeys(formats))
     for f in formats:
         if f not in FORMATS:
             raise ValueError(f"unknown format {f!r}; choose from {FORMATS}")
     if d is None:
         d = load_run(Path(run))
+    lang = _i18n.normalize(lang) if lang else default_lang(d)
     pj = Path(d["prisma_file"])
     if not pj.exists():
         pj.parent.mkdir(parents=True, exist_ok=True)
         pj.write_text(json.dumps(PRISMA_TEMPLATE, indent=2), encoding="utf-8")
     out_dir = Path(out_dir) if out_dir else Path(d["run"])
     out_dir.mkdir(parents=True, exist_ok=True)
-    title, nodes = build(d, level, **build_kw)
+    title, nodes = build(d, level, lang=lang, **build_kw)
     written = {}
     need = set(formats)
     if "pdf" in need:
@@ -1032,7 +1069,7 @@ def write_reports(run: Path | None = None, level: str = "simple", formats=("md",
     if "md" in need:
         rendered["md"] = render_md(title, nodes)
     if "html" in need:
-        rendered["html"] = render_html(title, nodes)
+        rendered["html"] = render_html(title, nodes, lang)
     if "tex" in need:
         rendered["tex"] = render_tex(title, nodes, VERSION)
     if "txt" in need:
@@ -1079,6 +1116,10 @@ def main() -> int:
                     help="simple | intermediate | full (default: project.json default, else simple)")
     ap.add_argument("--format", nargs="+", choices=FORMATS, default=None,
                     help="md html tex pdf txt (default: project.json default, else md)")
+    ap.add_argument("--lang", default=None, metavar="LANG",
+                    help="report language: en, pt-BR, es, de, fr (default: project.json "
+                         "defaults.lang, else en). Only the report's own wording is translated; "
+                         "records, query strings, file names and logs are never touched")
     ap.add_argument("--basename", default="report", help="output file stem (default: report)")
     ap.add_argument("--out", default=None,
                     help="output directory (default: the run dir, or <outdir>/reports/<stamp>-<level>)")
@@ -1153,8 +1194,14 @@ def main() -> int:
         out_dir = Path(args.out) if args.out else run
     apply_filters(d, args.backends, args.blocks, args.year_from, args.year_to, args.min_citations,
                   args.oa_only, args.metric, args.min_metric, args.diff, args.since, args.until)
+    try:
+        lang = _i18n.normalize(args.lang) if args.lang else None
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        return 2
     written = write_reports(None, level, formats, args.basename, quiet=args.quiet, d=d,
-                            out_dir=out_dir, top=args.top, sort=args.sort, metric=args.metric)
+                            out_dir=out_dir, lang=lang, top=args.top, sort=args.sort,
+                            metric=args.metric)
     if log:
         for f, p in written.items():
             log.debug("wrote %s", p)

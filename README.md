@@ -29,7 +29,8 @@ directory per project. Databases are **configuration, not code**.
 Standard library only, no install step: five scripts — `librarian.py`
 (search), `project.py` (research directory and ingest), `report.py`
 (reports), `journals.py` (venue metrics), `wos_manual.py` (Web of Science
-by hand) — plus `render.py`, the shared Markdown/HTML/LaTeX/PDF renderer. Full documentation: [**User Manual**](docs/USER_MANUAL.md)
+by hand) — plus `render.py`, the shared Markdown/HTML/LaTeX/PDF renderer, and
+`i18n.py`, the report-language catalogue. Full documentation: [**User Manual**](docs/USER_MANUAL.md)
 ([HTML](docs/USER_MANUAL.html) · [PDF](docs/USER_MANUAL.pdf)); a start-to-PRISMA
 [**walkthrough**](docs/WALKTHROUGH.md) of a real project exercises every
 feature; [JCR import](docs/JCR_IMPORT.md) covers the licensed Impact Factor. Working with
@@ -127,6 +128,12 @@ not as fine print, but as a design principle:
   cap, read these five hits by hand). Three levels — `simple`,
   `intermediate`, `full` — from a two-page summary to every record with its
   abstract and the complete log. See [Reports and PRISMA](#reports-and-prisma).
+- **Reports in five languages.** `--lang pt-BR|es|de|fr` (default `en`)
+  writes the report's own wording — headings, PRISMA stages and diagram,
+  checklist, explanations, suggestions — in Brazilian Portuguese, Spanish,
+  German or French. Records, query strings, block names, file names and
+  logs are never translated: a report is still a faithful record of the
+  search in every language.
 - **Crash-proof by checkpointing.** Counts are saved after *every* API call
   and Ctrl-C is safe — a hang late in a long run loses nothing.
 - **A junk filter with receipts.** OpenAlex indexes non-curated repositories;
@@ -144,7 +151,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 195 checks run with no network and no keys (backends
+- **Offline-testable.** 211 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux, Windows and macOS, Python 3.9 and 3.13.
@@ -385,6 +392,18 @@ pdflatex if one is installed, else with pandoc, else by a built-in
 dependency-free writer — the option never fails, only the typesetting
 degrades.
 
+**Languages.** `report.py --lang` and `librarian.py --report-lang` take
+`en` (default), `pt-BR`, `es`, `de` or `fr`; a research directory can set
+`"defaults": {"lang": "pt-BR"}` in `project.json`. Only the report's
+scaffolding is translated — headings, table headers, the PRISMA 2020 stages
+and flow diagram in every format, the PRISMA-S checklist, explanatory text,
+suggestions, thousands separators. Everything the tool found or was given
+is reproduced as is: titles, abstracts, authors, venues, block names and
+notes, the exact query strings, backend names, flags, file names, JSON
+dumps and the embedded run log. `run.log`, the audit logs and the console
+stay English whatever the report language. Sample:
+[`samples/pt-BR/report.md`](samples/pt-BR/report.md).
+
 **PRISMA.** The report carries a [PRISMA 2020](https://www.prisma-statement.org/)
 flow diagram (SVG in HTML, TikZ in LaTeX/PDF, ASCII in Markdown/text). The
 stages a tool can know are filled from the data — records identified per
@@ -454,7 +473,9 @@ records retrieved, 1,226 unique) rendered at every level in every format —
 Browse: [simple](samples/simple/report.md) ·
 [intermediate](samples/intermediate/report.md) ·
 [full](samples/full/report.md) (Markdown, rendered by GitHub), or the
-`.html`, `.tex`, `.pdf`, `.txt` next to each.
+`.html`, `.tex`, `.pdf`, `.txt` next to each;
+[`samples/pt-BR/`](samples/pt-BR/) is the `simple` report of the same run
+in Brazilian Portuguese (`--lang pt-BR`).
 
 [`samples/project/`](samples/project/) is the same example as a **research
 directory**: two runs (an OpenAlex-only first pass and the full CC0 run)
@@ -490,9 +511,10 @@ python librarian.py --init-backends         write defaults to backends.json
 python librarian.py --list                  blocks + backend readiness
 python librarian.py --report-level full     simple | intermediate | full (default simple)
 python librarian.py --report-format md pdf  any of md html tex pdf txt (default md)
+python librarian.py --report-lang pt-BR     report language: en pt-BR es de fr (default en)
 python librarian.py --no-report             skip the report
 python librarian.py --outdir DIR            another research directory (all scripts)
-python report.py <run dir> | --latest       re-render an archived run (--level, --format)
+python report.py <run dir> | --latest       re-render an archived run (--level, --format, --lang)
 python report.py --project [filters]        the whole research directory
 python project.py init|status|ingest|oa|exclude|include|label|alias
 python journals.py fetch|import-scimago|import-jcr|import-csv|list|show
@@ -539,7 +561,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-195 checks, stdlib only, no network and no keys — backends run against
+211 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -562,7 +584,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 195-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 211-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |
