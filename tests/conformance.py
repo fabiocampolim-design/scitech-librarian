@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -101,6 +101,10 @@ DEFAULT_RULES = [
          applies="all", check="auto", check_ids=["archives-ignored"]),
     dict(id=21, title="No local copies of shared tools",
          applies="all", check="auto", check_ids=["no-stale-tool-copies"]),
+    dict(id=22, title="Every skill product ships an undergraduate course (AILECTURE mechanics)",
+         applies="study-and-contribute", check="manual", check_ids=[]),
+    dict(id=23, title="Weekly upstream watch by a scheduled local script",
+         applies="study-and-contribute", check="manual", check_ids=[]),
 ]
 
 
