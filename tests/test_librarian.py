@@ -937,6 +937,8 @@ check("README carries a visible Disclaimer under Licence",
 _cff = (HERE.parent / "CITATION.cff").read_text(encoding="utf-8")
 check("CITATION.cff version equals librarian.VERSION",
       f'version: "{lib.VERSION}"' in _cff, f"CITATION.cff does not say {lib.VERSION}")
+check("USER_MANUAL.md subtitle equals librarian.VERSION",
+      f'subtitle: "version {lib.VERSION}"' in _MAN, f"manual subtitle does not say {lib.VERSION}")
 _aff = _readme[_readme.index("This is an independent project."):].split("\n\n")[0]
 _bk = {b for b in lib.DEFAULT_BACKENDS}
 _names = {"openalex": "OpenAlex", "ads": "NASA ADS", "arxiv": "arXiv", "inspire": "INSPIRE-HEP",
@@ -955,21 +957,34 @@ check("every tracked .py carries the SPDX header", not _nospdx, f"missing: {_nos
 _ci = (HERE.parent / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
 _no_os = [o for o in ("ubuntu-latest", "windows-latest", "macos-latest") if o not in _ci]
 check("CI matrix covers Linux, Windows and macOS", not _no_os, f"missing: {_no_os}")
+_pos = _re.compile(r"Linux,\s+Windows\s+and\s+macOS")          # any hard-wrap
+_neg = _re.compile(r"CI[^.]*?Linux and\s+Windows")                # only the CI sentence
+_need = {"README": 2, "manual": 1, "AGENTS": 1}                    # README says it twice
 _stale = [n for n, d in (("README", _readme), ("manual", _MAN), ("AGENTS", _AG))
-          if not _re.search(r"Linux,\s+Windows and macOS", d) or _re.search(r"Linux and\s+Windows", d)]
-check("README, manual and AGENTS.md state the CI platforms as Linux, Windows and macOS",
+          if len(_pos.findall(d)) < _need[n] or _neg.search(d)]
+check("README (x2), manual and AGENTS.md state the CI platforms as Linux, Windows and macOS",
       not _stale, f"stale platform wording in: {_stale}")
 
 # the vendored checker must stay byte-identical to the canonical copy on every
 # platform: a Windows checkout with core.autocrlf=true would turn it CRLF
 # unless .gitattributes pins it to LF.
-# read the *effective* attribute, not the .gitattributes text (spelling-proof);
-# outside a git checkout (tarball) there is nothing to pin, so the check passes.
+# read the *effective* attribute, not the .gitattributes text (spelling-proof).
+# Only this repo's own checkout is judged: a tarball, or a tools/ drop-in inside
+# someone else's repository, has no .git here and nothing to pin. In our own
+# checkout a git error (no binary, dubious ownership, ...) fails loudly rather
+# than masking a missing pin.
 _vend = ("tests/conformance.py", "tests/test_githubify_conformance.py")
-_attr = subprocess.run(["git", "check-attr", "eol", *_vend], cwd=HERE.parent,
-                       capture_output=True, text=True)
-_unpinned = [] if _attr.returncode != 0 else [f for f in _vend if f"{f}: eol: lf" not in _attr.stdout]
-check("vendored checker files are pinned to LF (git check-attr eol)", not _unpinned, f"unpinned: {_unpinned}")
+_unpinned = []
+if (HERE.parent / ".git").exists():
+    try:
+        _attr = subprocess.run(["git", "check-attr", "eol", *_vend], cwd=HERE.parent,
+                               capture_output=True, text=True, timeout=60)
+        _unpinned = ([f for f in _vend if f"{f}: eol: lf" not in _attr.stdout]
+                     if _attr.returncode == 0 else [f"git error: {_attr.stderr.strip()[:80]}"])
+    except (OSError, subprocess.SubprocessError) as _e:
+        _unpinned = [f"git unavailable: {_e}"]
+check("vendored checker files are pinned to LF in this checkout (git check-attr eol)",
+      not _unpinned, f"unpinned: {_unpinned}")
 
 
 def test_offline_suite():

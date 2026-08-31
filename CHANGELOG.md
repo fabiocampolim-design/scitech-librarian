@@ -2,6 +2,18 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.6 — 2026-08-31
+
+- The LF-pin guard added in 3.2.4 crashed the whole suite with
+  `FileNotFoundError` on a machine without git, and false-failed for a
+  `tools/` drop-in living inside another repository. It now judges only this
+  repo's own checkout (a `.git` here): no `.git` → nothing to pin; in our own
+  checkout a git error fails loudly instead of masking a missing pin.
+- Platform guard: README must say "Linux, Windows and macOS" twice, any
+  hard-wrap accepted; the negative match is anchored to the CI sentence.
+- New guard: the manual's `subtitle: "version …"` must equal `VERSION`
+  (CITATION.cff already was).
+
 ## 3.2.5 — 2026-08-31
 
 - Post-release code-review fixes (same day): the manual and `AGENTS.md` still
