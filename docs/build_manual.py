@@ -114,6 +114,30 @@ def md_to_html_min(text: str) -> str:
     return "\n".join(out)
 
 
+def _is_quoted(text: str, start: int, end: int) -> bool:
+    """A count phrase wrapped in double quotes is a quotation of a historical
+    figure ('the v3.2.6 README quoted "189 checks"') -- never rewrite it and
+    never hold it to the current count."""
+    return (text[max(0, start - 1):start] in ('"', "\u201c")
+            and text[end:end + 1] in ('"', "\u201d"))
+
+
+def count_mentions(text):
+    """The live check-count figures a doc quotes (quoted historicals excluded)."""
+    return [int(m.group(1)) for m in CHECK_COUNT_RE.finditer(text)
+            if not _is_quoted(text, m.start(), m.end())]
+
+
+def rewrite_count(path, n: int) -> None:
+    """Rewrite every live count phrase in *path* to *n*, LF-preserving."""
+    t = path.read_text(encoding="utf-8")
+    t2 = CHECK_COUNT_RE.sub(
+        lambda m: m.group(0) if _is_quoted(t, m.start(), m.end())
+        else m.group(0).replace(m.group(1), str(n), 1), t)
+    if t2 != t:
+        path.write_text(t2, encoding="utf-8", newline="\n")
+
+
 def count_checks(stdout: str) -> int:
     """PASS/FAIL lines of a *complete* suite run -- 0 when the run never
     reached its summary block, so a crashed suite (as opposed to a red but
@@ -137,10 +161,7 @@ def sync_check_count() -> int:
         # exactly until the docs carry the new number
         print("note: test suite is red; syncing the check count anyway")
     for f in (HERE.parent / "README.md", SRC, HERE.parent / "AGENTS.md"):
-        t = f.read_text(encoding="utf-8")
-        t2 = CHECK_COUNT_RE.sub(lambda m: m.group(0).replace(m.group(1), str(n), 1), t)
-        if t2 != t:
-            f.write_text(t2, encoding="utf-8")
+        rewrite_count(f, n)
     print(f"check count synced: {n}")
     return n
 

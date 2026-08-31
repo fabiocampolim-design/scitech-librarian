@@ -948,12 +948,25 @@ check("count_checks refuses a truncated suite run and counts a complete one",
       _bm.count_checks("  PASS  a\n  PASS  b\n") == 0
       and _bm.count_checks("  PASS  a\n  FAIL  b  -- x\n\nsummary\n  1 FAILED: b\n") == 2,
       "a crashed suite must not rewrite the docs' check count")
+# rewrite_count must keep LF endings (an autocrlf=false contributor must not
+# get a whole-file CRLF diff) and must leave a quoted historical figure alone.
+_tdir = Path(tempfile.mkdtemp())
+_tf = _tdir / "doc.md"
+_tf.write_bytes(b'A 5-check offline suite with 5 checks.\nThe old README said "3 checks".\n')
+_bm.rewrite_count(_tf, 9)
+_tb = _tf.read_bytes()
+check("rewrite_count writes LF and skips quoted historical counts",
+      b"\r" not in _tb and b"9-check offline suite with 9 checks" in _tb
+      and b'said "3 checks"' in _tb, f"got: {_tb!r}")
+check("count_mentions reads the live count and ignores the quoted one",
+      _bm.count_mentions(_tf.read_text(encoding="utf-8")) == [9, 9],
+      f"got: {_bm.count_mentions(_tf.read_text(encoding='utf-8'))}")
 check("builtin (no-pandoc) HTML fallback carries the manual's subtitle version",
       f"version {lib.VERSION}" in _bm._wrap(_bm.md_to_html_min(_MAN)),
       "md_to_html_min/_wrap drop the front-matter subtitle")
+_HTMLDOC = (HERE.parent / "docs" / "USER_MANUAL.html").read_text(encoding="utf-8", errors="replace")
 check("built USER_MANUAL.html carries librarian.VERSION (build_manual.py was run)",
-      f"version {lib.VERSION}" in (HERE.parent / "docs" / "USER_MANUAL.html").read_text(encoding="utf-8", errors="replace"),
-      f"USER_MANUAL.html does not say {lib.VERSION}")
+      f"version {lib.VERSION}" in _HTMLDOC, f"USER_MANUAL.html does not say {lib.VERSION}")
 _aff = _readme[_readme.index("This is an independent project."):].split("\n\n")[0]
 _bk = {b for b in lib.DEFAULT_BACKENDS}
 _names = {"openalex": "OpenAlex", "ads": "NASA ADS", "arxiv": "arXiv", "inspire": "INSPIRE-HEP",
@@ -1013,10 +1026,9 @@ def test_offline_suite():
 # final, so there is no "keep this last" fragility and no +1. Every doc that
 # quotes the count (build_manual.py syncs the first three; the HTML is built
 # from the manual) must say exactly CHECKS, at least once each.
-_htmldoc = (HERE.parent / "docs" / "USER_MANUAL.html").read_text(encoding="utf-8", errors="replace")
 _badcnt = [n for n, d in (("README.md", _readme), ("USER_MANUAL.md", _MAN),
-                          ("AGENTS.md", _AG), ("USER_MANUAL.html", _htmldoc))
-           if {int(m.group(1)) for m in _bm.CHECK_COUNT_RE.finditer(d)} != {CHECKS}]
+                          ("AGENTS.md", _AG), ("USER_MANUAL.html", _HTMLDOC))
+           if set(_bm.count_mentions(d)) != {CHECKS}]
 if _badcnt:
     FAILED.append("docs quote the actual check count")
 print("\nsummary")

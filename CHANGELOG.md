@@ -2,6 +2,17 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.9 — 2026-08-31
+
+- Check-count sync hygiene (the 3.2.8 review's three notes): the sync writes
+  docs back LF (`newline="
+"`), so a contributor with `core.autocrlf=false`
+  no longer gets a whole-file CRLF diff; a count phrase inside double quotes
+  is treated as a quotation of a historical figure — never rewritten and not
+  held to the current count (`count_mentions`/`rewrite_count`, shared by
+  `build_manual.py` and the suite's guard); the built manual HTML is read
+  once per suite run. All suite-guarded.
+
 ## 3.2.8 — 2026-08-31
 
 - Check-count guard hardened end to end: `build_manual.py` refuses to sync
