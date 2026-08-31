@@ -2,6 +2,19 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.7 — 2026-08-31
+
+- The v3.2.6 README quoted "189 checks" while the manual and the suite said
+  190 (the count was re-synced by `build_manual.py` but not committed). The
+  suite now guards that README, manual and `AGENTS.md` quote the real count,
+  and `build_manual.py` syncs the count even when the suite is red (it counts
+  PASS+FAIL lines), so the guard cannot block its own fix.
+- LF-pin guard: git output is decoded as UTF-8 with replacement, so a
+  localized git message can no longer abort the suite.
+- Platform guard: "Linux and Windows" is rejected anywhere in the docs again
+  (no legitimate use exists); the built `USER_MANUAL.html` must carry
+  `VERSION` (catches a forgotten `build_manual.py` run).
+
 ## 3.2.6 — 2026-08-31
 
 - The LF-pin guard added in 3.2.4 crashed the whole suite with

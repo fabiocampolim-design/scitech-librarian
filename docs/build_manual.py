@@ -107,10 +107,14 @@ def sync_check_count() -> int:
     wherever the docs quote it -- so the figure can never drift."""
     r = subprocess.run([sys.executable, str(HERE.parent / "tests" / "test_librarian.py")],
                        capture_output=True, text=True, encoding="utf-8", errors="replace")
-    n = sum(1 for ln in r.stdout.splitlines() if ln.startswith("  PASS"))
-    if r.returncode != 0 or n == 0:
-        print("test suite failed -- check count not synced")
+    # count PASS and FAIL lines: the suite's own count guard fails until the
+    # docs are synced, so a red suite must not block the sync
+    n = sum(1 for ln in r.stdout.splitlines() if ln.startswith(("  PASS", "  FAIL")))
+    if n == 0:
+        print("test suite produced no checks -- check count not synced")
         return 0
+    if r.returncode != 0:
+        print("note: test suite is red; syncing the check count anyway")
     for f in (HERE.parent / "README.md", SRC, HERE.parent / "AGENTS.md"):
         t = f.read_text(encoding="utf-8")
         t2 = re.sub(r"\b\d+ checks\b", f"{n} checks", t)

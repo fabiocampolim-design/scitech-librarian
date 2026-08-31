@@ -21,9 +21,12 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
 FAILED = []
+CHECKS = 0          # every check() call; the docs quote this number
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
+    global CHECKS
+    CHECKS += 1
     print(f"  {'PASS' if cond else 'FAIL'}  {name}" + ("" if cond else f"  -- {detail}"))
     if not cond:
         FAILED.append(name)
@@ -939,6 +942,9 @@ check("CITATION.cff version equals librarian.VERSION",
       f'version: "{lib.VERSION}"' in _cff, f"CITATION.cff does not say {lib.VERSION}")
 check("USER_MANUAL.md subtitle equals librarian.VERSION",
       f'subtitle: "version {lib.VERSION}"' in _MAN, f"manual subtitle does not say {lib.VERSION}")
+check("built USER_MANUAL.html carries librarian.VERSION (build_manual.py was run)",
+      f"version {lib.VERSION}" in (HERE.parent / "docs" / "USER_MANUAL.html").read_text(encoding="utf-8", errors="replace"),
+      f"USER_MANUAL.html does not say {lib.VERSION}")
 _aff = _readme[_readme.index("This is an independent project."):].split("\n\n")[0]
 _bk = {b for b in lib.DEFAULT_BACKENDS}
 _names = {"openalex": "OpenAlex", "ads": "NASA ADS", "arxiv": "arXiv", "inspire": "INSPIRE-HEP",
@@ -958,7 +964,7 @@ _ci = (HERE.parent / ".github" / "workflows" / "tests.yml").read_text(encoding="
 _no_os = [o for o in ("ubuntu-latest", "windows-latest", "macos-latest") if o not in _ci]
 check("CI matrix covers Linux, Windows and macOS", not _no_os, f"missing: {_no_os}")
 _pos = _re.compile(r"Linux,\s+Windows\s+and\s+macOS")          # any hard-wrap
-_neg = _re.compile(r"CI[^.]*?Linux and\s+Windows")                # only the CI sentence
+_neg = _re.compile(r"Linux and\s+Windows")                       # nowhere, in any prose
 _need = {"README": 2, "manual": 1, "AGENTS": 1}                    # README says it twice
 _stale = [n for n, d in (("README", _readme), ("manual", _MAN), ("AGENTS", _AG))
           if len(_pos.findall(d)) < _need[n] or _neg.search(d)]
@@ -978,13 +984,22 @@ _unpinned = []
 if (HERE.parent / ".git").exists():
     try:
         _attr = subprocess.run(["git", "check-attr", "eol", *_vend], cwd=HERE.parent,
-                               capture_output=True, text=True, timeout=60)
+                               capture_output=True, text=True, timeout=60,
+                               encoding="utf-8", errors="replace")   # localized git output
         _unpinned = ([f for f in _vend if f"{f}: eol: lf" not in _attr.stdout]
                      if _attr.returncode == 0 else [f"git error: {_attr.stderr.strip()[:80]}"])
     except (OSError, subprocess.SubprocessError) as _e:
         _unpinned = [f"git unavailable: {_e}"]
 check("vendored checker files are pinned to LF in this checkout (git check-attr eol)",
       not _unpinned, f"unpinned: {_unpinned}")
+
+# the check count quoted in README, manual and AGENTS.md is the real one
+# (docs/build_manual.py syncs it; this guard catches an unsynced or unstaged doc).
+# Keep this the LAST check() in the module: it counts itself.
+_quoted = {int(x) for d in (_readme, _MAN, _AG)
+           for x in _re.findall(r"\b(\d+)(?: checks\b|-check offline suite)", d)}
+check("README, manual and AGENTS.md quote the actual check count",
+      _quoted == {CHECKS + 1}, f"docs say {sorted(_quoted)}, suite has {CHECKS + 1}")
 
 
 def test_offline_suite():
