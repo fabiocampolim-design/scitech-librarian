@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.4.0"
+VERSION = "1.4.1"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -435,7 +435,10 @@ def chk_spdx(repo, ctx):
 
 
 def chk_held_guard(repo, ctx):
-    present = [d for d in HELD_DIRS if os.path.isdir(os.path.join(repo, d))]
+    # held/ sits at the study root even when the product is a subfolder
+    bases = dict.fromkeys((ctx.get("root", repo), repo))
+    present = sorted({d for b in bases for d in HELD_DIRS
+                      if os.path.isdir(os.path.join(b, d))})
     if not present:
         return "SKIP", "no held/ or private/ directory"
     for rel in ctx["files"]:
@@ -486,10 +489,11 @@ def chk_no_stale_tool_copies(repo, ctx):
     IS one of the tools passes (the file sits at its root); a recorded
     consumer lists its copies in a gitignored .githubify-tool-consumer file."""
     allow = set()
-    p = os.path.join(repo, ".githubify-tool-consumer")
-    if os.path.isfile(p):
-        allow = {ln.strip().replace("\\", "/") for ln in slurp(p).splitlines()
-                 if ln.strip() and not ln.startswith("#")}
+    for base in dict.fromkeys((ctx.get("root", repo), repo)):
+        p = os.path.join(base, ".githubify-tool-consumer")
+        if os.path.isfile(p):
+            allow |= {ln.strip().replace("\\", "/") for ln in slurp(p).splitlines()
+                      if ln.strip() and not ln.startswith("#")}
     hits = []
     for rel in ctx["files"]:
         norm = rel.replace("\\", "/")
@@ -565,22 +569,35 @@ def project_type(repo, override=None):
 
 
 def run_repo(repo, rules, ptype, subdir=None):
-    def local_alts(name):
-        p = os.path.join(repo, name)
-        if not os.path.isfile(p):
-            return []
-        return [ln.strip() for ln in slurp(p).splitlines()
-                if ln.strip() and not ln.startswith("#")]
-
-    extra = local_alts(".githubify-extra-scrub")
-    allow_alts = ([rules["scrub_allow"]] if rules["scrub_allow"] else [])         + local_alts(".githubify-scrub-allow")
-    files = tracked_files(repo)
+    """Run every rule against `repo`. With `subdir`, the product folder is the
+    unit under check: paths become relative to it and every file-existence
+    check (LICENSE, README, .github/workflows, docs/, ...) looks there — 1.4.0
+    only filtered the tracked-file list, so study repos with a `<pkg>-skill/`
+    product scored four spurious FAILs (rules 5 and 17; PYTHTB, QE, 2026-08-31).
+    Repo-local allow files and `held/` are honoured at both levels."""
+    root = repo
+    files = tracked_files(root)
     if subdir:
         pref = subdir.replace("\\", "/").rstrip("/") + "/"
-        files = [f for f in files if f.replace("\\", "/").startswith(pref)]
+        files = [f.replace("\\", "/")[len(pref):] for f in files
+                 if f.replace("\\", "/").startswith(pref)]
+        repo = os.path.join(root, *pref.rstrip("/").split("/"))
+
+    def local_alts(name):
+        out = []
+        for base in dict.fromkeys((root, repo)):
+            p = os.path.join(base, name)
+            if os.path.isfile(p):
+                out += [ln.strip() for ln in slurp(p).splitlines()
+                        if ln.strip() and not ln.startswith("#")]
+        return out
+
+    extra = local_alts(".githubify-extra-scrub")
+    allow_alts = ([rules["scrub_allow"]] if rules["scrub_allow"] else []) + local_alts(".githubify-scrub-allow")
     scrub_alts = ([rules["scrub_pattern"]] if rules["scrub_pattern"] else []) + extra
     ctx = {
         "files": files,
+        "root": root,
         "scrub_re": re.compile("|".join(scrub_alts), re.I) if scrub_alts else None,
         "allow_re": re.compile("|".join(a for a in allow_alts if a), re.I)
         if any(allow_alts) else None,
