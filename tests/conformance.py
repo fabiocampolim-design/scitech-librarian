@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -97,6 +97,10 @@ DEFAULT_RULES = [
          check="auto", check_ids=["held-guard"]),
     dict(id=19, title="CI matrix covers Linux + Windows + macOS",
          applies="from-scratch", check="auto", check_ids=["ci-matrix"]),
+    dict(id=20, title="Archived predecessors are never tracked",
+         applies="all", check="auto", check_ids=["archives-ignored"]),
+    dict(id=21, title="No local copies of shared tools",
+         applies="all", check="auto", check_ids=["no-stale-tool-copies"]),
 ]
 
 
@@ -450,6 +454,43 @@ def chk_no_hardcoded_paths(repo, ctx):
     return "PASS", "no absolute user paths in tracked .py"
 
 
+ARCHIVE_DIR_RE = re.compile(r"(^|/)(archive|archived|_archive|old)(/|$)", re.I)
+# Shared tools that live in exactly one repo each; a copy elsewhere is stale.
+SHARED_TOOL_FILES = ("litscan.py", "transcript_archiver.py", "librarian.py",
+                     "wos_manual.py", "journals.py")
+
+
+def chk_archives_ignored(repo, ctx):
+    """Rule 20: an archived predecessor folded into the repo keeps its own
+    .git and is gitignored; nothing under an archive dir may be tracked."""
+    tracked = [f for f in ctx["files"]
+               if ARCHIVE_DIR_RE.search(f.replace("\\", "/").rsplit("/", 1)[0] + "/")]
+    if tracked:
+        return "FAIL", "%d tracked file(s) under an archive dir: %s" % (
+            len(tracked), ", ".join(tracked[:MAX_FINDINGS]))
+    return "PASS", "no tracked files under archive dirs"
+
+
+def chk_no_stale_tool_copies(repo, ctx):
+    """Rule 21: shared tools are not copied into other projects. A repo that
+    IS one of the tools passes (the file sits at its root); a recorded
+    consumer lists its copies in a gitignored .githubify-tool-consumer file."""
+    allow = set()
+    p = os.path.join(repo, ".githubify-tool-consumer")
+    if os.path.isfile(p):
+        allow = {ln.strip().replace("\\", "/") for ln in slurp(p).splitlines()
+                 if ln.strip() and not ln.startswith("#")}
+    hits = []
+    for rel in ctx["files"]:
+        norm = rel.replace("\\", "/")
+        base = norm.rsplit("/", 1)[-1]
+        if base in SHARED_TOOL_FILES and "/" in norm and norm not in allow:
+            hits.append(norm)
+    if hits:
+        return "FAIL", "shared-tool copies inside the tree (rule 21): " + ", ".join(hits[:MAX_FINDINGS])
+    return "PASS", "no stray copies of shared tools"
+
+
 CHECKS = {
     "scrub": chk_scrub,
     "scrub-notebook-outputs": chk_scrub_nb_outputs,
@@ -470,6 +511,8 @@ CHECKS = {
     "spdx-headers": chk_spdx,
     "held-guard": chk_held_guard,
     "no-hardcoded-paths": chk_no_hardcoded_paths,
+    "archives-ignored": chk_archives_ignored,
+    "no-stale-tool-copies": chk_no_stale_tool_copies,
 }
 
 
