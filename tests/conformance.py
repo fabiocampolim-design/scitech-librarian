@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -45,7 +45,9 @@ MAX_FINDINGS = 8   # per check, in the report
 # ---------------------------------------------------------------- rules.yaml
 
 def slurp(path):
-    with open(path, encoding="utf-8", errors="replace") as f:
+    # utf-8-sig: files written from PowerShell carry a UTF-8 BOM, which made
+    # a .project-class read as "set=?" on 2026-08-31 (CLAUDIU). Tolerate it.
+    with open(path, encoding="utf-8-sig", errors="replace") as f:
         return f.read()
 
 
@@ -61,7 +63,8 @@ DEFAULT_RULES = [
     dict(id=2, title="Show samples before pushing; naming is the owner's call",
          applies="all", check="manual", check_ids=[]),
     dict(id=3, title="Nothing personal, nothing secret (scrub)", applies="all",
-         check="auto", check_ids=["scrub", "scrub-notebook-outputs"]),
+         check="auto", check_ids=["scrub", "scrub-notebook-outputs",
+                                  "history-identity"]),
     dict(id=4, title="Priority: correctness, inputs, outputs, convenience",
          applies="all", check="manual", check_ids=[]),
     dict(id=5, title="Failing-first tests; pyflakes always looped in",
@@ -105,6 +108,9 @@ DEFAULT_RULES = [
          applies="study-and-contribute", check="manual", check_ids=[]),
     dict(id=23, title="Weekly upstream watch by a scheduled local script",
          applies="study-and-contribute", check="manual", check_ids=[]),
+    dict(id=24, title="Installers fail loudly and run unattended (dry-run test, "
+                      "tested failure path, --skip-deps, dated platforms.md row)",
+         applies="all", check="manual", check_ids=[]),
 ]
 
 
@@ -495,6 +501,30 @@ def chk_no_stale_tool_copies(repo, ctx):
     return "PASS", "no stray copies of shared tools"
 
 
+def chk_history_identity(repo, ctx):
+    """Rule 3 applies to git history too: an author/committer identity that
+    matches the scrub pattern (the private e-mail) is published by the first
+    push and survives every later file scrub. Found 2026-08-31: three
+    unpublished repos whose every commit carried the private identity, and a
+    fork branch about to be pushed. Rewrite (mailmap + filter-repo) first."""
+    if ctx["scrub_re"] is None:
+        return NO_PATTERN
+    rc, out = run_git(repo, "log", "--all", "--format=%an <%ae> / %cn <%ce>")
+    if rc != 0:
+        return "SKIP", "not a git repository"
+    pat, allow = ctx["scrub_re"], ctx["allow_re"]
+    bad = {}
+    for line in out.splitlines():
+        probe = allow.sub("", line) if allow is not None else line
+        if pat.search(probe):
+            bad[line] = bad.get(line, 0) + 1
+    if bad:
+        shown = ", ".join("%s x%d" % kv for kv in sorted(bad.items())[:MAX_FINDINGS])
+        return "FAIL", ("commit identities match the scrub pattern - rewrite "
+                        "history before any remote: " + shown)
+    return "PASS", "no scrub-pattern hit in any author/committer identity"
+
+
 CHECKS = {
     "scrub": chk_scrub,
     "scrub-notebook-outputs": chk_scrub_nb_outputs,
@@ -517,6 +547,7 @@ CHECKS = {
     "no-hardcoded-paths": chk_no_hardcoded_paths,
     "archives-ignored": chk_archives_ignored,
     "no-stale-tool-copies": chk_no_stale_tool_copies,
+    "history-identity": chk_history_identity,
 }
 
 
