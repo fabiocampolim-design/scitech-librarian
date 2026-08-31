@@ -1,0 +1,3 @@
+# Vendored byte-identical files must not be CRLF-converted on checkout
+tests/conformance.py text eol=lf
+tests/test_githubify_conformance.py text eol=lf

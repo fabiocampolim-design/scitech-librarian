@@ -949,6 +949,25 @@ _nospdx = [f for f in ("librarian.py", "project.py", "report.py", "render.py", "
            if "SPDX-License-Identifier: Apache-2.0" not in (HERE.parent / f).read_text(encoding="utf-8")[:300]]
 check("every tracked .py carries the SPDX header", not _nospdx, f"missing: {_nospdx}")
 
+# githubify rule 19: CI covers Linux + Windows + macOS -- and the README says
+# so honestly (the sister project's badge read "Windows | Linux" three
+# releases after macOS joined its matrix).
+_ci = (HERE.parent / ".github" / "workflows" / "tests.yml").read_text(encoding="utf-8")
+_no_os = [o for o in ("ubuntu-latest", "windows-latest", "macos-latest") if o not in _ci]
+check("CI matrix covers Linux, Windows and macOS", not _no_os, f"missing: {_no_os}")
+check("README states the CI platforms as Linux, Windows and macOS",
+      _readme.count("Linux, Windows and macOS") >= 2 and "on Linux and Windows" not in _readme,
+      "README still says 'Linux and Windows'")
+
+# the vendored checker must stay byte-identical to the canonical copy on every
+# platform: a Windows checkout with core.autocrlf=true would turn it CRLF
+# unless .gitattributes pins it to LF.
+_gaf = HERE.parent / ".gitattributes"
+_ga = _gaf.read_text(encoding="utf-8") if _gaf.exists() else ""
+_unpinned = [f for f in ("tests/conformance.py", "tests/test_githubify_conformance.py")
+             if f"{f} text eol=lf" not in _ga]
+check("vendored checker files are pinned to LF in .gitattributes", not _unpinned, f"unpinned: {_unpinned}")
+
 
 def test_offline_suite():
     """pytest entry point: the module body above is the suite."""

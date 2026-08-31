@@ -2,6 +2,16 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.2.4 — 2026-08-31
+
+- CI now runs the suite on macOS as well as Linux and Windows (Python 3.9
+  and 3.13) — the only check a Windows-developed tool gets on that platform.
+  The README's description of the CI platforms is updated to match, and the
+  suite guards both (the matrix and the README wording).
+- `.gitattributes` pins the vendored conformance checker and its wiring test
+  to LF, so a Windows checkout with `core.autocrlf=true` keeps them
+  byte-identical to the canonical copy; guarded by the suite.
+
 ## 3.2.3 — 2026-08-29
 
 - Post-release code-review fixes (same day): `CITATION.cff` at 3.2.3; the
