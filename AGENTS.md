@@ -63,6 +63,10 @@ imports) or clone, and run.
 3. `python librarian.py --selftest` — reports which backends work.
 4. `python project.py init --name "<project name>"` — optional but
    recommended; writes `lit/project.json`.
+5. Claude Code users: copy the repository's `SKILL.md` to
+   `~/.claude/skills/literature-search/SKILL.md` (the suite checks an
+   installed copy is byte-identical; it locates the clone via
+   `SCITECH_LIBRARIAN_HOME` or by searching for `librarian.py`).
 
 ## Writing queries (`queries.json`)
 
@@ -247,6 +251,6 @@ merge (by design: different questions, different blocks).
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys,
-223 checks; must pass
+229 checks; must pass
 before any change is proposed. CI runs it on Linux, Windows and macOS,
 Python 3.9 and 3.13.

@@ -2,6 +2,25 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.3.3 — 2026-09-01
+
+- The Claude Code skill ships with the tool: `SKILL.md` at the repository
+  root (portable — the clone is found through `SCITECH_LIBRARIAN_HOME` or by
+  searching for `librarian.py`, never by a hard-coded path), installed by
+  copying it to `~/.claude/skills/literature-search/SKILL.md`; the suite
+  checks an installed copy stays byte-identical, so the skill can no longer
+  describe a CLI the release has moved past (the 3.3.0 lesson).
+- `docs/build_manual.py` builds a reproducible `USER_MANUAL.pdf`: pandoc and
+  the TeX engine receive `SOURCE_DATE_EPOCH` derived from the manual's
+  front-matter `date`, so CreationDate and the PDF trailer `/ID` come from
+  the manual, not the wall clock, and lualatex is now preferred to xelatex
+  because xdvipdfmx draws the font subset tags at random on every run while
+  LuaTeX derives them from the font data — an unchanged manual rebuilds to
+  identical bytes (a rebuild on the released 3.3.2 tree used to dirty the PDF
+  by two bytes). The manual's `date` must now equal `CITATION.cff`
+  `date-released` (suite check).
+- Suite: 229 checks (six new).
+
 ## 3.3.2 — 2026-08-31
 
 - The 3.3.1 post-release review, all six findings: a non-dict `defaults`

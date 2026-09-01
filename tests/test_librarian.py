@@ -1168,6 +1168,55 @@ check("vendored checker files are pinned to LF in this checkout (git check-attr 
       not _unpinned, f"unpinned: {_unpinned}")
 
 
+# ---------------------------------------------------------------------------
+print("\n3.3.3: shipped Claude Code skill, reproducible manual PDF")
+# The literature-search skill ships in the repo (SKILL.md, portable: no machine
+# paths) and the copy a user installs under ~/.claude/skills must not drift
+# from it -- judged only where a copy is installed; CI has none.
+_skill = HERE.parent / "SKILL.md"
+_skill_txt = _skill.read_text(encoding="utf-8") if _skill.exists() else ""
+check("repo ships SKILL.md with the literature-search front matter",
+      _skill_txt.startswith("---\nname: literature-search\n"))
+_inst = Path.home() / ".claude" / "skills" / "literature-search" / "SKILL.md"
+check("installed ~/.claude/skills/literature-search/SKILL.md is byte-identical to the repo's"
+      " (skipped when none is installed)",
+      not _inst.exists() or (_skill.exists() and _inst.read_bytes() == _skill.read_bytes()),
+      f"installed copy at {_inst} differs -- copy the repo SKILL.md over it")
+# The manual PDF must be reproducible: pandoc + xelatex stamp CreationDate,
+# ModDate and the trailer /ID from SOURCE_DATE_EPOCH when it is set, so
+# build_manual.py derives it from the manual's own front-matter date and an
+# unchanged manual rebuilds to identical bytes.
+_sde = getattr(_bm, "source_date_epoch", None)
+check("build_manual.source_date_epoch(front matter) is the manual's date at 00:00 UTC",
+      _sde is not None and _sde('---\ntitle: "x"\ndate: "2026-08-31"\n---\n') == "1788134400"
+      and _sde("no front matter") == "0",
+      "missing or wrong")
+_calls = []
+class _Ret:
+    returncode = 0
+_orig_run = _bm.subprocess.run
+_bm.subprocess.run = lambda *a, **k: (_calls.append(k), _Ret)[1]
+try:
+    _bm._run(["pandoc", "--version"], HERE)
+finally:
+    _bm.subprocess.run = _orig_run
+_env = (_calls[0].get("env") or {}) if _calls else {}
+check("build_manual._run hands pandoc/xelatex SOURCE_DATE_EPOCH from the manual's date, PATH intact",
+      _sde is not None and _env.get("SOURCE_DATE_EPOCH") == _sde(_MAN)
+      and _env.get("PATH") == os.environ.get("PATH"),
+      f"env keys: {sorted(_env)[:6]}")
+# xdvipdfmx draws font subset tags (ABCDEF+LMRoman...) at random on every run
+# even under SOURCE_DATE_EPOCH; LuaTeX derives them from the font data, so only
+# a lualatex build is byte-reproducible (measured 2026-09-01, TeX Live 2026).
+check("build_manual prefers lualatex (reproducible font subset tags) over xelatex",
+      tuple(getattr(_bm, "ENGINES", ()))[:1] == ("lualatex",),
+      f"ENGINES = {getattr(_bm, 'ENGINES', None)}")
+check("USER_MANUAL.md front-matter date equals CITATION.cff date-released (it stamps the PDF)",
+      _re.search(r'^date:\s*"([^"]+)"', _MAN, _re.M).group(1)
+      == _re.search(r'^date-released:\s*"([^"]+)"',
+                    (HERE.parent / "CITATION.cff").read_text(encoding="utf-8"), _re.M).group(1))
+
+
 
 def test_offline_suite():
     """pytest entry point: the module body above is the suite."""

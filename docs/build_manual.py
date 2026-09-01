@@ -8,18 +8,21 @@ build_manual.py -- render docs/USER_MANUAL.md to USER_MANUAL.html and USER_MANUA
 
 Development-time script (the manual's source of truth is the Markdown; the
 built files are committed so readers need no tooling). Uses pandoc for the
-HTML and pandoc + xelatex for the PDF when available; otherwise falls back
+HTML and pandoc + lualatex for the PDF when available; otherwise falls back
 to a minimal stdlib Markdown-to-HTML conversion and report.py's built-in
 PDF writer, so the command never fails -- it just says what it used.
 """
 
 from __future__ import annotations
 
+import calendar
 import html
+import os
 import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -29,6 +32,10 @@ SRC = HERE / "USER_MANUAL.md"
 # tests/test_librarian.py imports this; sync_check_count() rewrites with it.
 CHECK_COUNT_RE = re.compile(r"\b(\d+)(?: checks\b|-check offline suite)")
 OUT_HTML, OUT_PDF = HERE / "USER_MANUAL.html", HERE / "USER_MANUAL.pdf"
+# lualatex first: it derives font subset tags from the font data, so with
+# SOURCE_DATE_EPOCH the PDF is byte-reproducible; xdvipdfmx draws the tags at
+# random on every run (TeX Live 2026, measured 2026-09-01).
+ENGINES = ("lualatex", "xelatex", "pdflatex")
 
 CSS = """body{font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:860px;
 margin:2rem auto;padding:0 1rem;color:#1b1b1b;background:#fff}
@@ -39,9 +46,27 @@ pre,code{font-family:ui-monospace,Consolas,monospace;font-size:.86rem}pre{backgr
 @media(prefers-color-scheme:dark){body{color:#e6e6e6;background:#151515}th{background:#222}pre{background:#222}}"""
 
 
-def _run(cmd, cwd):
+def source_date_epoch(text: str) -> str:
+    """The manual's front-matter date as a Unix epoch string (00:00 UTC), "0"
+    when there is none. Handed to pandoc / the TeX engine as SOURCE_DATE_EPOCH so the
+    PDF's CreationDate, ModDate and trailer /ID come from the manual, not the
+    wall clock: an unchanged manual rebuilds to identical bytes (3.3.3)."""
+    m = re.search(r'^date: *"([^"]+)"', text, flags=re.M)
+    if not m:
+        return "0"
     try:
-        return subprocess.run(cmd, cwd=str(cwd), capture_output=True, timeout=600).returncode == 0
+        return str(calendar.timegm(time.strptime(m.group(1).strip(), "%Y-%m-%d")))
+    except ValueError:
+        return "0"
+
+
+def _run(cmd, cwd):
+    env = dict(os.environ)
+    env["SOURCE_DATE_EPOCH"] = source_date_epoch(SRC.read_text(encoding="utf-8"))
+    env["FORCE_SOURCE_DATE"] = "1"       # TeX's own date primitives follow suit
+    try:
+        return subprocess.run(cmd, cwd=str(cwd), capture_output=True, timeout=600,
+                              env=env).returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
 
@@ -184,7 +209,7 @@ def main() -> int:
     else:
         OUT_HTML.write_text(_wrap(md_to_html_min(text)), encoding="utf-8")
         print("html via builtin converter (install pandoc for a nicer one)")
-    engine = next((e for e in ("xelatex", "lualatex", "pdflatex") if shutil.which(e)), None)
+    engine = next((e for e in ENGINES if shutil.which(e)), None)
     if shutil.which("pandoc") and engine:
         ok = _run(["pandoc", SRC.name, "--toc", "--toc-depth=2", f"--pdf-engine={engine}",
                    "-V", "geometry:margin=2.2cm", "-V", "colorlinks=true", "-V", "mainfont=",
