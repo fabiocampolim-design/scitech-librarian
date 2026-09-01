@@ -81,11 +81,15 @@ def date(lang, ymd=None) -> str:
         ymd = _time.localtime()[:3]
     y, m, d = ymd
     month = _MONTHS[lang][m - 1]
-    if lang in ("pt-BR", "es"):
+    if lang == "pt-BR":
+        return f"{'1º' if d == 1 else d} de {month} de {y}"
+    if lang == "es":
         return f"{d} de {month} de {y}"
     if lang == "de":
         return f"{d}. {month} {y}"
-    return f"{d} {month} {y}"                      # en, fr
+    if lang == "fr":
+        return f"{'1er' if d == 1 else d} {month} {y}"
+    return f"{d} {month} {y}"                      # en
 
 
 class Translator:

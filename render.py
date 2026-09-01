@@ -445,7 +445,9 @@ def _pdf_builtin(text: str, path: Path) -> None:
     pages = [lines[i:i + per_page] for i in range(0, max(len(lines), 1), per_page)]
 
     def esc(s):
-        s = s.encode("latin-1", "replace").decode("latin-1")
+        # cp1252 = WinAnsiEncoding (the font's declared encoding): dashes,
+        # curly quotes, ellipsis, oe ligature survive; the rest becomes '?'
+        s = s.encode("cp1252", "replace").decode("cp1252")
         return s.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
     objs = []
@@ -461,7 +463,7 @@ def _pdf_builtin(text: str, path: Path) -> None:
     kids_placeholder = add(b"")
     for pg in pages:
         stream = "BT /F1 8 Tf 10 TL 36 806 Td " + " ".join(f"({esc(ln)}) Tj T*" for ln in pg) + " ET"
-        sb = stream.encode("latin-1")
+        sb = stream.encode("cp1252")
         cid = add(b"<< /Length " + str(len(sb)).encode() + b" >>\nstream\n" + sb + b"\nendstream")
         pid = add(f"<< /Type /Page /Parent {kids_placeholder} 0 R /MediaBox [0 0 595 842] "
                   f"/Resources << /Font << /F1 {font} 0 R >> >> /Contents {cid} 0 R >>".encode())

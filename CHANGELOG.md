@@ -2,6 +2,22 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.3.2 — 2026-08-31
+
+- The 3.3.1 post-release review, all six findings: a non-dict `defaults`
+  in `project.json` (`null`, a bare string) is repaired once in
+  `project.load_project`, so project-mode reports no longer crash on it
+  (3.3.1 had guarded only `default_lang`); `librarian.py --report-lang`
+  validates through `i18n.normalize` as an argparse `type`, so the aliases
+  `report.py --lang` accepts (`pt`, `PT-br`, `fr_FR`) work here too, still
+  refused before any backend call, and `i18n` is imported lazily on use
+  instead of at module load; the built-in PDF writer encodes cp1252 to
+  match its `WinAnsiEncoding`, so dashes, curly quotes, ellipses, `œ` and
+  `€` render instead of `?`; `i18n.date` writes `1er août` / `1º de
+  setembro`; the suite's no-translation guard now asserts that
+  `librarian.py`'s only i18n use is `normalize` (any spelling of a
+  translator call fails it). All suite-guarded.
+
 ## 3.3.1 — 2026-08-31
 
 - The 3.3.0 post-release review, all five findings: the dependency-free PDF

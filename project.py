@@ -360,6 +360,8 @@ def load_project(outdir: Path) -> dict:
     p.setdefault("labels", {})
     p.setdefault("block_aliases", {})
     p.setdefault("defaults", {})
+    if not isinstance(p["defaults"], dict):     # "defaults": null / "pt-BR" (hand edits)
+        p["defaults"] = {}
     return p
 
 

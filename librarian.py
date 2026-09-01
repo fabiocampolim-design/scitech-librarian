@@ -53,12 +53,21 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.3.1"
-try:                                     # report languages, for --report-lang choices only:
-    from i18n import LANGS as _LANGS     # nothing in this script is ever translated
-    REPORT_LANGS = tuple(_LANGS)
-except ImportError:                      # librarian.py copied alone
-    REPORT_LANGS = ("en", "pt-BR", "es", "de", "fr")
+VERSION = "3.3.2"
+
+
+def _report_lang(value: str) -> str:
+    """argparse type for --report-lang: validated before any backend call,
+    aliases accepted (pt, PT-br, fr_FR ...). Nothing in this script is ever
+    translated; i18n is imported here only, on use."""
+    try:
+        import i18n
+    except ImportError as e:             # librarian.py copied without i18n.py
+        raise argparse.ArgumentTypeError(f"i18n.py is needed next to librarian.py ({e})")
+    try:
+        return i18n.normalize(value)
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
 HERE = Path(__file__).resolve().parent
 # If this file lives in a tools/ subdirectory of a larger project, the .env,
 # query file and lit/ output directory belong to the project root. Resolve that
@@ -885,8 +894,8 @@ def main() -> int:
                     choices=("md", "html", "tex", "pdf", "txt"),
                     help="report formats to write (default: md). pdf uses LaTeX/pandoc "
                          "if installed, else a built-in plain-text writer")
-    ap.add_argument("--report-lang", default=None, choices=REPORT_LANGS, metavar="LANG",
-                    help=f"report language: {', '.join(REPORT_LANGS)} (default: project.json "
+    ap.add_argument("--report-lang", default=None, type=_report_lang, metavar="LANG",
+                    help="report language: en, pt-BR, es, de, fr (default: project.json "
                          "defaults.lang, else en); logs and console stay English")
     ap.add_argument("--no-report", action="store_true", help="skip report generation")
     ap.add_argument("--version", action="version", version=f"scitech-librarian {VERSION}")

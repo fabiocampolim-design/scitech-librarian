@@ -573,10 +573,16 @@ with tempfile.TemporaryDirectory() as td:
     check("write_reports: explicit lang wins over the project default",
           out["md"].read_text(encoding="utf-8").startswith("# Rapport de recherche bibliographique"))
     (lit / "project.json").unlink()
-    check("run.log written by librarian.py is not translated (librarian/project never call a translator)",
+    import re as _re2
+    _lib_src = (HERE.parent / "librarian.py").read_text(encoding="utf-8")
+    _i18n_uses = set(_re2.findall(r"i18n\.(?!py\b)(\w+)", _lib_src))     # attributes, not "i18n.py"
+    check("run.log written by librarian.py is not translated: librarian.py's only i18n use is "
+          "normalize (lazily, for --report-lang); project.py has none",
           "i18n" not in (HERE.parent / "project.py").read_text(encoding="utf-8")
-          and "translator(" not in (HERE.parent / "librarian.py").read_text(encoding="utf-8")
-          and "_i18n.tr(" not in (HERE.parent / "librarian.py").read_text(encoding="utf-8"))
+          and _i18n_uses == {"normalize"}
+          and not _re2.search(r"translator|Translator|\btr\(|from i18n import", _lib_src)
+          and not _re2.search(r"^import i18n", _lib_src, flags=_re2.M),
+          f"i18n uses in librarian.py: {_i18n_uses}")
 
     # --- 3.3.1: the post-release review of 3.3.0 ---------------------------------
     # (1) the dependency-free PDF writer must draw accented letters: a Type1
@@ -590,10 +596,32 @@ with tempfile.TemporaryDirectory() as td:
           "no /Encoding or accented bytes replaced")
     # (2) a bad --report-lang is refused by argparse, before any backend call
     _bad = subprocess.run([sys.executable, str(HERE.parent / "librarian.py"), "--report-lang", "pt-PT",
-                           "--list"], capture_output=True, text=True, cwd=str(lit))
+                           "--help"], capture_output=True, text=True, cwd=str(lit))
     check("librarian.py --report-lang rejects an unknown language at parse time (exit 2)",
-          _bad.returncode == 2 and "pt-PT" in _bad.stderr and "invalid choice" in _bad.stderr,
+          _bad.returncode == 2 and "pt-PT" in _bad.stderr and "unknown report language" in _bad.stderr,
           f"rc={_bad.returncode} stderr={_bad.stderr[-160:]!r}")
+    _ok = subprocess.run([sys.executable, str(HERE.parent / "librarian.py"), "--report-lang", "PT-br",
+                          "--help"], capture_output=True, text=True, cwd=str(lit))
+    check("librarian.py --report-lang accepts the same aliases as report.py --lang (PT-br)",
+          _ok.returncode == 0, f"rc={_ok.returncode} stderr={_ok.stderr[-160:]!r}")
+    # 3.3.2: a non-dict "defaults" is repaired where every consumer reads it
+    import project as _project  # noqa: E402
+    for _bad_def in (None, "pt-BR", 3):
+        (lit / "project.json").write_text(json.dumps({"defaults": _bad_def}), encoding="utf-8")
+        _p = _project.load_project(lit)
+        check(f"load_project: defaults={_bad_def!r} -> {{}} (build/main/default_lang all safe)",
+              _p["defaults"] == {})
+    (lit / "project.json").unlink()
+    _pdf3 = run / "builtin_cp1252.pdf"
+    report._pdf_builtin("Cœur — “quotes”… ‘x’ €", _pdf3)
+    _pb3 = _pdf3.read_bytes()
+    check("builtin PDF: WinAnsi-only glyphs (oe, dashes, curly quotes, ellipsis, euro) kept, not '?'",
+          b"C\x9cur \x97 \x93quotes\x94\x85 \x91x\x92 \x80" in _pb3, "cp1252 range replaced")
+    check("i18n.date: first of the month is 1er (fr) and 1º (pt-BR)",
+          i18n.date("fr", (2026, 9, 1)) == "1er septembre 2026"
+          and i18n.date("pt-BR", (2026, 9, 1)) == "1º de setembro de 2026"
+          and i18n.date("es", (2026, 9, 1)) == "1 de septiembre de 2026"
+          and i18n.date("en", (2026, 9, 1)) == "1 September 2026")
     # (3) an invalid or null project default degrades to English with a warning, never a traceback
     for _pj in ({"defaults": {"lang": "pt-PT"}}, {"defaults": None}):
         (lit / "project.json").write_text(json.dumps(_pj), encoding="utf-8")
