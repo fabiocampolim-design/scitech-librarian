@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10.2" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2026-09-01" />
+  <title>scitech-librarian — Manuel utilisateur</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style type="text/css">body{font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:860px;margin:2rem auto;padding:0 1rem;color:#1b1b1b;background:#fff}h1{font-size:1.6rem;border-bottom:1px solid #999;padding-bottom:.2rem;margin-top:2rem}h2{font-size:1.25rem;margin-top:1.6rem}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{border:1px solid #bbb;padding:.3rem .5rem;text-align:left;vertical-align:top}th{background:#f3f3f3}pre,code{font-family:ui-monospace,Consolas,monospace;font-size:.86rem}pre{background:#f6f6f6;padding:.6rem;overflow-x:auto}@media(prefers-color-scheme:dark){body{color:#e6e6e6;background:#151515}th{background:#222}pre{background:#222}}</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">scitech-librarian — Manuel utilisateur</h1>
+<p class="subtitle">version 3.4.0</p>
+<p class="date">2026-09-01</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#ce-que-cest" id="toc-ce-que-cest">1. Ce que c’est</a></li>
+<li><a href="#installation-et-configuration" id="toc-installation-et-configuration">2. Installation et
+configuration</a></li>
+<li><a href="#concepts" id="toc-concepts">3. Concepts</a></li>
+<li><a href="#écrire-des-requêtes" id="toc-écrire-des-requêtes">4.
+Écrire des requêtes</a></li>
+<li><a href="#lancer-une-recherche" id="toc-lancer-une-recherche">5.
+Lancer une recherche</a></li>
+<li><a href="#le-répertoire-de-recherche" id="toc-le-répertoire-de-recherche">6. Le répertoire de recherche</a>
+<ul>
+<li><a href="#index" id="toc-index">6.1 Index</a></li>
+<li><a href="#apporter-des-notices-de-lextérieur" id="toc-apporter-des-notices-de-lextérieur">6.2 Apporter des notices de
+l’extérieur</a></li>
+<li><a href="#depuis-zotero-mendeley-et-endnote" id="toc-depuis-zotero-mendeley-et-endnote">6.3 Depuis Zotero, Mendeley
+et EndNote</a></li>
+</ul></li>
+<li><a href="#rapports" id="toc-rapports">7. Rapports</a>
+<ul>
+<li><a href="#une-exécution" id="toc-une-exécution">7.1 Une
+exécution</a></li>
+<li><a href="#le-répertoire-de-recherche-entier" id="toc-le-répertoire-de-recherche-entier">7.2 Le répertoire de
+recherche entier</a></li>
+<li><a href="#niveaux" id="toc-niveaux">7.3 Niveaux</a></li>
+<li><a href="#formats" id="toc-formats">7.4 Formats</a></li>
+<li><a href="#filtres" id="toc-filtres">7.5 Filtres</a></li>
+<li><a href="#prisma" id="toc-prisma">7.6 PRISMA</a></li>
+<li><a href="#suggestions" id="toc-suggestions">7.7 Suggestions</a></li>
+<li><a href="#langues" id="toc-langues">7.8 Langues</a></li>
+</ul></li>
+<li><a href="#indicateurs-des-revues" id="toc-indicateurs-des-revues">8.
+Indicateurs des revues</a></li>
+<li><a href="#web-of-science" id="toc-web-of-science">9. Web of
+Science</a></li>
+<li><a href="#journaux-et-audit" id="toc-journaux-et-audit">10. Journaux
+et audit</a></li>
+<li><a href="#flux-de-travail" id="toc-flux-de-travail">11. Flux de
+travail</a></li>
+<li><a href="#fonctionnalités-et-limitations" id="toc-fonctionnalités-et-limitations">12. Fonctionnalités et
+limitations</a></li>
+<li><a href="#tests" id="toc-tests">13. Tests</a></li>
+<li><a href="#licence-et-conduite" id="toc-licence-et-conduite">14.
+Licence et conduite</a></li>
+</ul>
+</nav>
+<p><a href="USER_MANUAL.md">English</a> · <a href="USER_MANUAL.pt-BR.md">Português (Brasil)</a> · <a href="USER_MANUAL.es.md">Español</a> · <a href="USER_MANUAL.de.md">Deutsch</a> · <strong>Français</strong></p>
+<p><em>Traduction du manuel anglais, qui fait référence ; les commandes,
+noms de fichiers, options et blocs de code sont conservés tels
+quels.</em></p>
+<h1 id="ce-que-cest">1. Ce que c’est</h1>
+<p>scitech-librarian est un instrument de recherche bibliographique
+reproductible pour les sciences et l’ingénierie. Vous écrivez une
+requête structurée une seule fois ; il l’exécute contre jusqu’à huit
+bases de données bibliographiques via leurs API documentées, archive
+tout (notices, la chaîne de requête exacte envoyée à chaque base de
+données, nombres de résultats, un journal) et rédige un rapport de
+recherche bibliographique avec un diagramme de flux PRISMA 2020. Au fil
+des mois, les exécutions, plus les notices obtenues par d’autres moyens,
+s’accumulent dans un <strong>répertoire de recherche</strong> que le
+même rapport peut décrire dans son ensemble — ce que chaque recherche a
+apporté, ce que chaque base de données a contribué, comment les nombres
+ont dérivé, quelles revues comptent.</p>
+<p>Ce sont cinq scripts Python plus deux modules partagés
+(<code>render.py</code>, <code>i18n.py</code>), sans dépendance au-delà
+de la bibliothèque standard. Il n’y a rien à installer : copiez les
+fichiers, remplissez <code>.env</code>, écrivez
+<code>queries.json</code>, exécutez.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>librarian.py</code></td>
+<td>exécute une recherche ; archive une exécution ; appelle le
+rapport</td>
+</tr>
+<tr>
+<td><code>project.py</code></td>
+<td>répertoire de recherche : index, ingestion de notices externes,
+état</td>
+</tr>
+<tr>
+<td><code>report.py</code></td>
+<td>rapports pour une exécution ou le répertoire entier ; PRISMA ;
+filtres</td>
+</tr>
+<tr>
+<td><code>journals.py</code></td>
+<td>indicateurs des revues (chiffres de type facteur d’impact) par
+année</td>
+</tr>
+<tr>
+<td><code>wos_manual.py</code></td>
+<td>Web of Science à la main (pas d’API gratuite utilisable)</td>
+</tr>
+<tr>
+<td><code>render.py</code></td>
+<td>moteurs de rendu Markdown / HTML / LaTeX / texte et la chaîne PDF
+(importé par <code>report.py</code>)</td>
+</tr>
+<tr>
+<td><code>i18n.py</code></td>
+<td>langues du rapport : le catalogue en / pt-BR / es / de / fr (importé
+par <code>report.py</code> ; §7.8)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pour les agents d’IA.</strong> <code>AGENTS.md</code> à la
+racine du dépôt est la description complète de l’outil orientée machine.
+Si vous travaillez avec un agent de programmation (Claude Code, Codex,
+Cursor…), dites-lui : <em>« Lis AGENTS.md, puis fais une vérification de
+nouveauté sur X »</em> — il contient les commandes, les schémas de
+fichiers, les flux de travail et les règles que l’agent ne doit pas
+enfreindre.</p>
+<h1 id="installation-et-configuration">2. Installation et
+configuration</h1>
+<p>Prérequis : Python 3.9 ou plus récent. Facultatif, pour des rapports
+PDF composés : une distribution LaTeX (xelatex, lualatex ou pdflatex) ou
+pandoc ; sans eux, le PDF est produit par un moteur texte brut
+intégré.</p>
+<pre><code>git clone https://github.com/fabiocampolim-design/scitech-librarian
+cd scitech-librarian
+cp .env.example .env            # fill in what you have
+cp queries.example.json queries.json
+python librarian.py --selftest</code></pre>
+<p>Clés de <code>.env</code> :</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Clé</th>
+<th>Nécessaire pour</th>
+<th>Comment l’obtenir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CONTACT_EMAIL</code></td>
+<td>accès « polite pool » à OpenAlex/Crossref/Unpaywall</td>
+<td>votre adresse</td>
+</tr>
+<tr>
+<td><code>ADS_TOKEN</code></td>
+<td>NASA ADS</td>
+<td>gratuit, <a href="https://ui.adsabs.harvard.edu/user/settings/token" class="uri">https://ui.adsabs.harvard.edu/user/settings/token</a></td>
+</tr>
+<tr>
+<td><code>SCOPUS_API_KEY</code></td>
+<td>Scopus (+ réseau institutionnel/VPN)</td>
+<td>gratuite, <a href="https://dev.elsevier.com/apikey/manage" class="uri">https://dev.elsevier.com/apikey/manage</a></td>
+</tr>
+<tr>
+<td><code>SCOPUS_INSTTOKEN</code></td>
+<td>Scopus sans VPN</td>
+<td>demandez à votre bibliothèque</td>
+</tr>
+<tr>
+<td><code>S2_API_KEY</code></td>
+<td>Semantic Scholar plus rapide</td>
+<td>facultatif</td>
+</tr>
+<tr>
+<td><code>CORE_API_KEY</code></td>
+<td>CORE (si configuré dans backends.json)</td>
+<td>gratuite, <a href="https://core.ac.uk/services/api" class="uri">https://core.ac.uk/services/api</a></td>
+</tr>
+<tr>
+<td><code>WOS_STARTER_KEY</code></td>
+<td>Web of Science Starter API (grammaire restreinte)</td>
+<td>rarement rentable</td>
+</tr>
+</tbody>
+</table>
+<p>Cinq backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
+Crossref) n’ont besoin ni de clé ni d’institution.</p>
+<p><strong>Utilisation intégrée dans un autre projet.</strong> Placez
+les sept fichiers dans un sous-répertoire <code>tools/</code> ;
+<code>.env</code>, <code>queries.json</code> et <code>lit/</code> sont
+alors cherchés dans le répertoire parent.</p>
+<h1 id="concepts">3. Concepts</h1>
+<p><strong>Bloc.</strong> Une requête structurée : une liste de groupes
+de synonymes combinés par AND, chaque groupe étant une liste de
+synonymes combinés par OR. Un bloc a un nom (<code>A</code>,
+<code>CD</code>, <code>NOV</code>…), un titre et une note. Les blocs
+vivent dans <code>queries.json</code>.</p>
+<p><strong>Exécution.</strong> Un lancement de <code>librarian.py</code>
+: chaque bloc sélectionné contre chaque backend sélectionné, archivé
+sous <code>lit/runs/&lt;timestamp&gt;/</code>.</p>
+<p><strong>Répertoire de recherche.</strong> Un dossier (par défaut
+<code>lit/</code>, un autre avec <code>--outdir</code>) contenant toutes
+les exécutions d’un projet, les notices ingérées de l’extérieur, l’index
+du projet (<code>project.json</code>), les nombres du tri PRISMA
+(<code>screening.json</code>), les indicateurs des revues, les rapports
+et les journaux d’audit. Un répertoire par projet ; un laboratoire en a
+plusieurs.</p>
+<p><strong>Source manuelle.</strong> Des notices qui ne viennent pas
+d’une exécution : un export Zotero ou Mendeley, le fichier RIS d’un
+collègue, une session Web of Science, une liste de références. Ingérées
+avec <code>project.py ingest</code>, elles gardent leur provenance (qui,
+quand, d’où, méthode) et apparaissent dans chaque rapport comme une
+source de plus, et dans le flux PRISMA dans la colonne appropriée.</p>
+<p><strong>Notice.</strong> Le schéma commun utilisé par chaque fichier
+:
+<code>title year doi journal authors url abstract cited_by issn block backend</code>.
+Les notices de projet fusionnées portent aussi <code>found_by</code>
+(les sources qui l’ont trouvée) et <code>first_seen</code>.</p>
+<p><strong>Niveau.</strong> Ce qu’un rapport contient :
+<code>simple</code> (quelques pages), <code>intermediate</code> (chaque
+notice unique plus des analyses), <code>full</code> (tout, résumés
+compris — des centaines de pages pour les grands projets).</p>
+<h1 id="écrire-des-requêtes">4. Écrire des requêtes</h1>
+<p><code>queries.json</code> :</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;PSC&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;Perovskite solar cell degradation under humidity&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;note&quot;</span><span class="fu">:</span> <span class="st">&quot;grounding block -- expect thousands&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;groups&quot;</span><span class="fu">:</span> <span class="ot">[[</span><span class="st">&quot;perovskite solar cell&quot;</span><span class="ot">,</span> <span class="st">&quot;halide perovskite photovoltaic&quot;</span><span class="ot">],</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>               <span class="ot">[</span><span class="st">&quot;degradation&quot;</span><span class="ot">,</span> <span class="st">&quot;stability&quot;</span><span class="ot">],</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>               <span class="ot">[</span><span class="st">&quot;humidity&quot;</span><span class="ot">,</span> <span class="st">&quot;moisture&quot;</span><span class="ot">]]</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;NOV&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;novelty check: origami metamaterials as topological acoustic pumps&quot;</span><span class="fu">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;note&quot;</span><span class="fu">:</span> <span class="st">&quot;a SMALL number is the good outcome; read every hit&quot;</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;groups&quot;</span><span class="fu">:</span> <span class="ot">[[</span><span class="st">&quot;origami&quot;</span><span class="ot">,</span> <span class="st">&quot;kirigami&quot;</span><span class="ot">],</span> <span class="ot">[</span><span class="st">&quot;acoustic metamaterial&quot;</span><span class="ot">,</span> <span class="st">&quot;phononic crystal&quot;</span><span class="ot">],</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>               <span class="ot">[</span><span class="st">&quot;topological pumping&quot;</span><span class="ot">,</span> <span class="st">&quot;edge state&quot;</span><span class="ot">]]</span><span class="fu">,</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;arxiv_groups&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">0</span><span class="ot">,</span> <span class="dv">2</span><span class="ot">]</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Règles pratiques :</p>
+<ul>
+<li>Ne mettez pas les termes entre guillemets ; l’outil le fait selon la
+grammaire de chaque base de données.</li>
+<li>Un mot générique seul (<code>model</code>, <code>structure</code>,
+<code>system</code>) dans son propre groupe est la cause habituelle de
+nombres dans les dizaines de milliers.</li>
+<li><code>arxiv_groups</code> indique quels groupes (deux au plus) arXiv
+reçoit ; arXiv se bloque sur les booléens profondément imbriqués. Par
+défaut : les deux premiers. arXiv est paginé par 100 notices avec une
+pause de 3 s, donc un grand <code>--limit</code> y est lent.</li>
+<li>Le bloc le plus informatif est une intersection délibérée de deux
+littératures dont vous soupçonnez qu’elles ne se parlent pas. Un
+résultat proche de zéro est une découverte — <em>si</em> vous lisez
+ensuite chaque résultat.</li>
+<li>Les opérateurs de proximité (<code>NEAR/n</code>, <code>W/n</code>)
+ne sont pas exprimables ; si votre article en a besoin, gardez à côté
+des chaînes Web of Science / Scopus écrites à la main et citez
+celles-ci.</li>
+</ul>
+<h1 id="lancer-une-recherche">5. Lancer une recherche</h1>
+<pre><code>python librarian.py                        # all blocks, every configured backend
+python librarian.py --counts-only          # hit counts only (seconds)
+python librarian.py --blocks NOV CD        # selected blocks
+python librarian.py --backends openalex ads
+python librarian.py --skip arxiv           # drop a misbehaving backend
+python librarian.py --limit 500            # records per block and backend (default 300)
+python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
+python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
+python librarian.py --outdir lit_topomat   # another research directory
+python librarian.py --report-level intermediate --report-format md html pdf
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --no-report
+python librarian.py --queries other.json      # another query file (default ./queries.json)
+python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
+python librarian.py --timeout 60              # per-request timeout in seconds (default 45)
+python librarian.py --list                    # blocks and backend readiness, then exit
+python librarian.py --selftest                # ping every backend, then exit</code></pre>
+<p>Liste complète des paramètres :
+<code>python librarian.py --help</code>. Chaque option a une valeur par
+défaut ; <code>--outdir</code>, <code>--verbose</code>,
+<code>--quiet</code> et <code>--log-dir</code> existent sur chaque
+script.</p>
+<p>Ce qu’une exécution écrit (<code>lit/runs/&lt;stamp&gt;/</code>)
+:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Contenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>counts.json</code>, <code>counts.md</code></td>
+<td>nombres de résultats par bloc et backend ; tableau prêt à
+coller</td>
+</tr>
+<tr>
+<td><code>queries.json</code></td>
+<td>la chaîne de requête exacte envoyée à chaque backend</td>
+</tr>
+<tr>
+<td><code>blocks.json</code></td>
+<td>les définitions de blocs utilisées</td>
+</tr>
+<tr>
+<td><code>meta.json</code></td>
+<td>réglages, backends et points d’accès, version, durées</td>
+</tr>
+<tr>
+<td><code>records/&lt;block&gt;_&lt;backend&gt;.json</code></td>
+<td>notices brutes par backend (après le filtre de revues)</td>
+</tr>
+<tr>
+<td><code>ris/&lt;block&gt;_&lt;backend&gt;.ris</code></td>
+<td>RIS par bloc pour Zotero/Mendeley/EndNote</td>
+</tr>
+<tr>
+<td><code>all_records.json/.csv/.ris</code></td>
+<td>dédoublonnées, triées par citations</td>
+</tr>
+<tr>
+<td><code>all_records.bib</code>, <code>all_records.csl.json</code></td>
+<td>le même ensemble en BibTeX et CSL-JSON</td>
+</tr>
+<tr>
+<td><code>junk.json</code></td>
+<td>notices retirées par le filtre de revues, avec leurs revues</td>
+</tr>
+<tr>
+<td><code>prisma.json</code></td>
+<td>modèle pour les étapes PRISMA manuelles</td>
+</tr>
+<tr>
+<td><code>run.log</code></td>
+<td>tout ce qui a été affiché</td>
+</tr>
+<tr>
+<td><code>report.*</code></td>
+<td>le rapport (voir §7)</td>
+</tr>
+</tbody>
+</table>
+<p>Plus <code>lit/counts_history.csv</code> (une ligne par
+bloc/backend/exécution, pour la dérive) et
+<code>lit/logs/librarian_&lt;stamp&gt;_&lt;pid&gt;.log</code> (journal
+d’audit : invocation, versions, chaque message).</p>
+<p>Les nombres sont sauvegardés après chaque appel d’API et Ctrl-C est
+sûr : un blocage tardif dans une longue exécution ne perd rien.</p>
+<h1 id="le-répertoire-de-recherche">6. Le répertoire de recherche</h1>
+<h2 id="index">6.1 Index</h2>
+<pre><code>python project.py init --name &quot;Topological materials review&quot; --description &quot;…&quot;
+python project.py status</code></pre>
+<p><code>status</code> liste chaque membre (exécutions et sources
+manuelles) avec date, nombre de notices, méthode et étiquette, l’état du
+dossier de dépôt et le dernier rapport. Les membres sont découverts en
+listant le répertoire — rien n’a besoin d’être déclaré.
+<code>project.json</code> ne contient que ce qui ne peut pas être
+découvert :</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;…&quot;</span><span class="fu">,</span> <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;…&quot;</span><span class="fu">,</span> <span class="dt">&quot;created&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-28&quot;</span><span class="fu">,</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;exclude&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;20260814T223331&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;labels&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;20260828T095041&quot;</span><span class="fu">:</span> <span class="st">&quot;August full scan&quot;</span><span class="fu">},</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;block_aliases&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;X&quot;</span><span class="fu">:</span> <span class="st">&quot;CD&quot;</span><span class="fu">},</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;defaults&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;level&quot;</span><span class="fu">:</span> <span class="st">&quot;simple&quot;</span><span class="fu">,</span> <span class="dt">&quot;format&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;md&quot;</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;metric&quot;</span><span class="fu">:</span> <span class="st">&quot;openalex_2yr&quot;</span><span class="fu">}}</span></span></code></pre></div>
+<pre><code>python project.py exclude 20260814T223331      # a test run you do not want in reports
+python project.py label 20260828T095041 &quot;August full scan&quot;
+python project.py alias X CD                    # block renamed between runs
+python project.py oa                            # Unpaywall pass over every member that lacks OA data
+python project.py oa --members 20260828T095041  # restrict the pass to these member ids</code></pre>
+<p><code>oa</code> est la recherche de libre accès a posteriori : les
+exécutions faites sans <code>--pdfs</code> et les sources manuelles
+reçoivent les champs <code>is_oa</code> / <code>oa_pdf</code> (copies
+légales uniquement, mises en cache dans
+<code>unpaywall_cache.json</code>), que les statistiques de libre accès
+du rapport et <code>--oa-only</code> couvrent alors pour tout le
+projet.</p>
+<h2 id="apporter-des-notices-de-lextérieur">6.2 Apporter des notices de
+l’extérieur</h2>
+<p>Trois façons, toutes aboutissant dans
+<code>lit/manual/&lt;name&gt;/</code> avec le fichier d’origine, un
+<code>records.json</code> au schéma commun et un
+<code>source.json</code> avec la provenance :</p>
+<ol type="1">
+<li><p><strong>Ligne de commande</strong> — la façon entièrement décrite
+:</p>
+<pre><code>python project.py ingest export.ris --name zotero-aug --block CD \
+       --method citation --who &quot;A. Colleague&quot; --origin &quot;Zotero group library&quot; \
+       --note &quot;reference lists of the three key papers&quot;</code></pre>
+<p>Plusieurs fichiers peuvent être donnés ; <code>--kind</code> remplace
+la détection par extension (<code>ris</code>, <code>bibtex</code>,
+<code>csv</code>, <code>json</code>).</p></li>
+<li><p><strong>Dossier de dépôt</strong> — déposez des fichiers dans
+<code>lit/inbox/</code> et lancez
+<code>python project.py ingest --inbox</code> ; chaque fichier devient
+une source nommée d’après lui (ajoutez <code>--method</code> etc. pour
+l’appliquer à tous).</p></li>
+<li><p><strong>Web of Science</strong> —
+<code>python wos_manual.py ingest</code> lit les fichiers RIS que vous
+avez exportés depuis l’interface WoS et les enregistre comme sources
+manuelles avec <code>method=database</code>.</p></li>
+</ol>
+<p>Formats acceptés : RIS (Zotero, Mendeley, EndNote, Web of Science,
+Scopus), BibTeX, CSV avec ligne d’en-tête (noms de colonnes Scopus et
+WoS reconnus ; sinon
+<code>title, year, doi, journal, authors, url, abstract, block, cited_by</code>)
+et listes de notices JSON (par exemple le <code>all_records.json</code>
+de l’exécution d’un collègue).</p>
+<p><code>--method</code> suit les catégories PRISMA 2020 pour les
+notices identifiées par d’autres méthodes : <code>database</code> (un
+export de base de données — rejoint la colonne des bases de données),
+<code>citation</code> (listes de références, articles citants),
+<code>website</code>, <code>organisation</code>, <code>expert</code> (la
+recommandation d’un collègue), <code>other</code>.</p>
+<p>Vous pouvez aussi fournir des fichiers supplémentaires à un seul
+rapport sans les stocker :
+<code>report.py --records file.ris</code>.</p>
+<h2 id="depuis-zotero-mendeley-et-endnote">6.3 Depuis Zotero, Mendeley
+et EndNote</h2>
+<p><em>Sortie :</em> chaque exécution écrit du RIS
+(<code>all_records.ris</code>, <code>ris/</code> par bloc), du BibTeX
+(<code>all_records.bib</code>) et du CSL-JSON
+(<code>all_records.csl.json</code>) ; importez avec File → Import. Les
+résumés, DOI et URL sont conservés, et le nom du bloc arrive comme
+mot-clé (<code>block:NOV</code>), de sorte que les éléments importés
+sont déjà étiquetés.</p>
+<p><em>Entrée :</em> exportez une collection en RIS (Zotero : clic droit
+→ Export Collection → RIS ; Mendeley : File → Export → RIS ; EndNoteX :
+File → Export → RefMan RIS) et ingérez-la comme ci-dessus. Il n’y a pas
+de connexion en direct à l’API Zotero (feuille de route).</p>
+<h1 id="rapports">7. Rapports</h1>
+<h2 id="une-exécution">7.1 Une exécution</h2>
+<pre><code>python report.py lit/runs/20260828T095041
+python report.py --latest --level full --format html pdf</code></pre>
+<h2 id="le-répertoire-de-recherche-entier">7.2 Le répertoire de
+recherche entier</h2>
+<pre><code>python report.py --project
+python report.py --project --outdir lit_topomat --level intermediate --format md html</code></pre>
+<p>Les rapports vont dans
+<code>lit/reports/&lt;stamp&gt;-&lt;level&gt;/</code>. Le rapport de
+projet ajoute un tableau des <strong>Sources</strong> (chaque exécution
+et source manuelle, sa date, sa méthode, ses notices et « nouvelles ici
+» — les notices uniques qu’aucune source antérieure n’avait trouvées),
+une <strong>Chronologie</strong> (nombres par bloc au fil des exécutions
+; quand les notices sont entrées dans le projet), un flux PRISMA avec
+les deux colonnes d’identification et, quand <code>journals.py</code> a
+été lancé, les indicateurs des revues.</p>
+<h2 id="niveaux">7.3 Niveaux</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Niveau</th>
+<th>Sections</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>simple</code></td>
+<td>métadonnées ; sources ; stratégie de recherche avec la chaîne exacte
+par backend ; résumé des résultats ; chronologie ; flux PRISMA 2020 +
+liste PRISMA-S ; 10 meilleures notices par bloc ; suggestions</td>
+</tr>
+<tr>
+<td><code>intermediate</code></td>
+<td>+ chaque notice unique ; recouvrement des sources (« trouvé ici
+seulement ») ; distributions par année / revue / auteur ; indicateurs
+des revues ; revues filtrées ; erreurs ; statistiques de libre accès ;
+historique des nombres</td>
+</tr>
+<tr>
+<td><code>full</code></td>
+<td>+ chaque notice avec résumé complet, liste d’auteurs et les sources
+qui l’ont trouvée ; listes brutes par source avant dédoublonnage ; les
+notices filtrées ; configuration des backends ; fichiers project.json et
+source.json ; le journal de l’exécution ; environnement</td>
+</tr>
+</tbody>
+</table>
+<p>Tailles, d’après l’exemple fourni (quatre blocs, trois bases de
+données CC0, 1 226 notices uniques) : 6, 68 et 427 pages de PDF.</p>
+<h2 id="formats">7.4 Formats</h2>
+<p><code>md</code> (Markdown ; rendu sur GitHub), <code>html</code>
+(autonome, clair/sombre, imprimable, diagramme SVG), <code>tex</code>
+(LaTeX avec diagramme TikZ), <code>pdf</code>, <code>txt</code> (texte
+brut, diagramme ASCII). Le PDF est compilé à partir du LaTeX avec
+xelatex, lualatex ou pdflatex si l’un d’eux est installé, sinon avec
+pandoc, sinon par un moteur intégré qui met en page la version texte —
+l’option n’échoue jamais.</p>
+<h2 id="filtres">7.5 Filtres</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Option</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--since DATE</code>, <code>--until DATE</code></td>
+<td>garder les membres (exécutions / sources manuelles) recherchés dans
+la fenêtre</td>
+</tr>
+<tr>
+<td><code>--latest</code></td>
+<td>le membre le plus récent seulement (projet) ; l’exécution la plus
+récente (mode simple)</td>
+</tr>
+<tr>
+<td><code>--diff</code></td>
+<td>ne garder que les notices <em>vues pour la première fois</em> dans
+la fenêtre — « ce que les recherches depuis DATE ont apporté »</td>
+</tr>
+<tr>
+<td><code>--year-from Y</code>, <code>--year-to Y</code></td>
+<td>année de publication</td>
+</tr>
+<tr>
+<td><code>--backends a b</code></td>
+<td>bases de données / sources à inclure (les sources manuelles sont
+<code>manual:&lt;name&gt;</code>)</td>
+</tr>
+<tr>
+<td><code>--blocks A CD</code></td>
+<td>blocs à inclure</td>
+</tr>
+<tr>
+<td><code>--sources auto\|manual\|all</code></td>
+<td>types de membres</td>
+</tr>
+<tr>
+<td><code>--records FILE…</code></td>
+<td>RIS/BibTeX/CSV/JSON supplémentaires comme source manuelle
+transitoire</td>
+</tr>
+<tr>
+<td><code>--metric NAME --min-metric X</code></td>
+<td>garder les notices dont l’indicateur de revue est au moins X (voir
+§8)</td>
+</tr>
+<tr>
+<td><code>--min-citations N</code></td>
+<td>seuil de citations</td>
+</tr>
+<tr>
+<td><code>--oa-only</code></td>
+<td>seulement les notices avec une copie légale en libre accès
+(nécessite les données de <code>--pdfs</code> ou
+<code>project.py oa</code>)</td>
+</tr>
+<tr>
+<td><code>--top N</code>, <code>--sort cited\|year\|metric</code></td>
+<td>taille et ordre du tableau</td>
+</tr>
+<tr>
+<td><code>--basename</code>, <code>--out</code></td>
+<td>radical du nom de fichier et répertoire de sortie</td>
+</tr>
+</tbody>
+</table>
+<p>Les filtres sont listés dans le tableau des métadonnées du rapport et
+dans l’item 9 de PRISMA-S, pour qu’un rapport filtré ne soit jamais pris
+pour la recherche entière.</p>
+<h2 id="prisma">7.6 PRISMA</h2>
+<p>Le rapport comporte un diagramme de flux PRISMA 2020 (SVG en HTML,
+TikZ en LaTeX/PDF, ASCII en Markdown et texte) et une liste de contrôle
+PRISMA-S pour la déclaration de la recherche. L’outil remplit ce qu’il
+peut connaître : notices identifiées par base de données (sommées sur
+les exécutions en mode projet), notices identifiées par d’autres
+méthodes (sources manuelles par méthode), notices récupérées, retirées
+par automatisation (le filtre de revues), doublons retirés, notices
+restant à trier. Il est explicite sur le fait qu’<em>identifiées</em>
+(ce que chaque base de données déclare) et <em>récupérées</em> (ce qui a
+été téléchargé dans la limite de <code>--limit</code>) diffèrent.</p>
+<p>Les étapes que seul un humain peut connaître sont lues dans
+<code>prisma.json</code> (exécution unique) ou
+<code>screening.json</code> (répertoire de recherche) ; un modèle avec
+des valeurs <code>null</code> est écrit au premier rapport. Remplissez
+les entiers au fil du tri et relancez le rapport :</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;records_screened&quot;</span><span class="fu">:</span> <span class="dv">2216</span><span class="fu">,</span> <span class="dt">&quot;records_excluded&quot;</span><span class="fu">:</span> <span class="dv">2100</span><span class="fu">,</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;reports_sought&quot;</span><span class="fu">:</span> <span class="dv">116</span><span class="fu">,</span> <span class="dt">&quot;reports_not_retrieved&quot;</span><span class="fu">:</span> <span class="dv">4</span><span class="fu">,</span> <span class="dt">&quot;reports_assessed&quot;</span><span class="fu">:</span> <span class="dv">112</span><span class="fu">,</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;excluded_reasons&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;not topological&quot;</span><span class="fu">:</span> <span class="dv">60</span><span class="fu">,</span> <span class="dt">&quot;no experiment&quot;</span><span class="fu">:</span> <span class="dv">30</span><span class="fu">},</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;other_sought&quot;</span><span class="fu">:</span> <span class="dv">12</span><span class="fu">,</span> <span class="dt">&quot;other_not_retrieved&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span> <span class="dt">&quot;other_assessed&quot;</span><span class="fu">:</span> <span class="dv">12</span><span class="fu">,</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;other_excluded_reasons&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;duplicate of included&quot;</span><span class="fu">:</span> <span class="dv">3</span><span class="fu">},</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;studies_included&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span> <span class="dt">&quot;reports_included&quot;</span><span class="fu">:</span> <span class="dv">31</span><span class="fu">,</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;citation_searching&quot;</span><span class="fu">:</span> <span class="st">&quot;reference lists of the 22 included studies&quot;</span><span class="fu">,</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;prior_work&quot;</span><span class="fu">:</span> <span class="st">&quot;none&quot;</span><span class="fu">,</span> <span class="dt">&quot;peer_review&quot;</span><span class="fu">:</span> <span class="st">&quot;search strategy reviewed by the librarian&quot;</span><span class="fu">}</span></span></code></pre></div>
+<h2 id="suggestions">7.7 Suggestions</h2>
+<p>Fondées sur des règles, à la fin de chaque rapport : appels de
+backend en échec, blocs à des milliers de résultats, blocs de taille «
+nouveauté » (lire chaque résultat), plafond <code>--limit</code>
+atteint, une base de données à forte part de revues filtrées, aucun
+backend de qualité citation, recherche de libre accès non lancée, étapes
+PRISMA non remplies, pas d’indicateurs des revues, dérive des nombres
+entre exécutions et — en mode projet — l’absence de toute source
+manuelle.</p>
+<h2 id="langues">7.8 Langues</h2>
+<pre><code>python report.py --latest --lang pt-BR
+python report.py --project --lang de --format pdf
+python librarian.py --report-lang fr            # the report written at the end of a run</code></pre>
+<p><code>--lang</code> (<code>report.py</code>) et
+<code>--report-lang</code> (<code>librarian.py</code>) acceptent
+<code>en</code> (par défaut), <code>pt-BR</code>, <code>es</code>,
+<code>de</code> ou <code>fr</code> ; un répertoire de recherche peut
+fixer sa propre valeur par défaut avec
+<code>&quot;defaults&quot;: {&quot;lang&quot;: &quot;es&quot;}</code> dans <code>project.json</code>,
+et une option explicite l’emporte. Seul le texte propre du rapport
+change — titres, en-têtes de tableau, les étapes PRISMA 2020 et le
+diagramme de flux dans chaque format, la liste PRISMA-S, les paragraphes
+explicatifs et les suggestions — avec le séparateur de milliers de la
+langue. Ce que l’outil a trouvé ou reçu est reproduit exactement tel
+quel, quelle que soit la langue : titres, résumés, auteurs et revues des
+notices, vos noms et notes de blocs, les chaînes de requête exactes, les
+noms des backends, les options citées dans le texte, les noms de
+fichiers, les sorties JSON et le journal de l’exécution incorporé. La
+sortie console, <code>run.log</code> et les journaux d’audit sont
+toujours en anglais, de sorte que les exécutions faites dans différentes
+langues restent consultables ensemble.</p>
+<h1 id="indicateurs-des-revues">8. Indicateurs des revues</h1>
+<pre><code>python journals.py fetch                          # every journal seen in the directory
+python journals.py fetch --providers openalex --refresh
+python journals.py import-scimago scimagojr_2024.csv --year 2024 [--all]
+python journals.py import-jcr JCR_JournalResults_*.csv       # Journal Citation Reports downloads
+python journals.py import-csv other.csv --provider my_metric --year 2023 --name-col Journal --value-col Value        [--issn-col ISSN] [--delimiter &quot;;&quot;]                  # any name/value table; ISSN column improves matching
+python journals.py list --missing jcr_if                      # journals still to look up by hand
+python journals.py show --metric scopus_citescore</code></pre>
+<p>Magasin : <code>lit/journals/metrics.json</code>, une entrée par
+revue indexée par ISSN (sinon par nom normalisé), valeurs conservées
+<strong>par année et jamais écrasées</strong> — récupérez à nouveau l’an
+prochain et le rapport montre la série.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fournisseur</th>
+<th>Clé</th>
+<th>Indicateurs</th>
+<th>Historique</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openalex</code></td>
+<td>aucune</td>
+<td><code>openalex_2yr</code> (citation moyenne sur 2 ans, un chiffre de
+type facteur d’impact), <code>openalex_h</code>, œuvres/citations par
+année</td>
+<td>instantané sous l’année de récupération</td>
+</tr>
+<tr>
+<td><code>scopus</code></td>
+<td><code>SCOPUS_API_KEY</code></td>
+<td><code>scopus_citescore</code>, <code>sjr</code>,
+<code>snip</code></td>
+<td>historique complet par année</td>
+</tr>
+<tr>
+<td><code>scimago</code></td>
+<td>aucune ; téléchargez le CSV de l’année sur scimagojr.com</td>
+<td><code>sjr</code>, <code>scimago_h</code>, quartile</td>
+<td>un fichier par année</td>
+</tr>
+<tr>
+<td><code>jcr</code></td>
+<td>licence</td>
+<td><code>jcr_if</code></td>
+<td>import uniquement</td>
+</tr>
+</tbody>
+</table>
+<p>Le Journal Impact Factor (Clarivate JCR) est propriétaire : il n’y a
+pas d’API gratuite et l’outil ne le scrapera pas. Les utilisateurs sous
+licence téléchargent des CSV depuis la page <em>Browse journals</em> du
+JCR (600 lignes par téléchargement ; découpez par catégorie, puis par
+quartile) et les importent avec
+<code>journals.py import-jcr FILE...</code> — les colonnes et l’année du
+JIF sont détectées. <code>journals.py list --missing jcr_if</code>
+affiche les revues de votre répertoire encore sans valeur, c’est-à-dire
+la liste à consulter. Le protocole complet est dans
+<code>docs/JCR_IMPORT.md</code>. Pour un indicateur couvrant toutes les
+revues, le CSV SCImago (~30 000 revues, un téléchargement) est la voie
+pratique ; <code>--all</code> importe le fichier entier, par défaut
+seules les revues vues dans vos notices sont importées.</p>
+<p>Dans les rapports : une colonne d’indicateur dans les tableaux de
+notices, « revues de cet ensemble par indicateur », un tableau
+d’évolution pour les revues ayant deux années ou plus enregistrées, et
+le filtre <code>--min-metric</code>. <code>--metric</code> choisit
+lequel (par défaut <code>openalex_2yr</code>, ou
+<code>defaults.metric</code> dans <code>project.json</code>).</p>
+<h1 id="web-of-science">9. Web of Science</h1>
+<p>La grammaire complète <code>TS=</code>/<code>NEAR</code> est dans
+l’Expanded API, rarement sous licence ; le niveau gratuit Starter
+rejette les booléens complexes. Web of Science est donc un travail
+manuel, rendu petit :</p>
+<pre><code>python wos_manual.py prep      # query files + CHECKLIST.md in WoS grammar
+python wos_manual.py walk      # copies each query to the clipboard in turn
+python wos_manual.py ingest    # RIS exports -&gt; records, registered as manual sources
+python wos_manual.py status
+python wos_manual.py prep --queries other.json   # a different query file (default ./queries.json)</code></pre>
+<p>La liste de contrôle encode les réglages de l’interface qui cassent
+silencieusement les requêtes (Core Collection, recherche Advanced,
+éditions, forme balisée contre forme nue).</p>
+<h1 id="journaux-et-audit">10. Journaux et audit</h1>
+<p>Chaque script écrit
+<code>&lt;outdir&gt;/logs/&lt;script&gt;_&lt;stamp&gt;_&lt;pid&gt;.log</code>
+avec l’invocation exacte, les versions de l’outil et de Python, le
+répertoire de recherche, chaque avertissement et erreur, et le résultat.
+La sortie console est réduite par défaut ; <code>--verbose</code> montre
+tout, <code>--quiet</code> seulement les avertissements et erreurs ;
+<code>--log-dir</code> déplace les journaux. Les exécutions conservent
+en plus <code>run.log</code> (la transcription de la console) dans le
+répertoire de l’exécution.</p>
+<h1 id="flux-de-travail">11. Flux de travail</h1>
+<p><strong>Une vérification de nouveauté (un après-midi).</strong>
+Écrivez 1–3 blocs de requête croisée ; <code>--counts-only</code> ;
+resserrez tout ce qui est dans les milliers ; exécution complète avec
+<code>--pdfs</code> ; lisez les Suggestions ; lisez chaque résultat des
+petits blocs à la main ; notez ce que vous avez trié dans
+<code>prisma.json</code> ; relancez <code>report.py</code> ; importez le
+RIS dans Zotero.</p>
+<p><strong>Une recherche systématique sur un projet (des mois).</strong>
+<code>project.py init</code>. Relancez <code>librarian.py</code> à
+intervalles avec le même <code>queries.json</code>. Ingérez les sessions
+Web of Science et les exports des collègues.
+<code>report.py --project</code> pour la vue d’ensemble ;
+<code>--project --since &lt;dernier rapport&gt; --diff</code> pour ce
+qui est nouveau ; <code>journals.py fetch</code> chaque année.
+Remplissez <code>screening.json</code> au fil de l’eau ; le diagramme
+PRISMA se complète de lui-même, prêt pour le matériel
+supplémentaire.</p>
+<p><strong>Un laboratoire.</strong> Un répertoire de recherche par
+projet (<code>--outdir</code>) ; chacun a son propre index, son tri et
+ses rapports. Les dossiers de dépôt permettent aux collaborateurs de
+déposer des exports sans apprendre l’outil. Il n’y a délibérément pas de
+fusion entre projets : questions différentes, blocs différents.</p>
+<p><strong>Un exemple complet.</strong> <code>docs/WALKTHROUGH.md</code>
+(en anglais) mène un projet réel de <code>queries.json</code> à un
+diagramme PRISMA achevé, chaque commande incluse.</p>
+<p><strong>Avec un agent d’IA.</strong> Pointez-le vers
+<code>AGENTS.md</code> ; demandez-lui de rédiger
+<code>queries.json</code> à partir de votre question de recherche, de
+lancer les balayages et de parcourir le rapport avec vous. Le fichier de
+requête structuré, les archives JSON et le rapport ont été conçus pour
+être écrits et audités par un agent.</p>
+<h1 id="fonctionnalités-et-limitations">12. Fonctionnalités et
+limitations</h1>
+<p>Fonctionnalités : une requête structurelle traduite en huit
+grammaires natives ; bases de données en configuration JSON
+(<code>--init-backends</code>) ; exécutions archivées et citables avec
+chaînes de requête exactes et historique des nombres ; points de reprise
+et Ctrl-C sûr ; un filtre de revues avec justificatifs ; cinq backends
+sans clé ; NASA ADS et INSPIRE pour la physique ; liens légaux vers des
+PDF en libre accès via Unpaywall ; rapports à trois niveaux en cinq
+formats avec PRISMA 2020 et PRISMA-S ; répertoires de recherche avec
+sources manuelles, provenance, chronologie et rapports différentiels ;
+indicateurs des revues avec série par année ; journaux d’audit ; une
+suite de tests hors ligne (294 vérifications) et CI.</p>
+<p>Limitations, toutes par conception ou par le monde :</p>
+<ul>
+<li>Les nombres ne sont pas comparables entre bases de données ; les
+opérateurs de proximité sont abandonnés. Découvrez ici ; citez une base
+de données dans l’article.</li>
+<li>Les résultats Scopus exigent un droit institutionnel (réseau/VPN).
+L’API de Web of Science est rarement sous licence ; utilisez la voie
+manuelle.</li>
+<li>arXiv reçoit au plus deux groupes par bloc.</li>
+<li><code>--limit</code> plafonne les notices par bloc et backend (les
+plus citées d’abord) ; les grands blocs sont une tranche, pas l’ensemble
+complet. Augmentez-le quand vous avez besoin d’exhaustivité.</li>
+<li>OpenAlex indexe des dépôts non curatés (~15 % de ses notices) ;
+filtrés par défaut, conservés dans <code>junk.json</code>.</li>
+<li>Pas de téléchargement de PDF (liens Unpaywall seulement), pas de
+boule de neige, pas de graphe de citations, pas de connexion en direct à
+Zotero/Mendeley (feuille de route) ; BibTeX et CSL-JSON sont écrits, pas
+relus depuis une bibliothèque Zotero.</li>
+<li>Indicateurs des revues : les valeurs OpenAlex sont des instantanés ;
+le facteur d’impact JCR est propriétaire et import uniquement ;
+l’appariement des revues par nom est imparfait quand une notice n’a pas
+d’ISSN.</li>
+<li>Le dédoublonnage se fait par DOI, sinon par les 90 premiers
+caractères du titre ; les paires prépublication/publication aux titres
+différents survivent comme deux notices.</li>
+<li>Google Scholar n’est pas et ne sera pas un backend (pas d’API ; le
+scraping viole ses conditions).</li>
+</ul>
+<h1 id="tests">13. Tests</h1>
+<pre><code>python tests/test_librarian.py</code></pre>
+<p>Hors ligne, bibliothèque standard uniquement, sans clés : les
+backends s’exécutent contre des réponses d’API enregistrées, le
+générateur de rapports contre des exécutions et des répertoires de
+recherche synthétiques, et la ligne de commande de chaque script est
+exercée de bout en bout. Le fichier est aussi un module pytest
+(<code>pytest tests/</code>). La CI lance pyflakes et la suite sur
+Linux, Windows et macOS sous Python 3.9 et 3.13.</p>
+<h1 id="licence-et-conduite">14. Licence et conduite</h1>
+<p>Apache License 2.0. L’outil est construit pour que le respect des
+conditions d’utilisation de chaque base de données soit le chemin facile
+: API documentées uniquement, limites de débit respectées, une adresse
+de contact dans chaque requête, pas de scraping, pas de contournement de
+paywall.</p>
+</body>
+</html>

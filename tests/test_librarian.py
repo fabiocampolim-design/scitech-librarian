@@ -1217,6 +1217,121 @@ check("USER_MANUAL.md front-matter date equals CITATION.cff date-released (it st
                     (HERE.parent / "CITATION.cff").read_text(encoding="utf-8"), _re.M).group(1))
 
 
+# ---------------------------------------------------------------------------
+print("\n3.4.0: translated README and manual (pt-BR, es, de, fr)")
+# English is the source of truth. Each translation must keep the English
+# skeleton (headings, numbering), every fenced code block verbatim (commands,
+# file names and flags are never translated), every flag and every link
+# target, quote the live check count, and record which English text it was
+# made from (a digest with count phrases and front matter normalised) so a
+# changed English file fails the suite until the translation is redone.
+_DL = tuple(getattr(_bm, "DOC_LANGS", ()))
+check("build_manual.DOC_LANGS names the four documentation languages",
+      _DL == ("pt-BR", "es", "de", "fr"), f"DOC_LANGS = {_DL}")
+_digest = getattr(_bm, "source_digest", None)
+check("build_manual.source_digest ignores front matter and the check count",
+      _digest is not None
+      and _digest('---\nsubtitle: "version 1"\n---\nbody 12 checks\n')
+      == _digest('---\nsubtitle: "version 2"\n---\nbody 99 checks\n')
+      and _digest("body a") != _digest("body b"))
+_FRONT = _re.compile(r"^---\n.*?\n---\n", _re.S)
+_SWITCH = ("README.pt-BR.md", "README.es.md", "README.de.md", "README.fr.md")
+_MSWITCH = ("USER_MANUAL.pt-BR.md", "USER_MANUAL.es.md", "USER_MANUAL.de.md", "USER_MANUAL.fr.md")
+
+
+def _skeleton(text):
+    return _re.findall(r"^(#{1,6}) +(\d+(?:\.\d+)?\.?)?", _FRONT.sub("", text), _re.M)
+
+
+def _fences(text):
+    return _re.findall(r"^```[^\n]*\n.*?^```", text, _re.M | _re.S)
+
+
+def _flags(text):
+    return set(_re.findall(r"(?<![\w-])--[a-z][a-z0-9-]+", text))
+
+
+def _targets(text):
+    # in-page anchors are language-specific (GitHub derives them from the
+    # heading text), so they are not held to parity
+    return {t for t in _re.findall(r"\]\(([^)\s]+)\)", text)
+            if not t.startswith("#")
+            and not _re.search(r"(README|USER_MANUAL)(\.[a-zA-Z-]+)?\.md$", t)}
+
+
+check("README.md carries the language switch line linking the four translations",
+      all(f"]({f})" in _readme.split("\n## ", 1)[0] for f in _SWITCH))
+# build_manual.py --stamp-translations records the English digests in every
+# translation once it has been redone, so nobody computes them by hand.
+_sroot = Path(tempfile.mkdtemp())
+(_sroot / "docs").mkdir()
+(_sroot / "README.md").write_text("# t\n\nbody 3 checks\n", encoding="utf-8")
+(_sroot / "docs" / "USER_MANUAL.md").write_text('---\ntitle: "m"\n---\n\nbody\n', encoding="utf-8")
+(_sroot / "README.pt-BR.md").write_text("# t\n<!-- source-digest: PENDING -->\n\ncorpo 3 verificações\n",
+                                        encoding="utf-8")
+(_sroot / "docs" / "USER_MANUAL.pt-BR.md").write_text('---\ntitle: "m"\nsource-digest: "old"\n---\n\ncorpo\n',
+                                                      encoding="utf-8")
+_stamp = getattr(_bm, "stamp_translations", None)
+_stamped = _stamp(_sroot) if _stamp else []
+check("build_manual.stamp_translations(root) writes the English digests into the translations present",
+      _digest is not None and sorted(_stamped) == ["README.pt-BR.md", "docs/USER_MANUAL.pt-BR.md"]
+      and f"<!-- source-digest: {_digest((_sroot / 'README.md').read_text(encoding='utf-8'))} -->"
+      in (_sroot / "README.pt-BR.md").read_text(encoding="utf-8")
+      and f'source-digest: "{_digest((_sroot / "docs" / "USER_MANUAL.md").read_text(encoding="utf-8"))}"'
+      in (_sroot / "docs" / "USER_MANUAL.pt-BR.md").read_text(encoding="utf-8"),
+      f"stamped: {_stamped}")
+check("USER_MANUAL.md carries the language switch line linking the four translations",
+      all(f"]({f})" in _MAN.split("\n# ", 1)[0] for f in _MSWITCH))
+for _lang in ("pt-BR", "es", "de", "fr"):
+    _rp = HERE.parent / f"README.{_lang}.md"
+    _mp = HERE.parent / "docs" / f"USER_MANUAL.{_lang}.md"
+    _rt = _rp.read_text(encoding="utf-8") if _rp.exists() else ""
+    _mt = _mp.read_text(encoding="utf-8") if _mp.exists() else ""
+    check(f"[{_lang}] README.{_lang}.md and docs/USER_MANUAL.{_lang}.md exist",
+          bool(_rt) and bool(_mt))
+    check(f"[{_lang}] README keeps the English heading skeleton",
+          _skeleton(_rt) == _skeleton(_readme),
+          f"{len(_skeleton(_rt))} vs {len(_skeleton(_readme))} headings")
+    check(f"[{_lang}] manual keeps the English heading skeleton and numbering",
+          _skeleton(_mt) == _skeleton(_MAN),
+          f"{len(_skeleton(_mt))} vs {len(_skeleton(_MAN))} headings")
+    _missing_fence = [f.splitlines()[1][:50] for f in _fences(_readme) if f not in _rt]
+    check(f"[{_lang}] README keeps every English fenced code block verbatim",
+          not _missing_fence, f"first missing: {_missing_fence[:2]}")
+    _missing_fence = [f.splitlines()[1][:50] for f in _fences(_MAN) if f not in _mt]
+    check(f"[{_lang}] manual keeps every English fenced code block verbatim",
+          not _missing_fence, f"first missing: {_missing_fence[:2]}")
+    check(f"[{_lang}] README names every flag the English README names",
+          _flags(_readme) <= _flags(_rt), f"missing: {sorted(_flags(_readme) - _flags(_rt))[:6]}")
+    check(f"[{_lang}] manual names every flag the English manual names",
+          _flags(_MAN) <= _flags(_mt), f"missing: {sorted(_flags(_MAN) - _flags(_mt))[:6]}")
+    check(f"[{_lang}] README keeps every English link target",
+          _targets(_readme) <= _targets(_rt), f"missing: {sorted(_targets(_readme) - _targets(_rt))[:4]}")
+    check(f"[{_lang}] manual keeps every English link target",
+          _targets(_MAN) <= _targets(_mt), f"missing: {sorted(_targets(_MAN) - _targets(_mt))[:4]}")
+    _others = [f for f in _SWITCH if f != f"README.{_lang}.md"] + ["README.md"]
+    check(f"[{_lang}] README switch line links English and the other three languages",
+          all(f"]({f})" in _rt.split("\n## ", 1)[0] for f in _others))
+    _mothers = [f for f in _MSWITCH if f != f"USER_MANUAL.{_lang}.md"] + ["USER_MANUAL.md"]
+    check(f"[{_lang}] manual switch line links English and the other three languages",
+          all(f"]({f})" in _mt.split("\n# ", 1)[0] for f in _mothers))
+    _fm = _FRONT.match(_mt).group(0) if _FRONT.match(_mt) else ""
+    check(f"[{_lang}] manual front matter: same version and date as English, lang set",
+          _re.search(rf'^subtitle: "[^"]*\b{_re.escape(lib.VERSION)}"', _fm, _re.M) is not None
+          and _re.search(r'^date: *"([^"]+)"', _MAN, _re.M).group(0) in _fm
+          and f'lang: "{_lang}"' in _fm, f"front matter: {_fm[:120]!r}")
+    check(f"[{_lang}] manual records the digest of the English manual it translates (not stale)",
+          _digest is not None and f'source-digest: "{_digest(_MAN)}"' in _fm,
+          f"expected source-digest: \"{_digest(_MAN) if _digest else '?'}\"")
+    check(f"[{_lang}] README records the digest of the English README it translates (not stale)",
+          _digest is not None and f"<!-- source-digest: {_digest(_readme)} -->" in "\n".join(_rt.splitlines()[:3]),
+          f"expected <!-- source-digest: {_digest(_readme) if _digest else '?'} --> in the first lines")
+    _hp = HERE.parent / "docs" / f"USER_MANUAL.{_lang}.html"
+    _pp = HERE.parent / "docs" / f"USER_MANUAL.{_lang}.pdf"
+    check(f"[{_lang}] built USER_MANUAL.{_lang}.html carries librarian.VERSION and the .pdf exists",
+          _hp.exists() and lib.VERSION in _hp.read_text(encoding="utf-8", errors="replace")
+          and _pp.exists() and _pp.stat().st_size > 10000)
+
 
 def test_offline_suite():
     """pytest entry point: the module body above is the suite."""
@@ -1227,9 +1342,13 @@ def test_offline_suite():
 # final, so there is no "keep this last" fragility and no +1. Every doc that
 # quotes the count (build_manual.py syncs the first three; the HTML is built
 # from the manual) must say exactly CHECKS, at least once each.
-_badcnt = [n for n, d in (("README.md", _readme), ("USER_MANUAL.md", _MAN),
-                          ("AGENTS.md", _AG), ("USER_MANUAL.html", _HTMLDOC))
-           if set(_bm.count_mentions(d)) != {CHECKS}]
+_counted = [("README.md", _readme), ("USER_MANUAL.md", _MAN),
+            ("AGENTS.md", _AG), ("USER_MANUAL.html", _HTMLDOC)]
+for _lang in ("pt-BR", "es", "de", "fr"):          # translations quote it too
+    for _rel in (f"README.{_lang}.md", f"docs/USER_MANUAL.{_lang}.md"):
+        if (HERE.parent / _rel).exists():
+            _counted.append((_rel, (HERE.parent / _rel).read_text(encoding="utf-8")))
+_badcnt = [n for n, d in _counted if set(_bm.count_mentions(d)) != {CHECKS}]
 if _badcnt:
     FAILED.append("docs quote the actual check count")
 print("\nsummary")

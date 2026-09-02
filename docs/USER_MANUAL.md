@@ -1,8 +1,11 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.3.3"
+subtitle: "version 3.4.0"
 date: "2026-09-01"
+lang: "en"
 ---
+
+**English** · [Português (Brasil)](USER_MANUAL.pt-BR.md) · [Español](USER_MANUAL.es.md) · [Deutsch](USER_MANUAL.de.md) · [Français](USER_MANUAL.fr.md)
 
 # 1. What it is
 
@@ -488,7 +491,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (229 checks) and
+with a per-year series; audit logs; an offline test suite (294 checks) and
 CI.
 
 Limitations, all by design or by the world:

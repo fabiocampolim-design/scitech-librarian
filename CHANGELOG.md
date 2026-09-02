@@ -2,6 +2,26 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.4.0 — 2026-09-01
+
+- The README and the User Manual in Brazilian Portuguese, Spanish, German
+  and French: `README.pt-BR.md`, `README.es.md`, `README.de.md`,
+  `README.fr.md` beside the English README, `docs/USER_MANUAL.<lang>.md`
+  beside the English manual, each built to `USER_MANUAL.<lang>.html` and
+  `.pdf` by `docs/build_manual.py`, with a language switch line at the top
+  of every README and manual. English is the source of truth; a translation
+  keeps the English heading skeleton and section numbering, every fenced
+  code block verbatim (commands, file names, flags and their comments are
+  never translated), every flag and every link target, quotes the live
+  check count, and records the digest of the English text it was made from
+  — the suite fails on any of these until the translation is redone, so a
+  translation can never silently describe an older tool. After redoing one,
+  `python docs/build_manual.py --stamp-translations` records the digests.
+- `docs/build_manual.py` builds every manual, syncs the check count into the
+  translations too, and takes each manual's language and titles from its
+  own front matter (`lang:` drives babel hyphenation in the PDF).
+- Suite: 294 checks (65 new).
+
 ## 3.3.3 — 2026-09-01
 
 - The Claude Code skill ships with the tool: `SKILL.md` at the repository

@@ -4,7 +4,9 @@
 """
 build_manual.py -- render docs/USER_MANUAL.md to USER_MANUAL.html and USER_MANUAL.pdf.
 
-    python docs/build_manual.py
+    python docs/build_manual.py                       # sync the check count, build every manual
+    python docs/build_manual.py --stamp-translations  # after redoing a translation: record the
+                                                      # English digests it now matches (see below)
 
 Development-time script (the manual's source of truth is the Markdown; the
 built files are committed so readers need no tooling). Uses pandoc for the
@@ -16,6 +18,7 @@ PDF writer, so the command never fails -- it just says what it used.
 from __future__ import annotations
 
 import calendar
+import hashlib
 import html
 import os
 import re
@@ -28,9 +31,14 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 SRC = HERE / "USER_MANUAL.md"
-# The one pattern for every doc phrase quoting the suite's check count.
-# tests/test_librarian.py imports this; sync_check_count() rewrites with it.
-CHECK_COUNT_RE = re.compile(r"\b(\d+)(?: checks\b|-check offline suite)")
+# The documentation languages besides English: README.<lang>.md and
+# docs/USER_MANUAL.<lang>.md, built to USER_MANUAL.<lang>.html / .pdf (3.4.0).
+DOC_LANGS = ("pt-BR", "es", "de", "fr")
+# The one pattern for every doc phrase quoting the suite's check count, in
+# every documentation language. tests/test_librarian.py imports this;
+# sync_check_count() rewrites with it.
+COUNT_WORDS = "checks|verificações|comprobaciones|Prüfungen|vérifications"
+CHECK_COUNT_RE = re.compile(r"\b(\d+)(?: (?:" + COUNT_WORDS + r")\b|-check offline suite)")
 OUT_HTML, OUT_PDF = HERE / "USER_MANUAL.html", HERE / "USER_MANUAL.pdf"
 # lualatex first: it derives font subset tags from the font data, so with
 # SOURCE_DATE_EPOCH the PDF is byte-reproducible; xdvipdfmx draws the tags at
@@ -165,6 +173,56 @@ def rewrite_count(path, n: int) -> None:
             fh.write(t2)
 
 
+def source_digest(text: str) -> str:
+    """What a translation was made from: a digest of the English text with the
+    front matter dropped and every live check count normalised, so a version
+    bump or a count sync does not mark a translation stale but any other
+    change to the English source does (tests/test_librarian.py)."""
+    body = re.sub(r"^---\n.*?\n---\n", "", text, count=1, flags=re.S)
+    body = CHECK_COUNT_RE.sub(lambda m: m.group(0).replace(m.group(1), "N", 1), body)
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
+
+
+def stamp_translations(root: Path) -> list:
+    """Record in every translation under *root* (README.<lang>.md,
+    docs/USER_MANUAL.<lang>.md) the digest of the English text it was made
+    from; the suite's staleness check then passes. Run it after a
+    translation has been brought up to date, never instead of that."""
+    readme_d = source_digest((root / "README.md").read_text(encoding="utf-8"))
+    manual_d = source_digest((root / "docs" / "USER_MANUAL.md").read_text(encoding="utf-8"))
+    done = []
+    for lang in DOC_LANGS:
+        p = root / f"README.{lang}.md"
+        if p.exists():
+            text = p.read_text(encoding="utf-8")
+            new = re.sub(r"<!-- source-digest: [^ ]+ -->", f"<!-- source-digest: {readme_d} -->",
+                         text, count=1)
+            if new != text:
+                with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                    fh.write(new)
+            done.append(p.name)
+        p = root / "docs" / f"USER_MANUAL.{lang}.md"
+        if p.exists():
+            text = p.read_text(encoding="utf-8")
+            new = re.sub(r'^source-digest: "[^"]*"', f'source-digest: "{manual_d}"', text,
+                         count=1, flags=re.M)
+            if new != text:
+                with open(p, "w", encoding="utf-8", newline="\n") as fh:
+                    fh.write(new)
+            done.append(f"docs/{p.name}")
+    return done
+
+
+def doc_files():
+    """Every document that quotes the check count: the English three plus the
+    translations that exist."""
+    files = [HERE.parent / "README.md", SRC, HERE.parent / "AGENTS.md"]
+    for lang in DOC_LANGS:
+        files += [p for p in (HERE.parent / f"README.{lang}.md", HERE / f"USER_MANUAL.{lang}.md")
+                  if p.exists()]
+    return files
+
+
 def count_checks(stdout: str) -> int:
     """PASS/FAIL lines of a *complete* suite run -- 0 when the run never
     reached its summary block, so a crashed suite (as opposed to a red but
@@ -187,45 +245,58 @@ def sync_check_count() -> int:
         # a red-but-complete suite still syncs: its own count guard is red
         # exactly until the docs carry the new number
         print("note: test suite is red; syncing the check count anyway")
-    for f in (HERE.parent / "README.md", SRC, HERE.parent / "AGENTS.md"):
+    for f in doc_files():
         rewrite_count(f, n)
     print(f"check count synced: {n}")
     return n
 
 
-def main() -> int:
-    sync_check_count()
-    text = SRC.read_text(encoding="utf-8")
+def build_one(src: Path, out_html: Path, out_pdf: Path, lang: str = "en") -> None:
+    """Render one manual (English or a translation; the language, title and
+    subtitle come from its front matter) to HTML and PDF."""
+    text = src.read_text(encoding="utf-8")
     if shutil.which("pandoc"):
         css = HERE / "_manual.css"
         css.write_text(CSS, encoding="utf-8")
-        ok = _run(["pandoc", SRC.name, "-s", "--toc", "--toc-depth=2", "-c", css.name,
-                   "--embed-resources", "--metadata", "title=scitech-librarian - User Manual",
-                   "-o", OUT_HTML.name], HERE)
+        ok = _run(["pandoc", src.name, "-s", "--toc", "--toc-depth=2", "-c", css.name,
+                   "--embed-resources", "-o", out_html.name], HERE)
         css.unlink()
-        print(f"html via {'pandoc' if ok else 'pandoc FAILED'}")
+        print(f"{out_html.name} via {'pandoc' if ok else 'pandoc FAILED'}")
         if not ok:
-            OUT_HTML.write_text(_wrap(md_to_html_min(text)), encoding="utf-8")
+            out_html.write_text(_wrap(md_to_html_min(text), lang), encoding="utf-8")
     else:
-        OUT_HTML.write_text(_wrap(md_to_html_min(text)), encoding="utf-8")
-        print("html via builtin converter (install pandoc for a nicer one)")
+        out_html.write_text(_wrap(md_to_html_min(text), lang), encoding="utf-8")
+        print(f"{out_html.name} via builtin converter (install pandoc for a nicer one)")
     engine = next((e for e in ENGINES if shutil.which(e)), None)
     if shutil.which("pandoc") and engine:
-        ok = _run(["pandoc", SRC.name, "--toc", "--toc-depth=2", f"--pdf-engine={engine}",
+        ok = _run(["pandoc", src.name, "--toc", "--toc-depth=2", f"--pdf-engine={engine}",
                    "-V", "geometry:margin=2.2cm", "-V", "colorlinks=true", "-V", "mainfont=",
-                   "-o", OUT_PDF.name], HERE)
-        print(f"pdf via pandoc+{engine}" if ok else "pdf via pandoc FAILED")
+                   "-o", out_pdf.name], HERE)
+        print(f"{out_pdf.name} via pandoc+{engine}" if ok else f"{out_pdf.name} via pandoc FAILED")
     else:
         ok = False
     if not ok:
         import report
-        report._pdf_builtin(re.sub(r"<[^>]+>", "", md_to_html_min(text)), OUT_PDF)
-        print("pdf via builtin writer (install pandoc + a TeX engine for a typeset manual)")
+        report._pdf_builtin(re.sub(r"<[^>]+>", "", md_to_html_min(text)), out_pdf)
+        print(f"{out_pdf.name} via builtin writer (install pandoc + a TeX engine for a typeset manual)")
+
+
+def main() -> int:
+    if "--stamp-translations" in sys.argv[1:]:
+        for name in stamp_translations(HERE.parent):
+            print(f"stamped {name}")
+        return 0
+    sync_check_count()
+    build_one(SRC, OUT_HTML, OUT_PDF)
+    for lang in DOC_LANGS:
+        src = HERE / f"USER_MANUAL.{lang}.md"
+        if src.exists():
+            build_one(src, HERE / f"USER_MANUAL.{lang}.html", HERE / f"USER_MANUAL.{lang}.pdf", lang)
     return 0
 
 
-def _wrap(body: str) -> str:
-    return (f"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
+def _wrap(body: str, lang: str = "en") -> str:
+    return (f"<!doctype html><html lang=\"{html.escape(lang)}\"><head><meta charset=\"utf-8\">"
             f"<title>scitech-librarian - User Manual</title><style>{CSS}</style></head>"
             f"<body>{body}</body></html>")
 

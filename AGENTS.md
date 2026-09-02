@@ -248,9 +248,22 @@ merge (by design: different questions, different blocks).
   (roadmap). BibTeX/CSL-JSON are outputs; Zotero libraries come in as RIS
   exports through `project.py ingest`.
 
+## Translated documentation
+
+`README.<lang>.md` and `docs/USER_MANUAL.<lang>.md` exist for `pt-BR`, `es`,
+`de` and `fr` (3.4.0). English is the source of truth. When you change
+`README.md` or `docs/USER_MANUAL.md`, redo the four translations of the
+changed passages (heading skeleton, section numbers, fenced code blocks,
+flags and link targets must stay identical to English; the suite checks
+every one), then run `python docs/build_manual.py --stamp-translations`
+followed by `python docs/build_manual.py` — the staleness check compares a
+digest of the English text with the one each translation records. Never
+translate commands, file names, flags, JSON or the comments inside code
+blocks.
+
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys,
-229 checks; must pass
+294 checks; must pass
 before any change is proposed. CI runs it on Linux, Windows and macOS,
 Python 3.9 and 3.13.
