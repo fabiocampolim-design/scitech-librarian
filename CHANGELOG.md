@@ -2,6 +2,21 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.4.1 — 2026-09-02
+
+- The 3.4.0 post-release review's one finding: `docs/build_manual.py
+  --stamp-translations` reported a translation as stamped even when it had
+  no digest marker to rewrite, so the suite's staleness check kept failing on
+  a file the command had just called done. It now says which file it cannot
+  stamp and why, and returns only the files it stamped (test).
+- Community pathways: `CONTRIBUTING.md` (what is welcome, the ground rules,
+  how the suite and the translations are kept honest), `CODE_OF_CONDUCT.md`
+  (Contributor Covenant 2.1; contact through issues or the maintainer's
+  GitHub profile) and `docs/DESIGN.md`, the design account — the problem
+  framing, each decision with its trade-offs and what was rejected, and who
+  decided what. Vendored publication checker updated to 1.5.1.
+- Suite: 294 checks (one check tightened, none added).
+
 ## 3.4.0 — 2026-09-01
 
 - The README and the User Manual in Brazilian Portuguese, Spanish, German

@@ -32,12 +32,20 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.4.1"
+VERSION = "1.5.1"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
             ".tex", ".rst", ".xml", ".csv"}
-MIRROR_DIRS = ("mirror", "upstream", "repos", "forum", "papers")
+MIRROR_DIRS = ("mirror", "upstream", "repos", "forum", "papers",
+               "book", "books", "extracted", "literature")   # 1.5.0: PRACTICALMETEOROLOGY book/, PDFEXTRACT extracted/
+NB_WARN, NB_FAIL = 1_000_000, 1_500_000   # rule 25: 1 MB target, 1.5 MB hard cap (Fabio 2026-08-31)
+PDF_WARN, PDF_MAX = 5_000_000, 20_000_000  # rule 7: a tracked PDF over 20 MB is literature; 5-20 MB is a built deck/manual to justify
+COMMUNITY = ("CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "docs/DESIGN.md")   # rule 26
+COMMUNITY_MIN = 400                        # bytes; a stub is not a pathway
+PROFILE_RULES = (3, 18, 20)                # kind: profile (a GitHub profile README repo) is not software:
+                                           # only scrub, held-material and archive rules apply (Fabio 2026-09-02)
+IMAGE_PAYLOAD = re.compile(r'"image/[a-z0-9+.-]+"\s*:\s*(?:"[^"]*"|\[[^\]]*\])')
 HELD_DIRS = ("held", "private")
 MAX_FINDINGS = 8   # per check, in the report
 
@@ -73,7 +81,7 @@ DEFAULT_RULES = [
     dict(id=6, title="One project at a time", applies="all",
          check="manual", check_ids=[]),
     dict(id=7, title="Downloaded literature never ships", applies="all",
-         check="auto", check_ids=["no-tracked-mirrors"]),
+         check="auto", check_ids=["no-tracked-mirrors", "large-pdfs"]),
     dict(id=8, title="Real device data gets a personal-information pass",
          applies="all", check="manual", check_ids=[]),
     dict(id=9, title="CRediT attribution from full transcripts", applies="all",
@@ -103,7 +111,7 @@ DEFAULT_RULES = [
     dict(id=20, title="Archived predecessors are never tracked",
          applies="all", check="auto", check_ids=["archives-ignored"]),
     dict(id=21, title="No local copies of shared tools",
-         applies="all", check="auto", check_ids=["no-stale-tool-copies"]),
+         applies="all", check="auto", check_ids=["no-stale-tool-copies", "vendored-lf-pin"]),
     dict(id=22, title="Every skill product ships an undergraduate course (AILECTURE mechanics)",
          applies="study-and-contribute", check="manual", check_ids=[]),
     dict(id=23, title="Weekly upstream watch by a scheduled local script",
@@ -111,6 +119,12 @@ DEFAULT_RULES = [
     dict(id=24, title="Installers fail loudly and run unattended (dry-run test, "
                       "tested failure path, --skip-deps, dated platforms.md row)",
          applies="all", check="manual", check_ids=[]),
+    dict(id=25, title="No shipped notebook over 1 MB (1.5 MB hard cap); courses ship as "
+                      "chapter notebooks with a TOC each",
+         applies="all", check="auto", check_ids=["notebook-size"]),
+    dict(id=26, title="Community pathways: CONTRIBUTING.md, CODE_OF_CONDUCT.md and "
+                      "docs/DESIGN.md (the design trade-offs) in every repo",
+         applies="all", check="auto", check_ids=["community-files"]),
 ]
 
 
@@ -209,6 +223,8 @@ def chk_scrub(repo, ctx):
         if not is_texty(rel):
             continue
         text = read_text(repo, rel)
+        if rel.endswith(".ipynb") and text:
+            text = IMAGE_PAYLOAD.sub('"image/*": "<binary>"', text)   # 1.5.0: base64 can spell a scrub token by chance (cap12_frentes)
         if text is None:
             continue
         for i, line in enumerate(text.splitlines(), 1):
@@ -529,6 +545,87 @@ def chk_history_identity(repo, ctx):
     return "PASS", "no scrub-pattern hit in any author/committer identity"
 
 
+def chk_large_pdfs(repo, ctx):
+    """Rule 7: a tracked PDF over PDF_MAX is downloaded literature or a built book, not a doc."""
+    big, mid = [], []
+    for rel in ctx["files"]:
+        if rel.lower().endswith(".pdf"):
+            try:
+                n = os.path.getsize(os.path.join(repo, rel))
+            except OSError:
+                continue
+            if n > PDF_MAX:
+                big.append("%s (%.1f MB)" % (rel, n / 1e6))
+            elif n > PDF_WARN:
+                mid.append("%s (%.1f MB)" % (rel, n / 1e6))
+    if big:
+        return "FAIL", "tracked PDF(s) over %d MB: %s" % (PDF_MAX // 1_000_000, ", ".join(big[:MAX_FINDINGS]))
+    if mid:
+        return "WARN", "tracked PDF(s) over %d MB (built deck/manual? literature must not ship): %s" % (
+            PDF_WARN // 1_000_000, ", ".join(mid[:MAX_FINDINGS]))
+    return "PASS", "no tracked PDF over %d MB" % (PDF_WARN // 1_000_000)
+
+
+def chk_notebook_size(repo, ctx):
+    """Rule 25: no shipped notebook over 1 MB (WARN) / 1.5 MB (FAIL); courses ship as
+    chapter notebooks with a TOC each. PYTHTB and KWANT monoliths crashed sessions at
+    2-6 MB (2026-08-31)."""
+    fail, warn, n = [], [], 0
+    for rel in ctx["files"]:
+        if not rel.endswith(".ipynb"):
+            continue
+        try:
+            size = os.path.getsize(os.path.join(repo, rel))
+        except OSError:
+            continue
+        n += 1
+        if size > NB_FAIL:
+            fail.append("%s (%.2f MB)" % (rel, size / 1e6))
+        elif size > NB_WARN:
+            warn.append("%s (%.2f MB)" % (rel, size / 1e6))
+    if not n:
+        return "SKIP", "no notebooks tracked"
+    if fail:
+        return "FAIL", "over %.1f MB: %s" % (NB_FAIL / 1e6, ", ".join(fail[:MAX_FINDINGS]))
+    if warn:
+        return "WARN", "over %.0f MB (1.5 MB is the cap): %s" % (NB_WARN / 1e6, ", ".join(warn[:MAX_FINDINGS]))
+    return "PASS", "%d notebook(s), all under %.0f MB" % (n, NB_WARN / 1e6)
+
+
+def chk_community_files(repo, ctx):
+    """Rule 26: CONTRIBUTING.md, CODE_OF_CONDUCT.md and docs/DESIGN.md (the design
+    trade-offs, what a JOSS/JOSE reviewer asks for) exist and are not stubs."""
+    missing, stubs = [], []
+    for rel in COMMUNITY:
+        p = os.path.join(repo, rel)
+        if not os.path.isfile(p):
+            missing.append(rel)
+        elif os.path.getsize(p) < COMMUNITY_MIN:
+            stubs.append(rel)
+    if missing or stubs:
+        parts = []
+        if missing:
+            parts.append("missing " + ", ".join(missing))
+        if stubs:
+            parts.append("stub (< %d bytes) " % COMMUNITY_MIN + ", ".join(stubs))
+        return "FAIL", "; ".join(parts) + " (rule 26)"
+    return "PASS", "CONTRIBUTING.md + CODE_OF_CONDUCT.md + docs/DESIGN.md"
+
+
+def chk_vendored_lf_pin(repo, ctx):
+    """Rule 21: a vendored tests/conformance.py is pinned to LF (.gitattributes) so the
+    wiring test's byte-identity survives a Windows checkout (librarian-a0, 3.2.4 review)."""
+    rel = "tests/conformance.py"
+    if rel not in [f.replace("\\", "/") for f in ctx["files"]]:
+        return "SKIP", "no vendored checker"
+    rc, out = run_git(repo, "check-attr", "eol", "--", rel)
+    if rc != 0:
+        return "SKIP", "not a git checkout"
+    if re.search(r"eol:\s*lf\s*$", out.strip()):
+        return "PASS", rel + " pinned eol=lf"
+    return "FAIL", rel + " not pinned to LF (.gitattributes: `tests/conformance.py text eol=lf`)"
+
+
 CHECKS = {
     "scrub": chk_scrub,
     "scrub-notebook-outputs": chk_scrub_nb_outputs,
@@ -537,6 +634,7 @@ CHECKS = {
     "ci-matrix": chk_ci_matrix,
     "tests-exist": chk_tests_exist,
     "no-tracked-mirrors": chk_no_tracked_mirrors,
+    "large-pdfs": chk_large_pdfs,
     "user-manual": chk_user_manual,
     "agents-md": chk_agents_md,
     "docs-guard": chk_docs_guard,
@@ -551,6 +649,9 @@ CHECKS = {
     "no-hardcoded-paths": chk_no_hardcoded_paths,
     "archives-ignored": chk_archives_ignored,
     "no-stale-tool-copies": chk_no_stale_tool_copies,
+    "vendored-lf-pin": chk_vendored_lf_pin,
+    "notebook-size": chk_notebook_size,
+    "community-files": chk_community_files,
     "history-identity": chk_history_identity,
 }
 
@@ -568,7 +669,20 @@ def project_type(repo, override=None):
     return "from-scratch"          # strictest default
 
 
-def run_repo(repo, rules, ptype, subdir=None):
+def project_kind(repo, override=None):
+    """`kind:` in .project-class -- `software` (default) or `profile` (a GitHub profile
+    README repository: no product, no suite, no manual; only rules 3, 18 and 20 apply)."""
+    if override:
+        return override
+    p = os.path.join(repo, ".project-class")
+    if os.path.isfile(p):
+        m = re.search(r"^kind:\s*(\S+)", slurp(p), re.M)
+        if m:
+            return m.group(1)
+    return "software"
+
+
+def run_repo(repo, rules, ptype, subdir=None, kind="software"):
     """Run every rule against `repo`. With `subdir`, the product folder is the
     unit under check: paths become relative to it and every file-existence
     check (LICENSE, README, .github/workflows, docs/, ...) looks there — 1.4.0
@@ -605,6 +719,11 @@ def run_repo(repo, rules, ptype, subdir=None):
     results = []
     for rule in rules["rules"]:
         applies = rule["applies"] in ("all", ptype)
+        if kind == "profile" and rule["id"] not in PROFILE_RULES:
+            for cid in rule["check_ids"] or ["(judgement)"]:
+                results.append(dict(rule=rule["id"], check=cid, status="SKIP",
+                                    detail="n/a for kind profile"))
+            continue
         if rule["check"] == "manual":
             results.append(dict(rule=rule["id"], check="(judgement)",
                                 status="MANUAL" if applies else "SKIP",
@@ -735,6 +854,8 @@ def build_parser():
                     help="run portfolio-side checks against the claude root")
     ap.add_argument("--type", choices=["from-scratch", "study-and-contribute"],
                     help="override the .project-class type")
+    ap.add_argument("--kind", choices=["software", "profile"],
+                    help="override the .project-class kind (profile = README-only repo, rules 3/18/20 only)")
     ap.add_argument("--subdir", help="restrict checks to this product subfolder "
                     "(e.g. pythtb-skill) - study repos whose product is a subset")
     ap.add_argument("--rules", help="path to rules.yaml (default: "
@@ -747,6 +868,10 @@ def build_parser():
 
 
 def main(argv=None):
+    try:   # a finding with a non-cp1252 character crashed the run under PowerShell (2026-09-01)
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
     args = build_parser().parse_args(argv)
     if not args.repo and not args.keep:
         build_parser().print_help()
@@ -756,8 +881,9 @@ def main(argv=None):
     if args.repo:
         repo = os.path.abspath(args.repo)
         ptype = project_type(repo, args.type)
-        res = run_repo(repo, rules, ptype, args.subdir)
-        label = "%s (%s)" % (repo, ptype)
+        kind = project_kind(repo, args.kind)
+        res = run_repo(repo, rules, ptype, args.subdir, kind)
+        label = "%s (%s%s)" % (repo, ptype, ", " + kind if kind != "software" else "")
         if args.subdir:
             label += " subdir=" + args.subdir
         code |= report(res, label, args.json, args.quiet)

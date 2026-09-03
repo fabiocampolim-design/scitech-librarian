@@ -187,7 +187,9 @@ def stamp_translations(root: Path) -> list:
     """Record in every translation under *root* (README.<lang>.md,
     docs/USER_MANUAL.<lang>.md) the digest of the English text it was made
     from; the suite's staleness check then passes. Run it after a
-    translation has been brought up to date, never instead of that."""
+    translation has been brought up to date, never instead of that. Returns
+    the files that carry a digest marker (a translation without one is
+    reported as unstampable, not as stamped)."""
     readme_d = source_digest((root / "README.md").read_text(encoding="utf-8"))
     manual_d = source_digest((root / "docs" / "USER_MANUAL.md").read_text(encoding="utf-8"))
     done = []
@@ -195,8 +197,11 @@ def stamp_translations(root: Path) -> list:
         p = root / f"README.{lang}.md"
         if p.exists():
             text = p.read_text(encoding="utf-8")
-            new = re.sub(r"<!-- source-digest: [^ ]+ -->", f"<!-- source-digest: {readme_d} -->",
-                         text, count=1)
+            new, n = re.subn(r"<!-- source-digest: [^ ]+ -->", f"<!-- source-digest: {readme_d} -->",
+                             text, count=1)
+            if not n:
+                print(f"cannot stamp {p.name}: no <!-- source-digest: ... --> marker in its first lines")
+                continue
             if new != text:
                 with open(p, "w", encoding="utf-8", newline="\n") as fh:
                     fh.write(new)
@@ -204,8 +209,11 @@ def stamp_translations(root: Path) -> list:
         p = root / "docs" / f"USER_MANUAL.{lang}.md"
         if p.exists():
             text = p.read_text(encoding="utf-8")
-            new = re.sub(r'^source-digest: "[^"]*"', f'source-digest: "{manual_d}"', text,
-                         count=1, flags=re.M)
+            new, n = re.subn(r'^source-digest: "[^"]*"', f'source-digest: "{manual_d}"', text,
+                             count=1, flags=re.M)
+            if not n:
+                print(f"cannot stamp docs/{p.name}: no source-digest line in its front matter")
+                continue
             if new != text:
                 with open(p, "w", encoding="utf-8", newline="\n") as fh:
                     fh.write(new)

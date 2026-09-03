@@ -1271,9 +1271,13 @@ _sroot = Path(tempfile.mkdtemp())
                                         encoding="utf-8")
 (_sroot / "docs" / "USER_MANUAL.pt-BR.md").write_text('---\ntitle: "m"\nsource-digest: "old"\n---\n\ncorpo\n',
                                                       encoding="utf-8")
+# a translation without a digest marker cannot be stamped and must not be
+# reported as such (3.4.0 review finding)
+(_sroot / "README.es.md").write_text("# t\n\ncuerpo 3 comprobaciones\n", encoding="utf-8")
 _stamp = getattr(_bm, "stamp_translations", None)
 _stamped = _stamp(_sroot) if _stamp else []
-check("build_manual.stamp_translations(root) writes the English digests into the translations present",
+check("build_manual.stamp_translations(root) writes the English digests into the translations present"
+      " and reports only those it could stamp",
       _digest is not None and sorted(_stamped) == ["README.pt-BR.md", "docs/USER_MANUAL.pt-BR.md"]
       and f"<!-- source-digest: {_digest((_sroot / 'README.md').read_text(encoding='utf-8'))} -->"
       in (_sroot / "README.pt-BR.md").read_text(encoding="utf-8")
