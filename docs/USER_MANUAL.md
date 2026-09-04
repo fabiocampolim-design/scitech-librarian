@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.5.0"
+subtitle: "version 3.5.1"
 date: "2026-09-04"
 lang: "en"
 ---
@@ -497,7 +497,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (313 checks) and
+with a per-year series; audit logs; an offline test suite (325 checks) and
 CI.
 
 Limitations, all by design or by the world:

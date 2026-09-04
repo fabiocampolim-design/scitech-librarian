@@ -214,10 +214,10 @@ def ingest() -> None:
     # Register each block's export as a manual source of the research
     # directory, so report.py --project sees Web of Science like any backend.
     for f in files:
-        project_ingest(globals()['OUTDIR'], [f], f"wos-{f.stem.upper()}", block=f.stem.upper(), kind="ris",
+        project_ingest(OUTDIR, [f], f"wos-{f.stem.upper()}", block=f.stem.upper(), kind="ris",
                        origin="Web of Science Core Collection, web UI export",
                        method="database", note="manual UI run via wos_manual.py")
-    print(f"registered as manual sources under {globals()['OUTDIR'] / 'manual'} (report.py --project)")
+    print(f"registered as manual sources under {OUTDIR / 'manual'} (report.py --project)")
 
 
 def status() -> None:
@@ -230,7 +230,7 @@ def status() -> None:
 
 
 def main() -> int:
-    global BASE, QDIR, RDIR, BLOCKS
+    global BASE, QDIR, RDIR, BLOCKS, OUTDIR
     import argparse
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -254,7 +254,7 @@ def main() -> int:
         log = project.setup_logging("wos_manual", args, outdir)
     except ImportError:
         project = None
-    globals()["OUTDIR"] = outdir
+    OUTDIR = outdir
     {"prep": prep, "walk": walk, "ingest": ingest, "status": status}[args.cmd]()
     if log is not None:
         project.close_logging(log)

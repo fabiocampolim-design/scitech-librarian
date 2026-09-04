@@ -2,6 +2,34 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.5.1 - 2026-09-04
+
+The independent review of 3.5.0 read every module line by line; these are
+its findings, each with a failing-first check.
+
+- **`--pdfs` without `CONTACT_EMAIL` no longer ends in a silent `0/0`.**
+  Unpaywall answers only callers who identify themselves; without the address
+  every lookup failed and was swallowed as "retry next time", so the pass
+  reported `open access: 0/0` and nothing else. The run now says
+  `CONTACT_EMAIL not set in the environment or .env` and skips the pass;
+  `unpaywall_cached` (and so `project.py oa`) refuses up front with the same
+  message instead of writing an empty cache.
+- **`.env` values may be quoted.** `KEY="value"` and `KEY='value'` lose their
+  quotes, as every dotenv dialect allows; 3.5.0 kept them, so a quoted key
+  reached the API with its quotes and failed auth with no hint. An unbalanced
+  quote is kept as typed.
+- **RIS: a preprint is `TY  - UNPB`, not `JOUR`.** BibTeX (`@misc`) and CSL
+  (`article`) already distinguished preprints; the RIS writer did not.
+- **`journals.py` no longer rebuilds the alias index per journal.** `_entry`
+  takes a shared index; `fetch` and the three importers pass one, so a fetch or
+  a SCImago import over thousands of journals is linear, not quadratic.
+- **LaTeX: `%` inside an `\href` target is escaped.** A DOI URL with an
+  encoded character (`10.1/a%2Fb`) started a TeX comment and silently ate the
+  rest of its table row.
+- `wos_manual.py` reaches the research directory as a plain module global;
+  `project.py` no longer checks the sub-command twice.
+- Suite: 325 checks (was 313).
+
 ## 3.5.0 - 2026-09-04
 
 - **CORE is now a shipped backend** — the ninth. ~300 M open-access outputs

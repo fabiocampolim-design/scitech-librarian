@@ -266,6 +266,6 @@ blocks.
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys,
-313 checks; must pass
+325 checks; must pass
 before any change is proposed. CI runs it on Linux, Windows and macOS,
 Python 3.9 and 3.13.

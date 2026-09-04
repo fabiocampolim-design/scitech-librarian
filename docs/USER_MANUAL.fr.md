@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — Manuel utilisateur"
-subtitle: "version 3.5.0"
+subtitle: "version 3.5.1"
 date: "2026-09-04"
 lang: "fr"
 source-digest: "a0b91afa92730631"
@@ -536,7 +536,7 @@ la physique ; liens légaux vers des PDF en libre accès via Unpaywall ;
 rapports à trois niveaux en cinq formats avec PRISMA 2020 et PRISMA-S ;
 répertoires de recherche avec sources manuelles, provenance, chronologie et
 rapports différentiels ; indicateurs des revues avec série par année ;
-journaux d'audit ; une suite de tests hors ligne (313 vérifications) et CI.
+journaux d'audit ; une suite de tests hors ligne (325 vérifications) et CI.
 
 Limitations, toutes par conception ou par le monde :
 

@@ -1444,6 +1444,68 @@ for _lang in ("pt-BR", "es", "de", "fr"):
           _hp.exists() and lib.VERSION in _hp.read_text(encoding="utf-8", errors="replace")
           and _pp.exists() and _pp.stat().st_size > 10000)
 
+# ---------------------------------------------------------------------------
+print("\n3.5.1: the review of 3.5.0 (line-by-line read of every module)")
+# (a) Unpaywall needs a contact address; without one every lookup fails and
+# was swallowed as "retry next time", so --pdfs ended in a silent 0/0. The
+# pass now refuses up front, naming both routes (rule 28).
+with tempfile.TemporaryDirectory() as td:
+    _saved_contact = lib.CONTACT
+    lib.CONTACT = ""
+    try:
+        try:
+            lib.unpaywall_cached(["10.1/x"], Path(td) / "cache.json")
+            _oa_err = ""
+        except RuntimeError as e:
+            _oa_err = str(e)
+    finally:
+        lib.CONTACT = _saved_contact
+    check("unpaywall pass refuses without CONTACT_EMAIL instead of failing silently",
+          "CONTACT_EMAIL" in _oa_err, repr(_oa_err)[:120])
+    check("the refusal names both routes (environment or .env)",
+          "environment or .env" in _oa_err, repr(_oa_err)[:120])
+    check("no cache file is created by a refused pass", not (Path(td) / "cache.json").exists())
+    # (b) .env values may be quoted, as every dotenv dialect allows; the quotes
+    # are not part of the value (a quoted key reached the API with its quotes
+    # and failed auth with no hint).
+    envq = Path(td) / ".env"
+    envq.write_text("LIB_TEST_Q1=\"double quoted\"\nLIB_TEST_Q2='single quoted'\n"
+                    "LIB_TEST_Q3=\"unbalanced\nLIB_TEST_Q4=\"\"\n", encoding="utf-8")
+    for k in ("LIB_TEST_Q1", "LIB_TEST_Q2", "LIB_TEST_Q3", "LIB_TEST_Q4"):
+        os.environ.pop(k, None)
+    load_env(envq)
+    check(".env: a double-quoted value loses its quotes", os.environ.get("LIB_TEST_Q1") == "double quoted")
+    check(".env: a single-quoted value loses its quotes", os.environ.get("LIB_TEST_Q2") == "single quoted")
+    check(".env: an unbalanced quote is kept as typed", os.environ.get("LIB_TEST_Q3") == "\"unbalanced")
+    check(".env: an empty quoted value is empty", os.environ.get("LIB_TEST_Q4") == "")
+    for k in ("LIB_TEST_Q1", "LIB_TEST_Q2", "LIB_TEST_Q3", "LIB_TEST_Q4"):
+        os.environ.pop(k, None)
+    # (c) RIS: a preprint is not a journal article. BibTeX and CSL already
+    # branch on _is_preprint; RIS wrote TY  - JOUR for everything.
+    _rp = Path(td) / "types.ris"
+    write_ris([_rec("Paper", 2020, "10.1/j", "Phys. Rev. B", ["A"], ""),
+               _rec("Preprint", 2021, "", "arXiv preprint", ["B"], "http://arxiv.org/abs/1")], _rp)
+    _rtxt = _rp.read_text(encoding="utf-8")
+    check("RIS: a journal record is TY  - JOUR, a preprint is TY  - UNPB",
+          _rtxt.count("TY  - JOUR") == 1 and _rtxt.count("TY  - UNPB") == 1, _rtxt[:200])
+    check("RIS: the parser still reads both back", len(wos_manual.parse_ris(_rtxt)) == 2)
+# (d) journals._entry rebuilt the alias index on every call (O(N^2) over a
+# fetch); a caller may now pass one shared index, and a new entry registers
+# its aliases in it so the next call finds it without a rebuild.
+_st = {}
+_idx = journals.alias_index(_st)
+_e1 = journals._entry(_st, "New Journal of Things", [], _idx)
+check("journals._entry accepts a shared alias index and registers the new entry in it",
+      _idx.get(journals.norm_name("New Journal of Things")) is _e1)
+_e2 = journals._entry(_st, "new journal of things", ["9876-5432"], _idx)
+check("a later call through the shared index resolves to the same entry",
+      _e2 is _e1 and "9876-5432" in _e1["issn"])
+# (e) LaTeX: a URL in \href must escape % (a TeX comment) or the rest of the
+# row vanishes; DOIs with encoded characters are real data.
+_tt = render._tex_table(["T", "DOI"], [["x", ("link", "10.1/a%2Fb", "https://doi.org/10.1/a%2Fb")]])
+check("render._tex_table escapes % inside the \\href target",
+      "\\href{https://doi.org/10.1/a\\%2Fb}" in _tt, _tt[:200])
+
 
 def test_offline_suite():
     """pytest entry point: the module body above is the suite."""

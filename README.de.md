@@ -177,7 +177,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
   *kleine* Zahl das informative Ergebnis ist, lassen Sie dieselben Blöcke
   über die Zeit laufen, beobachten Sie die Trefferzahlen — und lesen Sie
   jeden Treffer von Hand, bevor Sie eine Lücke behaupten.
-- **Offline testbar.** 313 Prüfungen laufen ohne Netz und ohne Schlüssel
+- **Offline testbar.** 325 Prüfungen laufen ohne Netz und ohne Schlüssel
   (Backends werden gegen aufgezeichnete API-Antworten geprüft; das
   Forschungsverzeichnis, die Import-Parser, der Zeitschriftenspeicher und
   der Berichtsgenerator gegen synthetische Verzeichnisse); CI auf Linux,
@@ -633,7 +633,7 @@ Arbeitsablauf gebaut.
 python tests/test_librarian.py
 ```
 
-313 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
+325 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
 Backends laufen gegen aufgezeichnete API-Antworten; die Import-Parser, die
 Zusammenführung des Forschungsverzeichnisses, der Zeitschriftenspeicher und
 der Berichtsgenerator gegen synthetische Verzeichnisse — sodass die Suite die
@@ -671,7 +671,7 @@ Zeitschriftenkennzahlen und Handbücher ergänzt. In
 | **Konzeption** | Eine Abfrage über jede Datenbank als reproduzierbares Instrument; die Methode Trefferzahlen-als-Neuheitsprüfung; die strikte Haltung zu Nutzungsbedingungen (manuelles WoS statt Scraping); der dreistufige PRISMA-Bericht; das Forschungsverzeichnis als laborweite Einheit, manuelle Quellen mit Herkunft, über die Zeit verfolgte Zeitschriftenkennzahlen | Das strukturelle Abfrageschema; die Datenbanken-als-Konfiguration-Engine; das Dokumentmodell des Berichts und die PDF-Rückfallkette; das Verzeichnis-als-Index-Design |
 | **Methodik** | Disziplin im Abfrageentwurf („eine kleine Zahl ist der Befund — dann jeden Treffer lesen"); Datenbankauswahl und Strategie für den institutionellen Zugang | Quantifizierung der Schrott-Zeitschriften; die arXiv-Gruppenbegrenzung; das Checkpoint-nach-jedem-Aufruf-Design |
 | **Software** | — | Alles |
-| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 313 Prüfungen; CI; Live-Selbsttests |
+| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 325 Prüfungen; CI; Live-Selbsttests |
 | **Untersuchung** | Das Labyrinth des institutionellen Zugangs (CAPES/CAFe, VPN, Schlüsselbeschaffung) | API-Dokumentation von 8+ Datenbanken; Codeanalyse der Konkurrenz |
 | **Schreiben** | Durchsicht und Redaktion | Erstentwurf |
 | **Ressourcen · Betreuung · Projektverwaltung · Mitteleinwerbung** | Alles | — |

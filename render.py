@@ -420,8 +420,10 @@ def _tex_table(headers, rows) -> str:
     widths = [max(0.045, usable * ln / total) for ln in lens]
     scale = usable / sum(widths)
     spec = "".join(f"p{{{w * scale:.3f}\\linewidth}}" for w in widths)
-    cell = lambda c: (f"\\href{{{c[2]}}}{{{_tex(c[1])}}}" if isinstance(c, tuple)  # noqa: E731
-                      else _tex(c))
+    # % starts a TeX comment even inside \href's target: an encoded DOI
+    # (10.1/a%2Fb) silently ate the rest of its row (3.5.0).
+    cell = lambda c: (f"\\href{{{c[2].replace('%', chr(92) + '%')}}}{{{_tex(c[1])}}}"  # noqa: E731
+                      if isinstance(c, tuple) else _tex(c))
     lines = ["{\\scriptsize\\begin{longtable}{" + spec + "}", "\\hline",
              " & ".join(f"\\textbf{{{_tex(h)}}}" for h in headers) + " \\\\ \\hline",
              "\\endhead"]

@@ -101,8 +101,12 @@ def save_store(outdir: Path, store: dict) -> None:
     p.write_text(json.dumps(store, indent=1, ensure_ascii=False, sort_keys=True), encoding="utf-8")
 
 
-def _entry(store: dict, name: str, issns: list) -> dict:
-    """Find or create the entry for a journal; ISSN key wins, name key else."""
+def _entry(store: dict, name: str, issns: list, idx: dict | None = None) -> dict:
+    """Find or create the entry for a journal; ISSN key wins, name key else.
+
+    `idx` is an alias index (alias_index) shared across a loop: without it
+    the index is rebuilt on every call, O(N^2) over a fetch or an import
+    (3.5.0). A new entry registers its aliases in the shared index."""
     issns = [i for i in (norm_issn(x) for x in issns) if i]
     for i in issns:
         if i in store:
@@ -110,7 +114,7 @@ def _entry(store: dict, name: str, issns: list) -> dict:
             break
     else:
         nk = "name:" + norm_name(name)
-        known = alias_index(store).get(norm_name(name))
+        known = (idx if idx is not None else alias_index(store)).get(norm_name(name))
         if issns and nk in store:               # upgrade a name-keyed entry to ISSN
             e = store.pop(nk)
             store[issns[0]] = e
@@ -129,6 +133,8 @@ def _entry(store: dict, name: str, issns: list) -> dict:
     for a in (norm_name(name), norm_name(e["name"])):
         if a and a not in e["aliases"]:
             e["aliases"].append(a)
+        if idx is not None and a:
+            idx.setdefault(a, e)
     e.setdefault("metrics", {})
     e.setdefault("quartile", {})
     e.setdefault("fetched", {})
@@ -264,13 +270,14 @@ def import_scimago(text: str, year: str, store: dict, only: dict | None = None) 
     `only` = {norm_name: True} restricts to journals seen in the directory."""
     rd = _csv_rows(text, "Title", ";")
     n = 0
+    idx = alias_index(store)
     for row in rd:
         title = (row.get("Title") or "").strip()
         issns = [x.strip() for x in (row.get("Issn") or "").split(",") if x.strip()]
         if only is not None and norm_name(title) not in only \
                 and not any(norm_issn(i) in only for i in issns):
             continue
-        e = _entry(store, title, issns)
+        e = _entry(store, title, issns, idx)
         put(e, "sjr", year, row.get("SJR"))
         put(e, "scimago_h", year, row.get("H index"))
         q = (row.get("SJR Best Quartile") or "").strip()
@@ -297,12 +304,13 @@ def import_csv(text: str, provider: str, year: str, store: dict, name_col: str,
                quartile_col: str = "") -> int:
     rd = _csv_rows(text, name_col, delimiter)
     n = 0
+    idx = alias_index(store)
     for row in rd:
         title = (row.get(name_col) or "").strip()
         if not title:
             continue
         issns = [x.strip() for x in (row.get(issn_col) or "").split(",")] if issn_col else []
-        e = _entry(store, title, issns)
+        e = _entry(store, title, issns, idx)
         put(e, provider, year, row.get(value_col))
         if quartile_col and (row.get(quartile_col) or "").strip():
             e["quartile"][str(year)] = row[quartile_col].strip()
@@ -330,12 +338,13 @@ def import_jcr(text: str, store: dict, year: str = "") -> tuple:
     issn_cols = [c for c in cols if c.upper() in ("ISSN", "EISSN")]
     q_col = next((c for c in cols if "quartile" in c.lower()), "")
     n = 0
+    idx = alias_index(store)
     for row in rd:
         title = (row.get(name_col) or "").strip()
         if not title or not re.match(r"\d", (row.get(jif) or "").strip()):
             continue                     # trailer lines ("Copyright ... Clarivate") and blanks
         issns = [row.get(c, "") for c in issn_cols if (row.get(c) or "").strip() not in ("", "N/A")]
-        e = _entry(store, title.title() if title.isupper() else title, issns)
+        e = _entry(store, title.title() if title.isupper() else title, issns, idx)
         put(e, "jcr_if", yr, row.get(jif))
         if q_col and (row.get(q_col) or "").strip():
             e["quartile"][str(yr)] = row[q_col].strip()
@@ -377,8 +386,9 @@ def fetch(outdir: Path, providers=PROVIDERS, refresh=False, log=None) -> dict:
     stats = {"journals": len(todo), "openalex": 0, "scopus": 0, "missed": 0}
     log.info("%d journals in %s", len(todo), outdir)
     providers = list(providers)
+    idx = alias_index(store)
     for i, (name, issns) in enumerate(sorted(todo.items()), 1):
-        e = _entry(store, name, issns)
+        e = _entry(store, name, issns, idx)
         if "openalex" in providers and (refresh or e["fetched"].get("openalex", "")[:4] != year):
             try:
                 src = fetch_openalex(name, e["issn"] or issns)

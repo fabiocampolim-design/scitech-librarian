@@ -568,9 +568,6 @@ def main() -> int:
         return 2
     outdir = resolve_outdir(args.outdir)
     log = setup_logging("project", args, outdir)
-    if not args.cmd:
-        ap.print_help()
-        return 2
     p = load_project(outdir)
     if args.cmd == "init":
         outdir.mkdir(parents=True, exist_ok=True)

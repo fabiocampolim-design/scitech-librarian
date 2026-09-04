@@ -58,7 +58,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.5.0"
+VERSION = "3.5.1"
 
 
 def _report_lang(value: str) -> str:
@@ -99,11 +99,20 @@ def load_env(path: Path = None) -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         k, v = line.split("=", 1)
-        os.environ.setdefault(k.strip(), v.strip())
+        v = v.strip()
+        # KEY="value" / KEY='value' as every dotenv dialect allows: the quotes
+        # are not part of the value (a quoted key reached the API with its
+        # quotes and failed auth with no hint, 3.5.0). An unbalanced quote is
+        # kept as typed.
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+            v = v[1:-1]
+        os.environ.setdefault(k.strip(), v)
 
 
 load_env()
 CONTACT = os.environ.get("CONTACT_EMAIL", "").strip()
+NO_CONTACT_MSG = ("CONTACT_EMAIL not set in the environment or .env -- Unpaywall answers "
+                  "only callers who identify themselves, so the open-access pass cannot run")
 
 
 # ---------------------------------------------------------------------------
@@ -349,7 +358,11 @@ def bk_arxiv(q, want):
 def unpaywall_cached(dois, cfile: Path, progress=None, sleep: float = 0.1) -> dict:
     """Look up DOIs via Unpaywall with a JSON cache on disk. Failed lookups are
     NOT cached, so a transient outage is retried next time. Ctrl-C keeps
-    what was fetched. Returns the cache (doi -> oa fields)."""
+    what was fetched. Returns the cache (doi -> oa fields). Refuses up front
+    without CONTACT_EMAIL: every lookup would fail and be swallowed, and the
+    pass would end in a silent 0/0 (3.5.0)."""
+    if not CONTACT:
+        raise RuntimeError(NO_CONTACT_MSG)
     cache: dict = json.loads(cfile.read_text(encoding="utf-8")) if cfile.exists() else {}
     todo = [d for d in dois if d and d not in cache]
     try:
@@ -760,7 +773,9 @@ bk_wos = _alias("wos")
 def write_ris(recs, path: Path):
     with path.open("w", encoding="utf-8") as f:
         for r in recs:
-            f.write("TY  - JOUR\n")
+            # UNPB (unpublished work) for a preprint, as BibTeX (@misc) and
+            # CSL (article) already distinguish; JOUR for everything else.
+            f.write("TY  - UNPB\n" if _is_preprint(r) else "TY  - JOUR\n")
             for a in r["authors"]:
                 f.write(f"AU  - {a}\n")
             f.write(f"TI  - {r['title']}\n")
@@ -1112,7 +1127,9 @@ def main() -> int:
         interrupted = True
         log("\n\n*** interrupted -- saving everything fetched so far ***")
 
-    if args.pdfs and everything:
+    if args.pdfs and everything and not CONTACT:
+        log(f"\nUnpaywall: {NO_CONTACT_MSG}; --pdfs skipped")
+    elif args.pdfs and everything:
         # Unpaywall is one HTTP call per DOI, so 3000 DOIs is ~20 min. Restrict
         # by default to the blocks you actually need PDFs for, cache to disk
         # across runs, show progress with an ETA, and stay interruptible.
