@@ -96,7 +96,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Manual del usuario</h1>
-<p class="subtitle">versión 3.4.3</p>
+<p class="subtitle">versión 3.5.0</p>
 <p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
@@ -153,7 +153,7 @@ como en el original.</em></p>
 <h1 id="qué-es">1. Qué es</h1>
 <p>scitech-librarian es un instrumento reproducible de búsqueda
 bibliográfica para ciencia e ingeniería. Escribes una consulta
-estructurada una sola vez; la ejecuta contra hasta ocho bases de datos
+estructurada una sola vez; la ejecuta contra hasta nueve bases de datos
 bibliográficas a través de sus APIs documentadas, archiva todo
 (registros, la cadena de consulta exacta enviada a cada base de datos,
 recuentos de resultados, un log) y escribe un informe de búsqueda
@@ -280,7 +280,8 @@ definida fuera siempre gana y el archivo es opcional.</p>
 </tr>
 <tr>
 <td><code>CORE_API_KEY</code></td>
-<td>CORE (si está configurado en backends.json)</td>
+<td>CORE — opcional; las llamadas anónimas funcionan, pero con límite de
+peticiones</td>
 <td>gratuita, <a href="https://core.ac.uk/services/api" class="uri">https://core.ac.uk/services/api</a></td>
 </tr>
 <tr>
@@ -290,8 +291,8 @@ definida fuera siempre gana y el archivo es opcional.</p>
 </tr>
 </tbody>
 </table>
-<p>Cinco backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) no necesitan clave ni institución.
+<p>Seis backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
+Crossref, CORE) no necesitan clave ni institución.
 <code>python librarian.py --list</code> informa de qué claves se
 encontraron por cualquiera de las dos vías; <code>--selftest</code>
 demuestra que funcionan.</p>
@@ -865,17 +866,17 @@ el informe contigo. El archivo de consulta estructurado, los archivos
 JSON y el informe se diseñaron para que un agente los escriba y
 audite.</p>
 <h1 id="funciones-y-limitaciones">12. Funciones y limitaciones</h1>
-<p>Funciones: una consulta estructural traducida a ocho gramáticas
+<p>Funciones: una consulta estructural traducida a nueve gramáticas
 nativas; bases de datos como configuración JSON
 (<code>--init-backends</code>); ejecuciones archivadas y citables con
 cadenas de consulta exactas e historial de recuentos; puntos de control
-y Ctrl-C seguro; un filtro de revistas con justificantes; cinco backends
+y Ctrl-C seguro; un filtro de revistas con justificantes; seis backends
 sin clave; NASA ADS e INSPIRE para física; enlaces legales a PDF de
 acceso abierto vía Unpaywall; informes de tres niveles en cinco formatos
 con PRISMA 2020 y PRISMA-S; directorios de investigación con fuentes
 manuales, procedencia, línea de tiempo e informes diferenciales;
 métricas de revistas con serie por año; logs de auditoría; una suite de
-pruebas sin conexión (305 comprobaciones) y CI.</p>
+pruebas sin conexión (313 comprobaciones) y CI.</p>
 <p>Limitaciones, todas por diseño o por el mundo:</p>
 <ul>
 <li>Los recuentos no son comparables entre bases de datos; los

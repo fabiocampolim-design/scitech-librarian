@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Benutzerhandbuch"
-subtitle: "Version 3.4.3"
+subtitle: "Version 3.5.0"
 date: "2026-09-04"
 lang: "de"
-source-digest: "28f9f034539b4b57"
+source-digest: "a0b91afa92730631"
 ---
 
 [English](USER_MANUAL.md) · [Português (Brasil)](USER_MANUAL.pt-BR.md) · [Español](USER_MANUAL.es.md) · **Deutsch** · [Français](USER_MANUAL.fr.md)
@@ -14,7 +14,7 @@ source-digest: "28f9f034539b4b57"
 
 scitech-librarian ist ein reproduzierbares Literaturrecherche-Instrument für
 Naturwissenschaft und Technik. Sie schreiben eine strukturierte Abfrage
-einmal; es führt sie über deren dokumentierte APIs gegen bis zu acht
+einmal; es führt sie über deren dokumentierte APIs gegen bis zu neun
 bibliografische Datenbanken aus, archiviert alles (Datensätze, den exakten an
 jede Datenbank gesendeten Abfragestring, Trefferzahlen, ein Log) und schreibt
 einen Literaturrecherche-Bericht mit PRISMA-2020-Flussdiagramm. Über Monate
@@ -75,10 +75,10 @@ Schlüssel:
 | `SCOPUS_API_KEY` | Scopus (+ Institutionsnetz/VPN) | kostenlos, <https://dev.elsevier.com/apikey/manage> |
 | `SCOPUS_INSTTOKEN` | Scopus ohne VPN | bei Ihrer Bibliothek erfragen |
 | `S2_API_KEY` | schnelleres Semantic Scholar | optional |
-| `CORE_API_KEY` | CORE (falls in backends.json konfiguriert) | kostenlos, <https://core.ac.uk/services/api> |
+| `CORE_API_KEY` | CORE — optional; anonyme Aufrufe funktionieren, unterliegen aber einem Ratenlimit | kostenlos, <https://core.ac.uk/services/api> |
 | `WOS_STARTER_KEY` | Web of Science Starter API (eingeschränkte Grammatik) | selten lohnend |
 
-Fünf Backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
+Sechs Backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref, CORE)
 brauchen weder Schlüssel noch Institution. `python librarian.py --list` meldet,
 welche Schlüssel auf einem der beiden Wege gefunden wurden; `--selftest`
 beweist, dass sie funktionieren.
@@ -524,15 +524,15 @@ einem Agenten geschrieben und geprüft zu werden.
 
 # 12. Funktionen und Einschränkungen
 
-Funktionen: eine strukturelle Abfrage, in acht native Grammatiken
+Funktionen: eine strukturelle Abfrage, in neun native Grammatiken
 übertragen; Datenbanken als JSON-Konfiguration (`--init-backends`);
 archivierte, zitierbare Läufe mit exakten Abfragestrings und Trefferverlauf;
-Checkpoints und sicheres Strg-C; ein Zeitschriftenfilter mit Belegen; fünf
+Checkpoints und sicheres Strg-C; ein Zeitschriftenfilter mit Belegen; sechs
 schlüssellose Backends; NASA ADS und INSPIRE für Physik; legale OA-PDF-Links
 über Unpaywall; dreistufige Berichte in fünf Formaten mit PRISMA 2020 und
 PRISMA-S; Forschungsverzeichnisse mit manuellen Quellen, Herkunft,
 Zeitverlauf und Differenzberichten; Zeitschriftenkennzahlen mit Jahresreihe;
-Audit-Logs; eine Offline-Testsuite (305 Prüfungen) und CI.
+Audit-Logs; eine Offline-Testsuite (313 Prüfungen) und CI.
 
 Einschränkungen, alle konstruktionsbedingt oder durch die Welt:
 

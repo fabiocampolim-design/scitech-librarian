@@ -13,8 +13,8 @@ remembers every search, every record you brought in by hand, and writes the
 PRISMA report for all of it.**
 
 Write a structured query once; scitech-librarian renders it into the native
-syntax of eight bibliographic databases (OpenAlex, NASA ADS, arXiv,
-INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, Web of Science), runs them
+syntax of nine bibliographic databases (OpenAlex, NASA ADS, arXiv,
+INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, CORE, Web of Science), runs them
 all, and archives the run — raw records, RIS for Zotero, the exact query
 string sent to each backend, hit counts — in a timestamped directory you can
 cite. Runs accumulate in a **research directory**: a folder per project that
@@ -87,7 +87,7 @@ not as fine print, but as a design principle:
 
 ## Features
 
-- **One structural query, eight native grammars.** `[[a, b], [c]]` means
+- **One structural query, nine native grammars.** `[[a, b], [c]]` means
   `(a OR b) AND c`; each backend's syntax — `TITLE-ABS-KEY(...)`,
   `TS=(...)`, `abs:"..."`, lowercase `and` — is generated from the same
   definition, so queries never drift out of sync between databases.
@@ -153,7 +153,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 305 checks run with no network and no keys (backends
+- **Offline-testable.** 313 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux, Windows and macOS, Python 3.9 and 3.13.
@@ -169,6 +169,7 @@ not as fine print, but as a design principle:
 | **Scopus** | free key + institution | ~27–28k curated journals | citation-grade counts for papers | entitlement is IP-based; needs campus network or VPN |
 | **Semantic Scholar** | none | broad, good citation graph | cross-checking | ~1 req/s without a key |
 | **Crossref** | none | DOI metadata for ~150M items | resolving DOIs | **no boolean support** — counts meaningless, excluded from default runs |
+| **CORE** | none (key raises the rate limit) | ~300M open-access outputs from ~10k repositories | theses, technical reports, institutional deposits — grey literature no journal index holds | many records carry no DOI and no journal |
 | **Web of Science** | licensed | ~21–22k curated journals | conventional legitimacy | API usually not licensed — use `wos_manual.py` |
 
 **If you only set up two:** OpenAlex (works instantly) and NASA ADS
@@ -205,8 +206,8 @@ Either way, `python librarian.py --list` shows which keys arrived and
 - **Web of Science** — see the manual companion below; the Starter key's
   restricted grammar makes the API rarely worth it.
 
-**No institution? Most of it still works.** Five of the eight backends
-(OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref) need no key and no
+**No institution? Most of it still works.** Six of the nine backends
+(OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref, CORE) need no key and no
 institutional access at all, and NASA ADS needs only a free personal token —
 so the tool is fully usable from any laptop, with zero affiliation and no
 VPN. Institutional entitlement matters only for Scopus (and the licensed WoS
@@ -297,7 +298,7 @@ with the automated ones, same schema, same analysis.
 ## How this compares
 
 [findpapers](https://github.com/jonatasgrosman/findpapers) is the closest
-tool: one boolean query across eight databases (IEEE and PubMed included),
+tool: one boolean query across nine databases (IEEE and PubMed included),
 with deduplication, refinement, and PDF downloading — a strong choice for
 software-engineering-style systematic reviews on Python 3.11+.
 [litstudy](https://github.com/NLeSC/litstudy) analyses a collection you
@@ -508,7 +509,7 @@ can be redistributed here. Scopus, NASA ADS and Semantic Scholar data come
 under their own API terms (Scopus: no redistribution outside your
 institution; Semantic Scholar: ODC-BY), so reports built on them are for
 your own research directory, not for a public repository. The tool runs
-all eight; the samples show three.
+all nine; the samples show three.
 
 ## Command reference
 
@@ -577,7 +578,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-305 checks, stdlib only, no network and no keys — backends run against
+313 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -612,7 +613,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 305-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 313-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |

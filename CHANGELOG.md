@@ -2,6 +2,26 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.5.0 - 2026-09-04
+
+- **CORE is now a shipped backend** — the ninth. ~300 M open-access outputs
+  harvested from ~10 000 repositories: theses, technical reports and
+  institutional deposits, the grey literature no journal index holds. It was
+  documented as "if configured in `backends.json`", which meant it did not
+  exist: `CORE_API_KEY` bought nothing and no entry shipped. It now ships in
+  `DEFAULT_BACKENDS`, and the key is **optional** — CORE answers anonymous
+  callers and rate-limits them, so a key raises the ceiling rather than
+  unlocking the backend. Boolean is honoured (the four-query differential of
+  `docs/FUTURE_BACKENDS.md`); paging is `limit`/`offset`; `totalHits` is the
+  count and `results` the records.
+- Repository records routinely carry **no DOI and an empty `journals` list**;
+  the field paths tolerate both, and the failing-first test pins exactly that
+  case alongside a record that has them. Live shape confirmed against the API
+  on 2026-09-04, not inferred from documentation.
+- Six of the nine backends now need no key at all (OpenAlex, arXiv,
+  INSPIRE-HEP, Semantic Scholar, Crossref, CORE). README, User Manual,
+  `AGENTS.md`, `.env.example` and all four translations updated.
+
 ## 3.4.3 - 2026-09-04
 
 - `docs/FUTURE_BACKENDS.md` rebuilt from a live survey of 30 candidate APIs

@@ -23,8 +23,10 @@ lit/counts_history.csv so drift over time is visible.
 
 Backends
 --------
-no key needed:  openalex  arxiv  inspire  semanticscholar  crossref
-                (OpenAlex has a daily free budget; OPENALEX_API_KEY raises it)
+no key needed:  openalex  arxiv  inspire  semanticscholar  crossref  core
+                (OpenAlex has a daily free budget; OPENALEX_API_KEY raises it.
+                 CORE answers anonymous callers but rate-limits them;
+                 CORE_API_KEY raises that ceiling.)
 key needed:     scopus (SCOPUS_API_KEY + institutional network/VPN)
                 ads    (ADS_TOKEN)
                 wos    (WOS_STARTER_KEY; restricted grammar, see .env.example)
@@ -56,7 +58,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.4.3"
+VERSION = "3.5.0"
 
 
 def _report_lang(value: str) -> str:
@@ -109,7 +111,7 @@ CONTACT = os.environ.get("CONTACT_EMAIL", "").strip()
 # ---------------------------------------------------------------------------
 # `groups` is a conjunction of disjunctions: [[a, b], [c]] means (a OR b) AND c.
 # Each backend's native syntax is generated from this, so the queries stay in
-# sync across eight databases instead of being maintained eight times.
+# sync across nine databases instead of being maintained nine times.
 #
 # Where proximity operators matter (WoS NEAR/n, Scopus W/n) the hand-written
 # strings in SEARCH_QUERIES.md remain authoritative for manual UI runs; the
@@ -476,6 +478,30 @@ DEFAULT_BACKENDS: dict[str, dict] = {
                              "url": "URL", "abstract": "abstract",
                              "cited": "is-referenced-by-count"}},
     },
+    "core": {
+        # 300 M+ open-access outputs harvested from ~10 000 repositories:
+        # theses, technical reports, institutional deposits -- the grey
+        # literature the journal indexes never see. Boolean is honoured
+        # (survey, docs/FUTURE_BACKENDS.md). The key is OPTIONAL: CORE answers
+        # anonymous callers but rate-limits them, so a key raises the ceiling
+        # rather than unlocking the backend. Repository records routinely have
+        # no DOI and an empty `journals` list; the field paths tolerate both.
+        "syntax": {},
+        "auth": {"env": "CORE_API_KEY", "header": "Authorization",
+                 "value": "Bearer {key}", "optional": True,
+                 "hint": "free key at https://core.ac.uk/services/api; "
+                         "anonymous callers work but are rate-limited"},
+        "request": {"url": "https://api.core.ac.uk/v3/search/works",
+                    "params": {"q": "{q}", "limit": "{n}", "offset": "{start}"},
+                    "paging": {"style": "offset", "size": 100, "sleep": 0.3}},
+        "parse": {"total": "totalHits", "items": "results",
+                  "fields": {"title": "title", "year": "yearPublished",
+                             "doi": "doi", "journal": "journals[0].title",
+                             "authors": "authors[].name",
+                             "url": {"template": "https://core.ac.uk/works/{id}",
+                                     "vars": {"id": "id"}},
+                             "abstract": "abstract", "cited": "citationCount"}},
+    },
     "ads": {
         "syntax": {"term": 'abs:"{t}"'},
         "auth": {"env": "ADS_TOKEN", "header": "Authorization", "value": "Bearer {key}",
@@ -721,6 +747,7 @@ bk_openalex = _alias("openalex")
 bk_inspire = _alias("inspire")
 bk_semanticscholar = _alias("semanticscholar")
 bk_crossref = _alias("crossref")
+bk_core = _alias("core")
 bk_ads = _alias("ads")
 bk_scopus = _alias("scopus")
 bk_wos = _alias("wos")

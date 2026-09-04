@@ -96,7 +96,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — User Manual</h1>
-<p class="subtitle">version 3.4.3</p>
+<p class="subtitle">version 3.5.0</p>
 <p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
@@ -148,7 +148,7 @@ Licence and conduct</a></li>
 <h1 id="what-it-is">1. What it is</h1>
 <p>scitech-librarian is a reproducible literature-search instrument for
 science and engineering. You write a structured query once; it runs the
-query against up to eight bibliographic databases through their
+query against up to nine bibliographic databases through their
 documented APIs, archives everything (records, the exact query string
 sent to each database, hit counts, a log), and writes a
 literature-search report with a PRISMA 2020 flow diagram. Over months,
@@ -266,7 +266,7 @@ wins and the file is optional.</p>
 </tr>
 <tr>
 <td><code>CORE_API_KEY</code></td>
-<td>CORE (if configured in backends.json)</td>
+<td>CORE — optional; anonymous callers work but are rate-limited</td>
 <td>free, <a href="https://core.ac.uk/services/api" class="uri">https://core.ac.uk/services/api</a></td>
 </tr>
 <tr>
@@ -276,8 +276,8 @@ wins and the file is optional.</p>
 </tr>
 </tbody>
 </table>
-<p>Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) need no key and no institution.
+<p>Six backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
+Crossref, CORE) need no key and no institution.
 <code>python librarian.py --list</code> reports which keys were found by
 either route; <code>--selftest</code> proves they work.</p>
 <p><strong>Drop-in use inside another project.</strong> Put the seven
@@ -816,7 +816,7 @@ your research question, run the scans, and walk the report with you. The
 structured query file, the JSON archives and the report were designed to
 be written and audited by an agent.</p>
 <h1 id="features-and-limitations">12. Features and limitations</h1>
-<p>Features: one structural query rendered into eight native grammars;
+<p>Features: one structural query rendered into nine native grammars;
 databases as JSON configuration (<code>--init-backends</code>);
 archived, citable runs with exact query strings and count history;
 checkpointing and safe Ctrl-C; a venue filter with receipts; five
@@ -824,7 +824,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (305 checks) and CI.</p>
+logs; an offline test suite (313 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are

@@ -191,6 +191,40 @@ try:
     total, recs = lib.bk_openalex("q", 0)
     check("openalex counts-only fetches no records", total == 2 and recs == [])
 
+    # CORE v3. Shape taken from a live probe on 2026-09-04: the payload carries
+    # totalHits/limit/offset/results, a record has yearPublished, authors as
+    # [{"name": ...}], journals as a list that is often EMPTY (repository
+    # deposits have no journal) and no doi at all for grey literature -- the
+    # two cases the field paths have to survive.
+    CANNED["api.core.ac.uk"] = json.dumps({
+        "totalHits": 2, "limit": 10, "offset": 0,
+        "results": [
+            {"id": 74104544, "title": "A4_3 Habitable Dyson Sphere",
+             "yearPublished": 2012, "doi": None, "journals": [],
+             "authors": [{"name": "Tudor, Vlad"}, {"name": "Winkworth, David"}],
+             "abstract": "A student report.", "citationCount": 0,
+             "downloadUrl": "https://core.ac.uk/download/267013217.pdf"},
+            {"id": 11, "title": "Collector swarms", "yearPublished": 2021,
+             "doi": "10.1/core", "journals": [{"title": "J. Astroeng."}],
+             "authors": [{"name": "B. Author"}], "abstract": "A.",
+             "citationCount": 7},
+        ],
+    }).encode()
+    total, recs = lib.bk_core("q", 10)
+    check("core total parsed", total == 2)
+    check("core year and authors parsed",
+          recs[0]["year"] == "2012" and recs[0]["authors"] == ["Tudor, Vlad", "Winkworth, David"])
+    check("core record with no doi and no journal still lands",
+          recs[0]["doi"] in (None, "") and recs[0]["title"].endswith("Dyson Sphere"))
+    check("core journal read from journals[0].title", recs[1]["journal"] == "J. Astroeng.")
+    check("core url built from the work id",
+          recs[0]["url"] == "https://core.ac.uk/works/74104544")
+    check("core citations parsed", recs[1]["cited_by"] == 7)
+    total, recs = lib.bk_core("q", 0)
+    check("core counts-only fetches no records", total == 2 and recs == [])
+    check("core key is optional (backend usable with no CORE_API_KEY)",
+          "core" in lib.NOKEY)
+
     CANNED["export.arxiv.org"] = (
         b'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom" '
         b'xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" '

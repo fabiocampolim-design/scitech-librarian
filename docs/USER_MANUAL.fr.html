@@ -96,7 +96,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Manuel utilisateur</h1>
-<p class="subtitle">version 3.4.3</p>
+<p class="subtitle">version 3.5.0</p>
 <p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
@@ -152,7 +152,7 @@ quels.</em></p>
 <h1 id="ce-que-cest">1. Ce que c’est</h1>
 <p>scitech-librarian est un instrument de recherche bibliographique
 reproductible pour les sciences et l’ingénierie. Vous écrivez une
-requête structurée une seule fois ; il l’exécute contre jusqu’à huit
+requête structurée une seule fois ; il l’exécute contre jusqu’à neuf
 bases de données bibliographiques via leurs API documentées, archive
 tout (notices, la chaîne de requête exacte envoyée à chaque base de
 données, nombres de résultats, un journal) et rédige un rapport de
@@ -282,7 +282,8 @@ fichier est facultatif.</p>
 </tr>
 <tr>
 <td><code>CORE_API_KEY</code></td>
-<td>CORE (si configuré dans backends.json)</td>
+<td>CORE — optionnelle ; les appels anonymes fonctionnent, mais avec une
+limite de débit</td>
 <td>gratuite, <a href="https://core.ac.uk/services/api" class="uri">https://core.ac.uk/services/api</a></td>
 </tr>
 <tr>
@@ -292,8 +293,8 @@ fichier est facultatif.</p>
 </tr>
 </tbody>
 </table>
-<p>Cinq backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) n’ont besoin ni de clé ni d’institution.
+<p>Six backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
+Crossref, CORE) n’ont besoin ni de clé ni d’institution.
 <code>python librarian.py --list</code> indique quelles clés ont été
 trouvées par l’une ou l’autre voie ; <code>--selftest</code> prouve
 qu’elles fonctionnent.</p>
@@ -872,17 +873,17 @@ requête structuré, les archives JSON et le rapport ont été conçus pour
 être écrits et audités par un agent.</p>
 <h1 id="fonctionnalités-et-limitations">12. Fonctionnalités et
 limitations</h1>
-<p>Fonctionnalités : une requête structurelle traduite en huit
+<p>Fonctionnalités : une requête structurelle traduite en neuf
 grammaires natives ; bases de données en configuration JSON
 (<code>--init-backends</code>) ; exécutions archivées et citables avec
 chaînes de requête exactes et historique des nombres ; points de reprise
-et Ctrl-C sûr ; un filtre de revues avec justificatifs ; cinq backends
+et Ctrl-C sûr ; un filtre de revues avec justificatifs ; six backends
 sans clé ; NASA ADS et INSPIRE pour la physique ; liens légaux vers des
 PDF en libre accès via Unpaywall ; rapports à trois niveaux en cinq
 formats avec PRISMA 2020 et PRISMA-S ; répertoires de recherche avec
 sources manuelles, provenance, chronologie et rapports différentiels ;
 indicateurs des revues avec série par année ; journaux d’audit ; une
-suite de tests hors ligne (305 vérifications) et CI.</p>
+suite de tests hors ligne (313 vérifications) et CI.</p>
 <p>Limitations, toutes par conception ou par le monde :</p>
 <ul>
 <li>Les nombres ne sont pas comparables entre bases de données ; les

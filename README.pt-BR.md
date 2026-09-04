@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 5aa2524bea7c059a -->
+<!-- source-digest: 7565b449338de027 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -16,8 +16,8 @@ lembra cada busca, cada registro que você trouxe à mão, e escreve o relatóri
 PRISMA de tudo isso.**
 
 Escreva uma consulta estruturada uma vez; o scitech-librarian a traduz para a
-sintaxe nativa de oito bases bibliográficas (OpenAlex, NASA ADS, arXiv,
-INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, Web of Science), executa todas
+sintaxe nativa de nove bases bibliográficas (OpenAlex, NASA ADS, arXiv,
+INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, CORE, Web of Science), executa todas
 e arquiva a rodada — registros brutos, RIS para o Zotero, a string de consulta
 exata enviada a cada backend, contagens de resultados — em um diretório com
 carimbo de data e hora que você pode citar. As rodadas se acumulam em um
@@ -96,7 +96,7 @@ não como letra miúda, mas como princípio de projeto:
 
 ## Recursos
 
-- **Uma consulta estrutural, oito gramáticas nativas.** `[[a, b], [c]]`
+- **Uma consulta estrutural, nove gramáticas nativas.** `[[a, b], [c]]`
   significa `(a OR b) AND c`; a sintaxe de cada backend — `TITLE-ABS-KEY(...)`,
   `TS=(...)`, `abs:"..."`, `and` em minúsculas — é gerada da mesma definição,
   de modo que as consultas nunca ficam dessincronizadas entre as bases.
@@ -158,7 +158,7 @@ não como letra miúda, mas como princípio de projeto:
   Scholar e INSPIRE. Em uma consulta decisiva de novidade essa foi toda a
   diferença entre 16 resultados e 3. Filtrado por padrão; `--keep-junk`
   desativa.
-- **Funciona sem nenhuma afiliação.** Cinco backends não precisam de chave nem
+- **Funciona sem nenhuma afiliação.** Seis backends não precisam de chave nem
   de instituição; o ADS precisa apenas de um token pessoal gratuito. Sem VPN,
   sem rede do campus, sem assinatura — isso só importa se você acrescentar a
   Scopus ou a API da WoS.
@@ -169,7 +169,7 @@ não como letra miúda, mas como princípio de projeto:
   que um número *pequeno* seja o resultado informativo, rode os mesmos blocos
   ao longo do tempo, observe as contagens — e leia cada resultado à mão antes
   de afirmar uma lacuna.
-- **Testável offline.** 305 verificações rodam sem rede e sem chaves (os
+- **Testável offline.** 313 verificações rodam sem rede e sem chaves (os
   backends são exercitados contra respostas de API gravadas; o diretório de
   pesquisa, os parsers de ingestão, o armazém de periódicos e o gerador de
   relatórios contra diretórios sintéticos); CI em Linux, Windows e macOS,
@@ -186,6 +186,7 @@ não como letra miúda, mas como princípio de projeto:
 | **Scopus** | chave gratuita + instituição | ~27–28 mil periódicos curados | contagens com grau de citação para artigos | direitos por IP; precisa da rede do campus ou VPN |
 | **Semantic Scholar** | nenhuma | amplo, bom grafo de citações | verificação cruzada | ~1 req/s sem chave |
 | **Crossref** | nenhuma | metadados de DOI de ~150 mi de itens | resolver DOIs | **sem suporte a booleanos** — contagens sem sentido, excluído das rodadas padrão |
+| **CORE** | nenhuma (a chave aumenta o limite de taxa) | ~300 mi de saídas de acesso aberto de ~10 mil repositórios | teses, relatórios técnicos, depósitos institucionais — literatura cinzenta que nenhum índice de periódicos guarda | muitos registros não têm DOI nem periódico |
 | **Web of Science** | licenciada | ~21–22 mil periódicos curados | legitimidade convencional | API normalmente não licenciada — use `wos_manual.py` |
 
 **Se você configurar apenas duas:** OpenAlex (funciona na hora) e NASA ADS
@@ -224,8 +225,8 @@ De qualquer forma, `python librarian.py --list` mostra quais chaves chegaram e
 - **Web of Science** — veja o companheiro manual abaixo; a gramática restrita
   da chave Starter raramente faz a API valer a pena.
 
-**Sem instituição? A maior parte ainda funciona.** Cinco dos oito backends
-(OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref) não precisam de
+**Sem instituição? A maior parte ainda funciona.** Seis dos nove backends
+(OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref, CORE) não precisam de
 chave nem de acesso institucional, e o NASA ADS precisa apenas de um token
 pessoal gratuito — então a ferramenta é totalmente usável de qualquer laptop,
 sem afiliação e sem VPN. O direito institucional importa apenas para a Scopus
@@ -319,7 +320,7 @@ mesma análise.
 ## Como se compara
 
 [findpapers](https://github.com/jonatasgrosman/findpapers) é a ferramenta mais
-próxima: uma consulta booleana em oito bases (IEEE e PubMed incluídas), com
+próxima: uma consulta booleana em nove bases (IEEE e PubMed incluídas), com
 deduplicação, refinamento e download de PDFs — uma boa escolha para revisões
 sistemáticas ao estilo da engenharia de software em Python 3.11+.
 [litstudy](https://github.com/NLeSC/litstudy) analisa uma coleção que você já
@@ -610,7 +611,7 @@ foi construída dentro de exatamente esse fluxo de trabalho.
 python tests/test_librarian.py
 ```
 
-305 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
+313 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
 rodam contra respostas de API gravadas; os parsers de ingestão, a mesclagem do
 diretório de pesquisa, o armazém de periódicos e o gerador de relatórios
 contra diretórios sintéticos — de modo que a suíte exercita offline os
@@ -647,7 +648,7 @@ periódicos e dos manuais em 28 de agosto de 2026. Em termos de
 | **Conceituação** | Uma consulta em todas as bases como instrumento reprodutível; o método de contagens como verificação de novidade; a postura estrita quanto aos termos de serviço (WoS manual em vez de raspagem); o relatório PRISMA em três níveis; o diretório de pesquisa como unidade do laboratório, fontes manuais com proveniência, métricas de veículos acompanhadas ao longo do tempo | O esquema de consulta estrutural; o motor de bases como configuração; o modelo de documento do relatório e a cadeia de fallback do PDF; o projeto do diretório como índice |
 | **Metodologia** | Disciplina de projeto de consultas ("um número pequeno é o achado — depois leia cada resultado"); seleção de bases e estratégia de acesso institucional | Quantificação de veículos lixo; a correção de limitação de grupos do arXiv; o projeto de checkpoint após cada chamada |
 | **Software** | — | Todo ele |
-| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 305 verificações; CI; autotestes ao vivo |
+| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 313 verificações; CI; autotestes ao vivo |
 | **Investigação** | O labirinto do acesso institucional (CAPES/CAFe, VPN, obtenção de chaves) | Documentação de API de 8+ bases; análise do código de concorrentes |
 | **Redação** | Revisão e edição | Rascunho original |
 | **Recursos · Supervisão · Administração do projeto · Obtenção de financiamento** | Tudo | — |

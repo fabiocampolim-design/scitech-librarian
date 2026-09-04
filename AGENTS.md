@@ -11,7 +11,7 @@ README. The human-oriented manual is `docs/USER_MANUAL.md`.
 
 A reproducible literature-search instrument for science and engineering:
 
-1. `librarian.py` runs one structured query against up to eight
+1. `librarian.py` runs one structured query against up to nine
    bibliographic databases through their documented APIs and archives every
    run (records, exact query strings, counts, log, PRISMA report).
 2. `project.py` turns a directory of runs into a **research directory**: it
@@ -266,6 +266,6 @@ blocks.
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys,
-305 checks; must pass
+313 checks; must pass
 before any change is proposed. CI runs it on Linux, Windows and macOS,
 Python 3.9 and 3.13.

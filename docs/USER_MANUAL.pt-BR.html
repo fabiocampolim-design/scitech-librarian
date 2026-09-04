@@ -96,7 +96,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Manual do Usuário</h1>
-<p class="subtitle">versão 3.4.3</p>
+<p class="subtitle">versão 3.5.0</p>
 <p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
@@ -150,7 +150,7 @@ de arquivos, opções e blocos de código ficam como no original.</em></p>
 <h1 id="o-que-é">1. O que é</h1>
 <p>O scitech-librarian é um instrumento reprodutível de busca
 bibliográfica para ciência e engenharia. Você escreve uma consulta
-estruturada uma vez; ele a executa em até oito bases bibliográficas por
+estruturada uma vez; ele a executa em até nove bases bibliográficas por
 meio de suas APIs documentadas, arquiva tudo (registros, a string de
 consulta exata enviada a cada base, contagens de resultados, um log) e
 escreve um relatório de busca bibliográfica com um diagrama de fluxo
@@ -276,7 +276,8 @@ opcional.</p>
 </tr>
 <tr>
 <td><code>CORE_API_KEY</code></td>
-<td>CORE (se configurado em backends.json)</td>
+<td>CORE — opcional; chamadas anônimas funcionam, mas com limite de
+taxa</td>
 <td>gratuita, <a href="https://core.ac.uk/services/api" class="uri">https://core.ac.uk/services/api</a></td>
 </tr>
 <tr>
@@ -286,8 +287,8 @@ opcional.</p>
 </tr>
 </tbody>
 </table>
-<p>Cinco backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) não precisam de chave nem de instituição.
+<p>Seis backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
+Crossref, CORE) não precisam de chave nem de instituição.
 <code>python librarian.py --list</code> informa quais chaves foram
 encontradas por qualquer um dos caminhos; <code>--selftest</code> prova
 que elas funcionam.</p>
@@ -848,16 +849,16 @@ relatório com você. O arquivo de consulta estruturado, os arquivos JSON
 e o relatório foram projetados para serem escritos e auditados por um
 agente.</p>
 <h1 id="recursos-e-limitações">12. Recursos e limitações</h1>
-<p>Recursos: uma consulta estrutural traduzida para oito gramáticas
+<p>Recursos: uma consulta estrutural traduzida para nove gramáticas
 nativas; bases como configuração JSON (<code>--init-backends</code>);
 rodadas arquivadas e citáveis com strings de consulta exatas e histórico
 de contagens; checkpoints e Ctrl-C seguro; um filtro de veículos com
-comprovantes; cinco backends sem chave; NASA ADS e INSPIRE para física;
+comprovantes; seis backends sem chave; NASA ADS e INSPIRE para física;
 links legais de PDF de acesso aberto via Unpaywall; relatórios em três
 níveis e cinco formatos com PRISMA 2020 e PRISMA-S; diretórios de
 pesquisa com fontes manuais, proveniência, linha do tempo e relatórios
 diferenciais; métricas de periódicos com série por ano; logs de
-auditoria; uma suíte de testes offline (305 verificações) e CI.</p>
+auditoria; uma suíte de testes offline (313 verificações) e CI.</p>
 <p>Limitações, todas por projeto ou pelo mundo:</p>
 <ul>
 <li>As contagens não são comparáveis entre bases; operadores de

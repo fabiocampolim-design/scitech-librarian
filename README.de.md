@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 5aa2524bea7c059a -->
+<!-- source-digest: 7565b449338de027 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -16,8 +16,8 @@ Forschungsverzeichnis, das sich an jede Suche und jeden von Hand
 eingebrachten Datensatz erinnert und den PRISMA-Bericht für alles schreibt.**
 
 Schreiben Sie eine strukturierte Abfrage einmal; scitech-librarian überträgt
-sie in die native Syntax von acht bibliografischen Datenbanken (OpenAlex, NASA
-ADS, arXiv, INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, Web of Science),
+sie in die native Syntax von neun bibliografischen Datenbanken (OpenAlex, NASA
+ADS, arXiv, INSPIRE-HEP, Scopus, Semantic Scholar, Crossref, CORE, Web of Science),
 führt sie alle aus und archiviert den Lauf — Rohdatensätze, RIS für Zotero,
 den exakten an jedes Backend gesendeten Abfragestring, Trefferzahlen — in
 einem zeitgestempelten Verzeichnis, das Sie zitieren können. Läufe sammeln
@@ -102,7 +102,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
 
 ## Funktionen
 
-- **Eine strukturelle Abfrage, acht native Grammatiken.** `[[a, b], [c]]`
+- **Eine strukturelle Abfrage, neun native Grammatiken.** `[[a, b], [c]]`
   bedeutet `(a OR b) AND c`; die Syntax jedes Backends —
   `TITLE-ABS-KEY(...)`, `TS=(...)`, `abs:"..."`, kleingeschriebenes `and` —
   wird aus derselben Definition erzeugt, sodass Abfragen zwischen Datenbanken
@@ -166,7 +166,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
   ADS, Scopus, Semantic Scholar und INSPIRE. Bei einer entscheidenden
   Neuheitsabfrage war das der ganze Unterschied zwischen 16 Treffern und 3.
   Standardmäßig gefiltert; `--keep-junk` schaltet es ab.
-- **Funktioniert ganz ohne Zugehörigkeit.** Fünf Backends brauchen weder
+- **Funktioniert ganz ohne Zugehörigkeit.** Sechs Backends brauchen weder
   Schlüssel noch Institution; ADS braucht nur ein kostenloses persönliches
   Token. Kein VPN, kein Campusnetz, kein Abonnement — das zählt nur, wenn Sie
   Scopus oder die WoS-API obendrauf setzen.
@@ -177,7 +177,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
   *kleine* Zahl das informative Ergebnis ist, lassen Sie dieselben Blöcke
   über die Zeit laufen, beobachten Sie die Trefferzahlen — und lesen Sie
   jeden Treffer von Hand, bevor Sie eine Lücke behaupten.
-- **Offline testbar.** 305 Prüfungen laufen ohne Netz und ohne Schlüssel
+- **Offline testbar.** 313 Prüfungen laufen ohne Netz und ohne Schlüssel
   (Backends werden gegen aufgezeichnete API-Antworten geprüft; das
   Forschungsverzeichnis, die Import-Parser, der Zeitschriftenspeicher und
   der Berichtsgenerator gegen synthetische Verzeichnisse); CI auf Linux,
@@ -194,6 +194,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
 | **Scopus** | kostenloser Schlüssel + Institution | ~27–28 Tsd. kuratierte Zeitschriften | zitierfähige Trefferzahlen für Aufsätze | Berechtigung ist IP-basiert; braucht Campusnetz oder VPN |
 | **Semantic Scholar** | keiner | breit, guter Zitationsgraph | Gegenprüfung | ~1 Anfrage/s ohne Schlüssel |
 | **Crossref** | keiner | DOI-Metadaten für ~150 Mio. Objekte | DOIs auflösen | **keine Boolean-Unterstützung** — Trefferzahlen bedeutungslos, aus Standardläufen ausgeschlossen |
+| **CORE** | keiner (ein Schlüssel erhöht das Ratenlimit) | ~300 Mio. Open-Access-Objekte aus ~10 000 Repositorien | Dissertationen, technische Berichte, institutionelle Ablagen — graue Literatur, die kein Zeitschriftenindex führt | viele Datensätze haben weder DOI noch Zeitschrift |
 | **Web of Science** | lizenziert | ~21–22 Tsd. kuratierte Zeitschriften | konventionelle Legitimität | API meist nicht lizenziert — `wos_manual.py` nutzen |
 
 **Wenn Sie nur zwei einrichten:** OpenAlex (funktioniert sofort) und NASA ADS
@@ -235,8 +236,8 @@ sind, und `--selftest` beweist, dass sie funktionieren.
   eingeschränkte Grammatik des Starter-Schlüssels macht die API selten
   lohnend.
 
-**Keine Institution? Das meiste funktioniert trotzdem.** Fünf der acht
-Backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref) brauchen
+**Keine Institution? Das meiste funktioniert trotzdem.** Sechs der neun
+Backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref, CORE) brauchen
 weder Schlüssel noch institutionellen Zugang, und NASA ADS braucht nur ein
 kostenloses persönliches Token — das Werkzeug ist also von jedem Laptop aus
 voll nutzbar, ohne Zugehörigkeit und ohne VPN. Institutionelle Berechtigung
@@ -331,7 +332,7 @@ automatisierten zusammen, gleiches Schema, gleiche Auswertung.
 ## Im Vergleich
 
 [findpapers](https://github.com/jonatasgrosman/findpapers) ist das nächste
-Werkzeug: eine Boolesche Abfrage über acht Datenbanken (IEEE und PubMed
+Werkzeug: eine Boolesche Abfrage über neun Datenbanken (IEEE und PubMed
 inklusive), mit Deduplizierung, Verfeinerung und PDF-Download — eine starke
 Wahl für systematische Reviews im Stil der Softwaretechnik auf Python 3.11+.
 [litstudy](https://github.com/NLeSC/litstudy) analysiert eine Sammlung, die
@@ -632,7 +633,7 @@ Arbeitsablauf gebaut.
 python tests/test_librarian.py
 ```
 
-305 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
+313 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
 Backends laufen gegen aufgezeichnete API-Antworten; die Import-Parser, die
 Zusammenführung des Forschungsverzeichnisses, der Zeitschriftenspeicher und
 der Berichtsgenerator gegen synthetische Verzeichnisse — sodass die Suite die
@@ -670,7 +671,7 @@ Zeitschriftenkennzahlen und Handbücher ergänzt. In
 | **Konzeption** | Eine Abfrage über jede Datenbank als reproduzierbares Instrument; die Methode Trefferzahlen-als-Neuheitsprüfung; die strikte Haltung zu Nutzungsbedingungen (manuelles WoS statt Scraping); der dreistufige PRISMA-Bericht; das Forschungsverzeichnis als laborweite Einheit, manuelle Quellen mit Herkunft, über die Zeit verfolgte Zeitschriftenkennzahlen | Das strukturelle Abfrageschema; die Datenbanken-als-Konfiguration-Engine; das Dokumentmodell des Berichts und die PDF-Rückfallkette; das Verzeichnis-als-Index-Design |
 | **Methodik** | Disziplin im Abfrageentwurf („eine kleine Zahl ist der Befund — dann jeden Treffer lesen"); Datenbankauswahl und Strategie für den institutionellen Zugang | Quantifizierung der Schrott-Zeitschriften; die arXiv-Gruppenbegrenzung; das Checkpoint-nach-jedem-Aufruf-Design |
 | **Software** | — | Alles |
-| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 305 Prüfungen; CI; Live-Selbsttests |
+| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 313 Prüfungen; CI; Live-Selbsttests |
 | **Untersuchung** | Das Labyrinth des institutionellen Zugangs (CAPES/CAFe, VPN, Schlüsselbeschaffung) | API-Dokumentation von 8+ Datenbanken; Codeanalyse der Konkurrenz |
 | **Schreiben** | Durchsicht und Redaktion | Erstentwurf |
 | **Ressourcen · Betreuung · Projektverwaltung · Mitteleinwerbung** | Alles | — |

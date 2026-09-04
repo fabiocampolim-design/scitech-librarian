@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.4.3"
+subtitle: "version 3.5.0"
 date: "2026-09-04"
 lang: "en"
 ---
@@ -11,7 +11,7 @@ lang: "en"
 
 scitech-librarian is a reproducible literature-search instrument for
 science and engineering. You write a structured query once; it runs the
-query against up to eight bibliographic databases through their documented
+query against up to nine bibliographic databases through their documented
 APIs, archives everything (records, the exact query string sent to each
 database, hit counts, a log), and writes a literature-search report with a
 PRISMA 2020 flow diagram. Over months, the runs, plus records you obtained
@@ -67,10 +67,10 @@ file is optional.
 | `SCOPUS_API_KEY` | Scopus (+ institutional network/VPN) | free, <https://dev.elsevier.com/apikey/manage> |
 | `SCOPUS_INSTTOKEN` | Scopus without VPN | ask your library |
 | `S2_API_KEY` | faster Semantic Scholar | optional |
-| `CORE_API_KEY` | CORE (if configured in backends.json) | free, <https://core.ac.uk/services/api> |
+| `CORE_API_KEY` | CORE — optional; anonymous callers work but are rate-limited | free, <https://core.ac.uk/services/api> |
 | `WOS_STARTER_KEY` | Web of Science Starter API (restricted grammar) | rarely worth it |
 
-Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
+Six backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref, CORE)
 need no key and no institution. `python librarian.py --list` reports which
 keys were found by either route; `--selftest` proves they work.
 
@@ -490,14 +490,14 @@ report were designed to be written and audited by an agent.
 
 # 12. Features and limitations
 
-Features: one structural query rendered into eight native grammars;
+Features: one structural query rendered into nine native grammars;
 databases as JSON configuration (`--init-backends`); archived, citable runs
 with exact query strings and count history; checkpointing and safe Ctrl-C;
 a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (305 checks) and
+with a per-year series; audit logs; an offline test suite (313 checks) and
 CI.
 
 Limitations, all by design or by the world:
