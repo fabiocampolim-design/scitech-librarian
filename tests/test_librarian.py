@@ -32,17 +32,17 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         FAILED.append(name)
 
 
-import librarian as lib  # noqa: E402
-
 # The canned Unpaywall checks below (oa pass, --pdfs cache) run on machines
 # with no keys and no CONTACT_EMAIL -- CI above all. Since 3.5.1 the pass
-# refuses without an address, so the suite supplies one; the refusal itself
-# is exercised further down with CONTACT cleared. (3.5.1's CI was red on all
-# six runners because this line was missing: the guard had only been run on
-# a machine whose environment carried the address.)
-if not lib.CONTACT:
-    lib.CONTACT = "suite@example.invalid"
+# refuses without an address, so the suite supplies one -- in the
+# environment, before the import, so the child processes the suite spawns
+# (librarian.py --list, --check, ...) see it as well as the module global;
+# the refusal itself is exercised further down with CONTACT cleared.
+# (3.5.1's CI was red on all six runners because this was missing: the guard
+# had only been run on a machine whose environment carried the address.)
+os.environ.setdefault("CONTACT_EMAIL", "suite@example.invalid")
 
+import librarian as lib  # noqa: E402
 from librarian import (_q, _rec, is_junk, load_blocks, load_env,  # noqa: E402
                      q_ads, q_arxiv, q_crossref, q_inspire, q_openalex,
                      q_s2, q_scopus, q_wos, q_wos_bare, write_csv, write_ris)
