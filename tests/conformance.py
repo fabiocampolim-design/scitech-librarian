@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.5.1"
+VERSION = "1.6.2"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -45,7 +45,19 @@ COMMUNITY = ("CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "docs/DESIGN.md")   # rule
 COMMUNITY_MIN = 400                        # bytes; a stub is not a pathway
 PROFILE_RULES = (3, 18, 20)                # kind: profile (a GitHub profile README repo) is not software:
                                            # only scrub, held-material and archive rules apply (Fabio 2026-09-02)
-IMAGE_PAYLOAD = re.compile(r'"image/[a-z0-9+.-]+"\s*:\s*(?:"[^"]*"|\[[^\]]*\])')
+# 1.6.2: JSON-string-aware (an svg+xml payload carries escaped quotes; the old
+# "[^"]*" stopped at the first one and left the tail unmasked) and applied so
+# that line numbers survive (see mask_image_payloads).
+IMAGE_PAYLOAD = re.compile(r'"image/[a-z0-9+.-]+"\s*:\s*(?:"(?:[^"\\]|\\.)*"|\[[^\]]*\])')
+HARVEST_RE = re.compile(r'(^|/)(all_records\.[A-Za-z.]+|junk\.json|unpaywall_cache\.json)$'
+                        r'|(^|/)lit/runs/[^/]+/(records|ris)/')   # rule 29: a literature pass's harvest
+
+
+def mask_image_payloads(text):
+    """Replace every notebook image payload with a marker of the same line
+    count, so a scrub hit after a list-form payload is reported at its real
+    line (1.6.2; 1.5.0 shifted every later line number)."""
+    return IMAGE_PAYLOAD.sub(lambda m: '"image/*": "<binary>"' + "\n" * m.group(0).count("\n"), text)
 HELD_DIRS = ("held", "private")
 MAX_FINDINGS = 8   # per check, in the report
 
@@ -125,6 +137,20 @@ DEFAULT_RULES = [
     dict(id=26, title="Community pathways: CONTRIBUTING.md, CODE_OF_CONDUCT.md and "
                       "docs/DESIGN.md (the design trade-offs) in every repo",
          applies="all", check="auto", check_ids=["community-files"]),
+    dict(id=27, title="Dependabot alerts enabled on every published repo, from the day "
+                      "it goes public (gh api repos/<o>/<r>/dependabot/alerts)",
+         applies="all", check="manual", check_ids=[]),
+    dict(id=28, title="Every user-facing message about configuration names every route "
+                      "the tool accepts (setdefault loader; 'environment or .env'; hints "
+                      "say where to get the credential), with a guard in the project's suite",
+         applies="all", check="manual", check_ids=[]),
+    dict(id=29, title="A literature pass ships its evidence (queries, counts, prisma, "
+                      "report), never its harvest (records/, ris/, all_records.*, junk, "
+                      "unpaywall cache)",
+         applies="all", check="auto", check_ids=["literature-harvest"]),
+    dict(id=30, title="A repo that byte-compares any generated artefact pins "
+                      "`* text=auto eol=lf` repo-wide, not only the vendored checker",
+         applies="all", check="manual", check_ids=[]),
 ]
 
 
@@ -224,7 +250,7 @@ def chk_scrub(repo, ctx):
             continue
         text = read_text(repo, rel)
         if rel.endswith(".ipynb") and text:
-            text = IMAGE_PAYLOAD.sub('"image/*": "<binary>"', text)   # 1.5.0: base64 can spell a scrub token by chance (cap12_frentes)
+            text = mask_image_payloads(text)   # 1.5.0: base64 can spell a scrub token by chance (cap12_frentes)
         if text is None:
             continue
         for i, line in enumerate(text.splitlines(), 1):
@@ -365,6 +391,49 @@ def chk_changelog(repo, ctx):
     return "FAIL", "no CHANGELOG.md (rule 16)"
 
 
+VERSION_LINE = re.compile(r'(?m)^\s*version\s*=\s*["\']([^"\']+)["\']')
+DUNDER_VERSION = re.compile(r'(?m)^__version__\s*=\s*["\']([^"\']+)["\']')
+VENDORED_NAME = "conformance.py"   # this checker, vendored into a repo
+CONST_VERSION = re.compile(r'(?m)^VERSION\s*=\s*["\']([^"\']+)["\']')
+CITED_VERSION = re.compile(r'(?m)^version:\s*["\']?([^"\'\s]+)')
+
+
+def _package_version(repo, files=None):
+    """The version the project declares machine-readably: pyproject
+    `[project] version`, else a top-level `VERSION` file, else the shallowest
+    package `__version__`, else a `VERSION = "x"` constant in a top-level
+    script. None when it declares none — then there is nothing to compare.
+    `files` is the caller's tracked list (ctx["files"]); 1.6.1 re-ran
+    `git ls-files` here and could disagree with the subdir-filtered list."""
+    m = VERSION_LINE.search(read_text(repo, "pyproject.toml") or "")
+    if m:
+        return m.group(1)
+    # 1.6.2: kwant-skill, pythtb-skill and practical-meteorology-course keep
+    # the version in a VERSION file; 1.6.0-1.6.1 never read it, so the
+    # comparison was inert for exactly the repos it was written for.
+    vfile = (read_text(repo, "VERSION") or "").strip().splitlines()
+    if vfile and re.match(r"^\d[\w.+-]*$", vfile[0].strip()):
+        return vfile[0].strip()
+    depth = lambda f: f.replace(chr(92), "/").count("/")            # noqa: E731
+    pys = [f for f in (files if files is not None else tracked_files(repo)) if f.endswith(".py")]
+    for rel in sorted((f for f in pys
+                       if os.path.basename(f) == "__init__.py"),
+                      key=lambda f: (depth(f), f)):
+        m = DUNDER_VERSION.search(read_text(repo, rel) or "")
+        if m:
+            return m.group(1)
+    # A bare `VERSION = "x"` is the project's only when it sits in a
+    # top-level script: a VENDORED checker carries its own (PDFEXTRACT and
+    # PRACTICALMETEOROLOGY vendor conformance.py under tests/, 2026-09-04).
+    for rel in sorted((f for f in pys if depth(f) == 0
+                       and os.path.basename(f) != VENDORED_NAME),
+                      key=lambda f: f):
+        m = CONST_VERSION.search(read_text(repo, rel) or "")
+        if m:
+            return m.group(1)
+    return None
+
+
 def chk_citation(repo, ctx):
     p = os.path.join(repo, "CITATION.cff")
     if not os.path.isfile(p):
@@ -373,7 +442,17 @@ def chk_citation(repo, ctx):
     missing = [k for k in ("version", "license") if k + ":" not in text]
     if missing:
         return "FAIL", "CITATION.cff missing field(s): " + ", ".join(missing)
-    return "PASS", "CITATION.cff with version + license"
+    # A citation left at an old version cites software nobody can get:
+    # CLAUDIU's sat at 0.1.0 through its whole 0.2 line because nothing
+    # compared the two (2026-09-04).
+    declared = _package_version(repo, ctx["files"])
+    m = CITED_VERSION.search(text)
+    cited = m.group(1) if m else None
+    if declared and cited and cited != declared:
+        return "FAIL", ("CITATION.cff cites %s but the package declares %s "
+                        "(rule 16)" % (cited, declared))
+    return "PASS", "CITATION.cff with version + license" + (
+        " (== %s)" % declared if declared else "")
 
 
 def _license_text(repo):
@@ -626,6 +705,18 @@ def chk_vendored_lf_pin(repo, ctx):
     return "FAIL", rel + " not pinned to LF (.gitattributes: `tests/conformance.py text eol=lf`)"
 
 
+def chk_literature_harvest(repo, ctx):
+    """Rule 29: a literature pass ships its evidence (queries, counts, prisma,
+    report), never its harvest -- records/, ris/, all_records.*, junk.json,
+    unpaywall_cache.json are third-party metadata (Scopus and ADS among them)
+    whose redistribution is not ours to assume, and they regenerate from the
+    queries (DYSON, 2026-09-04)."""
+    hits = [f.replace("\\", "/") for f in ctx["files"] if HARVEST_RE.search(f.replace("\\", "/"))]
+    if hits:
+        return "FAIL", "tracked literature harvest (rule 29): " + ", ".join(hits[:MAX_FINDINGS])
+    return "PASS", "no literature harvest tracked"
+
+
 CHECKS = {
     "scrub": chk_scrub,
     "scrub-notebook-outputs": chk_scrub_nb_outputs,
@@ -653,6 +744,7 @@ CHECKS = {
     "notebook-size": chk_notebook_size,
     "community-files": chk_community_files,
     "history-identity": chk_history_identity,
+    "literature-harvest": chk_literature_harvest,
 }
 
 
