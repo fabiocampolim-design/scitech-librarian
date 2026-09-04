@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: b9a5751826afc198 -->
+<!-- source-digest: 5aa2524bea7c059a -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
   *kleine* Zahl das informative Ergebnis ist, lassen Sie dieselben Blöcke
   über die Zeit laufen, beobachten Sie die Trefferzahlen — und lesen Sie
   jeden Treffer von Hand, bevor Sie eine Lücke behaupten.
-- **Offline testbar.** 301 Prüfungen laufen ohne Netz und ohne Schlüssel
+- **Offline testbar.** 305 Prüfungen laufen ohne Netz und ohne Schlüssel
   (Backends werden gegen aufgezeichnete API-Antworten geprüft; das
   Forschungsverzeichnis, die Import-Parser, der Zeitschriftenspeicher und
   der Berichtsgenerator gegen synthetische Verzeichnisse); CI auf Linux,
@@ -300,8 +300,10 @@ Paginierungsstile: `cursor`, `page`, `offset`, `none`. Auth ist eine
 Umgebungsvariable, die auf einen Header abgebildet wird. Feldpfade
 unterstützen `[0]`-Indizierung, `[]`-Abbildung über Listen,
 `a|b`-Alternativen und benannte Transformationen. `docs/FUTURE_BACKENDS.md`
-enthält geprüfte Ausgangspunkte für Europe PMC, CORE, DOAJ, OpenAIRE, DBLP
-und PubMed. Einträge in `backends.json` überlagern die eingebauten
+enthält geprüfte Ausgangspunkte für Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz,
+Zenodo, ClinicalTrials.gov und CORE, jeweils erneut gegen die Live-API geprüft,
+zusammen mit dem Booleschen Test, den ein Kandidat bestehen muss, bevor er sich
+lohnt. Einträge in `backends.json` überlagern die eingebauten
 Voreinstellungen namentlich; `"disabled": true` entfernt einen.
 
 ## Web of Science, die ehrliche Lage
@@ -613,9 +615,12 @@ Arbeitsablauf gebaut.
 
 ## Fahrplan
 
-- Mehr Datenbanken als Konfiguration: Europe PMC, CORE, DOAJ, OpenAIRE, DBLP,
-  PubMed (`docs/FUTURE_BACKENDS.md` enthält die geprüften API-Details —
-  Beiträge funktionierender `backends.json`-Einträge sind sehr willkommen).
+- Mehr Datenbanken als Konfiguration: Europe PMC, OpenAIRE, DOAJ, ERIC,
+  EconBiz, Zenodo und ClinicalTrials.gov brauchen gar keinen Schlüssel; CORE
+  braucht einen kostenlosen (`docs/FUTURE_BACKENDS.md` enthält die erneut
+  geprüften API-Details, den Booleschen Test, den jeder bestanden hat, und was
+  die Patentämter verlangen würden — Beiträge funktionierender
+  `backends.json`-Einträge sind sehr willkommen).
 - Legaler OA-PDF-Download aus den bereits gesammelten Unpaywall-Links.
 - Zotero-Web-API-Push (ein Lauf direkt in eine Sammlung).
 - Schneeballsuche über die Referenz-Endpunkte von OpenAlex/Semantic Scholar
@@ -627,7 +632,7 @@ Arbeitsablauf gebaut.
 python tests/test_librarian.py
 ```
 
-301 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
+305 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
 Backends laufen gegen aufgezeichnete API-Antworten; die Import-Parser, die
 Zusammenführung des Forschungsverzeichnisses, der Zeitschriftenspeicher und
 der Berichtsgenerator gegen synthetische Verzeichnisse — sodass die Suite die
@@ -665,7 +670,7 @@ Zeitschriftenkennzahlen und Handbücher ergänzt. In
 | **Konzeption** | Eine Abfrage über jede Datenbank als reproduzierbares Instrument; die Methode Trefferzahlen-als-Neuheitsprüfung; die strikte Haltung zu Nutzungsbedingungen (manuelles WoS statt Scraping); der dreistufige PRISMA-Bericht; das Forschungsverzeichnis als laborweite Einheit, manuelle Quellen mit Herkunft, über die Zeit verfolgte Zeitschriftenkennzahlen | Das strukturelle Abfrageschema; die Datenbanken-als-Konfiguration-Engine; das Dokumentmodell des Berichts und die PDF-Rückfallkette; das Verzeichnis-als-Index-Design |
 | **Methodik** | Disziplin im Abfrageentwurf („eine kleine Zahl ist der Befund — dann jeden Treffer lesen"); Datenbankauswahl und Strategie für den institutionellen Zugang | Quantifizierung der Schrott-Zeitschriften; die arXiv-Gruppenbegrenzung; das Checkpoint-nach-jedem-Aufruf-Design |
 | **Software** | — | Alles |
-| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 301 Prüfungen; CI; Live-Selbsttests |
+| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 305 Prüfungen; CI; Live-Selbsttests |
 | **Untersuchung** | Das Labyrinth des institutionellen Zugangs (CAPES/CAFe, VPN, Schlüsselbeschaffung) | API-Dokumentation von 8+ Datenbanken; Codeanalyse der Konkurrenz |
 | **Schreiben** | Durchsicht und Redaktion | Erstentwurf |
 | **Ressourcen · Betreuung · Projektverwaltung · Mitteleinwerbung** | Alles | — |

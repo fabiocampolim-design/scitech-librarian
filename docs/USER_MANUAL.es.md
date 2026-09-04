@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — Manual del usuario"
-subtitle: "versión 3.4.2"
+subtitle: "versión 3.4.3"
 date: "2026-09-04"
 lang: "es"
 source-digest: "28f9f034539b4b57"
@@ -530,7 +530,7 @@ enlaces legales a PDF de acceso abierto vía Unpaywall; informes de tres
 niveles en cinco formatos con PRISMA 2020 y PRISMA-S; directorios de
 investigación con fuentes manuales, procedencia, línea de tiempo e informes
 diferenciales; métricas de revistas con serie por año; logs de auditoría; una
-suite de pruebas sin conexión (301 comprobaciones) y CI.
+suite de pruebas sin conexión (305 comprobaciones) y CI.
 
 Limitaciones, todas por diseño o por el mundo:
 

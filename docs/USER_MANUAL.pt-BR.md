@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — Manual do Usuário"
-subtitle: "versão 3.4.2"
+subtitle: "versão 3.4.3"
 date: "2026-09-04"
 lang: "pt-BR"
 source-digest: "28f9f034539b4b57"
@@ -524,7 +524,7 @@ chave; NASA ADS e INSPIRE para física; links legais de PDF de acesso aberto
 via Unpaywall; relatórios em três níveis e cinco formatos com PRISMA 2020 e
 PRISMA-S; diretórios de pesquisa com fontes manuais, proveniência, linha do
 tempo e relatórios diferenciais; métricas de periódicos com série por ano;
-logs de auditoria; uma suíte de testes offline (301 verificações) e CI.
+logs de auditoria; uma suíte de testes offline (305 verificações) e CI.
 
 Limitações, todas por projeto ou pelo mundo:
 

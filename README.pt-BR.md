@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: b9a5751826afc198 -->
+<!-- source-digest: 5aa2524bea7c059a -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -169,7 +169,7 @@ não como letra miúda, mas como princípio de projeto:
   que um número *pequeno* seja o resultado informativo, rode os mesmos blocos
   ao longo do tempo, observe as contagens — e leia cada resultado à mão antes
   de afirmar uma lacuna.
-- **Testável offline.** 301 verificações rodam sem rede e sem chaves (os
+- **Testável offline.** 305 verificações rodam sem rede e sem chaves (os
   backends são exercitados contra respostas de API gravadas; o diretório de
   pesquisa, os parsers de ingestão, o armazém de periódicos e o gerador de
   relatórios contra diretórios sintéticos); CI em Linux, Windows e macOS,
@@ -287,7 +287,10 @@ Estilos de paginação: `cursor`, `page`, `offset`, `none`. A autenticação é 
 variável de ambiente mapeada para um cabeçalho. Os caminhos de campo aceitam
 indexação `[0]`, mapeamento `[]` sobre listas, alternativas `a|b` e
 transformações nomeadas. `docs/FUTURE_BACKENDS.md` tem pontos de partida
-verificados para Europe PMC, CORE, DOAJ, OpenAIRE, DBLP e PubMed. As entradas
+verificados para Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo,
+ClinicalTrials.gov e CORE, cada um reverificado contra a API ao vivo, junto
+com o teste booleano que um candidato precisa passar antes de valer a pena
+adicioná-lo. As entradas
 em `backends.json` sobrepõem os padrões embutidos pelo nome;
 `"disabled": true` remove uma.
 
@@ -589,9 +592,11 @@ foi construída dentro de exatamente esse fluxo de trabalho.
 
 ## Roteiro
 
-- Mais bases como configuração: Europe PMC, CORE, DOAJ, OpenAIRE, DBLP, PubMed
-  (`docs/FUTURE_BACKENDS.md` tem os detalhes de API verificados —
-  contribuições de entradas de `backends.json` funcionais são muito
+- Mais bases como configuração: Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz,
+  Zenodo e ClinicalTrials.gov não precisam de chave alguma; CORE precisa de uma
+  gratuita (`docs/FUTURE_BACKENDS.md` tem os detalhes de API reverificados, o
+  teste booleano que cada um passou e o que os escritórios de patentes
+  exigiriam — contribuições de entradas de `backends.json` funcionais são muito
   bem-vindas).
 - Download legal de PDFs de acesso aberto a partir dos links do Unpaywall já
   coletados.
@@ -605,7 +610,7 @@ foi construída dentro de exatamente esse fluxo de trabalho.
 python tests/test_librarian.py
 ```
 
-301 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
+305 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
 rodam contra respostas de API gravadas; os parsers de ingestão, a mesclagem do
 diretório de pesquisa, o armazém de periódicos e o gerador de relatórios
 contra diretórios sintéticos — de modo que a suíte exercita offline os
@@ -642,7 +647,7 @@ periódicos e dos manuais em 28 de agosto de 2026. Em termos de
 | **Conceituação** | Uma consulta em todas as bases como instrumento reprodutível; o método de contagens como verificação de novidade; a postura estrita quanto aos termos de serviço (WoS manual em vez de raspagem); o relatório PRISMA em três níveis; o diretório de pesquisa como unidade do laboratório, fontes manuais com proveniência, métricas de veículos acompanhadas ao longo do tempo | O esquema de consulta estrutural; o motor de bases como configuração; o modelo de documento do relatório e a cadeia de fallback do PDF; o projeto do diretório como índice |
 | **Metodologia** | Disciplina de projeto de consultas ("um número pequeno é o achado — depois leia cada resultado"); seleção de bases e estratégia de acesso institucional | Quantificação de veículos lixo; a correção de limitação de grupos do arXiv; o projeto de checkpoint após cada chamada |
 | **Software** | — | Todo ele |
-| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 301 verificações; CI; autotestes ao vivo |
+| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 305 verificações; CI; autotestes ao vivo |
 | **Investigação** | O labirinto do acesso institucional (CAPES/CAFe, VPN, obtenção de chaves) | Documentação de API de 8+ bases; análise do código de concorrentes |
 | **Redação** | Revisão e edição | Rascunho original |
 | **Recursos · Supervisão · Administração do projeto · Obtenção de financiamento** | Tudo | — |

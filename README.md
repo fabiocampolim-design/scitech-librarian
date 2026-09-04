@@ -153,7 +153,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 301 checks run with no network and no keys (backends
+- **Offline-testable.** 305 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux, Windows and macOS, Python 3.9 and 3.13.
@@ -267,7 +267,9 @@ lives in the response:
 Paging styles: `cursor`, `page`, `offset`, `none`. Auth is an env var mapped
 to a header. Field paths support `[0]` indexing, `[]` mapping over lists,
 `a|b` fallbacks, and named transforms. `docs/FUTURE_BACKENDS.md` has vetted
-starting points for Europe PMC, CORE, DOAJ, OpenAIRE, DBLP and PubMed.
+starting points for Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo,
+ClinicalTrials.gov and CORE, each re-verified against the live API, together
+with the boolean test a candidate has to pass before it is worth adding.
 Entries in `backends.json` overlay the built-in defaults by name;
 `"disabled": true` removes one.
 
@@ -559,8 +561,10 @@ agent to write and audit — this tool was built inside exactly that workflow.
 
 ## Roadmap
 
-- More databases as config: Europe PMC, CORE, DOAJ, OpenAIRE, DBLP, PubMed
-  (`docs/FUTURE_BACKENDS.md` has the vetted API details — contributions of
+- More databases as config: Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo
+  and ClinicalTrials.gov need no key at all; CORE needs a free one
+  (`docs/FUTURE_BACKENDS.md` has the re-verified API details, the boolean test
+  each one passed, and what the patent offices would take — contributions of
   working `backends.json` entries are very welcome).
 - Legal OA-PDF downloading from the Unpaywall links already collected.
 - Zotero Web API push (a run straight into a collection).
@@ -573,7 +577,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-301 checks, stdlib only, no network and no keys — backends run against
+305 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -608,7 +612,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 301-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 305-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |

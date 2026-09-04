@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: b9a5751826afc198 -->
+<!-- source-digest: 5aa2524bea7c059a -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ datos que toca — no como letra pequeña, sino como principio de diseño:
   que un número *pequeño* sea el resultado informativo, ejecuta los mismos
   bloques a lo largo del tiempo, observa los recuentos — y luego lee cada
   resultado a mano antes de afirmar una laguna.
-- **Comprobable sin conexión.** 301 comprobaciones se ejecutan sin red y sin
+- **Comprobable sin conexión.** 305 comprobaciones se ejecutan sin red y sin
   claves (los backends se ejercitan contra respuestas de API grabadas; el
   directorio de investigación, los analizadores de ingesta, el almacén de
   revistas y el generador de informes contra directorios sintéticos); CI en
@@ -296,7 +296,10 @@ Estilos de paginación: `cursor`, `page`, `offset`, `none`. La autenticación es
 una variable de entorno asignada a una cabecera. Las rutas de campo admiten
 indexación `[0]`, mapeo `[]` sobre listas, alternativas `a|b` y
 transformaciones con nombre. `docs/FUTURE_BACKENDS.md` tiene puntos de partida
-verificados para Europe PMC, CORE, DOAJ, OpenAIRE, DBLP y PubMed. Las entradas
+verificados para Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo,
+ClinicalTrials.gov y CORE, cada uno reverificado contra la API en vivo, junto
+con la prueba booleana que un candidato tiene que superar antes de que valga la
+pena añadirlo. Las entradas
 de `backends.json` se superponen a los valores por defecto integrados por
 nombre; `"disabled": true` elimina una.
 
@@ -604,9 +607,11 @@ esta herramienta se construyó dentro de exactamente ese flujo de trabajo.
 
 ## Hoja de ruta
 
-- Más bases de datos como configuración: Europe PMC, CORE, DOAJ, OpenAIRE,
-  DBLP, PubMed (`docs/FUTURE_BACKENDS.md` tiene los detalles de API
-  verificados — las contribuciones de entradas de `backends.json` que
+- Más bases de datos como configuración: Europe PMC, OpenAIRE, DOAJ, ERIC,
+  EconBiz, Zenodo y ClinicalTrials.gov no necesitan clave alguna; CORE necesita
+  una gratuita (`docs/FUTURE_BACKENDS.md` tiene los detalles de API
+  reverificados, la prueba booleana que cada uno superó y lo que exigirían las
+  oficinas de patentes — las contribuciones de entradas de `backends.json` que
   funcionen son muy bienvenidas).
 - Descarga legal de PDF de acceso abierto desde los enlaces de Unpaywall ya
   recopilados.
@@ -620,7 +625,7 @@ esta herramienta se construyó dentro de exactamente ese flujo de trabajo.
 python tests/test_librarian.py
 ```
 
-301 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
+305 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
 backends se ejecutan contra respuestas de API grabadas; los analizadores de
 ingesta, la fusión del directorio de investigación, el almacén de revistas y
 el generador de informes contra directorios sintéticos — de modo que la suite
@@ -659,7 +664,7 @@ manuales el 28 de agosto de 2026. En términos de
 | **Conceptualización** | Una consulta en todas las bases de datos como instrumento reproducible; el método de recuentos como comprobación de novedad; la postura estricta sobre los términos de servicio (WoS manual en vez de scraping); el informe PRISMA de tres niveles; el directorio de investigación como unidad del laboratorio, fuentes manuales con procedencia, métricas de revistas seguidas en el tiempo | El esquema de consulta estructural; el motor de bases de datos como configuración; el modelo de documento del informe y la cadena de respaldo del PDF; el diseño del directorio como índice |
 | **Metodología** | Disciplina de diseño de consultas ("un número pequeño es el hallazgo — luego lee cada resultado"); selección de bases de datos y estrategia de acceso institucional | Cuantificación de revistas basura; la corrección de limitación de grupos de arXiv; el diseño de punto de control tras cada llamada |
 | **Software** | — | Todo |
-| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 301 comprobaciones; CI; autopruebas en vivo |
+| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 305 comprobaciones; CI; autopruebas en vivo |
 | **Investigación** | El laberinto del acceso institucional (CAPES/CAFe, VPN, obtención de claves) | Documentación de API de 8+ bases de datos; análisis del código de la competencia |
 | **Redacción** | Revisión y edición | Borrador original |
 | **Recursos · Supervisión · Administración del proyecto · Obtención de financiación** | Todo | — |

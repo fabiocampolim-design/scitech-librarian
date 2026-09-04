@@ -1,6 +1,6 @@
 ---
 title: "scitech-librarian — Benutzerhandbuch"
-subtitle: "Version 3.4.2"
+subtitle: "Version 3.4.3"
 date: "2026-09-04"
 lang: "de"
 source-digest: "28f9f034539b4b57"
@@ -532,7 +532,7 @@ schlüssellose Backends; NASA ADS und INSPIRE für Physik; legale OA-PDF-Links
 über Unpaywall; dreistufige Berichte in fünf Formaten mit PRISMA 2020 und
 PRISMA-S; Forschungsverzeichnisse mit manuellen Quellen, Herkunft,
 Zeitverlauf und Differenzberichten; Zeitschriftenkennzahlen mit Jahresreihe;
-Audit-Logs; eine Offline-Testsuite (301 Prüfungen) und CI.
+Audit-Logs; eine Offline-Testsuite (305 Prüfungen) und CI.
 
 Einschränkungen, alle konstruktionsbedingt oder durch die Welt:
 

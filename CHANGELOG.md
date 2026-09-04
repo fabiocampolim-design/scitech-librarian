@@ -2,6 +2,28 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.4.3 - 2026-09-04
+
+- `docs/FUTURE_BACKENDS.md` rebuilt from a live survey of 30 candidate APIs
+  (2026-09-04). Every candidate now has to pass a four-query boolean
+  differential before it is listed: a backend whose `A AND B` is not below both
+  singletons returns a number that looks like evidence and is not, which is why
+  `crossref` already ships excluded. Corrections to the August 2026 list, all
+  found by probing: **DBLP honours no boolean operator** and moves to the
+  excluded set; Europe PMC's journal is `journalInfo.journal.title`, not the
+  `journalTitle` the file claimed, so the pinned mapping would have produced an
+  empty journal on every record; OpenAIRE has a Graph v1 API that needs no
+  driver; Lens is free for non-commercial research, not commercial-only.
+- New in the list, keyless and boolean-confirmed: Europe PMC (MEDLINE, Agricola,
+  preprints, EPO patent abstracts and NICE in one index), OpenAIRE, DOAJ, ERIC,
+  EconBiz, Zenodo and ClinicalTrials.gov; plus what OSTI, PubMed, SciELO and
+  J-STAGE would each need from the engine, and the three patent offices with
+  their auth models. The README roadmap follows, in all five languages.
+- Suite: 305 checks (+4), a roadmap guard that keeps the README's roadmap and
+  `docs/FUTURE_BACKENDS.md` one list -- it fails if a backend the roadmap file
+  marks excluded is advertised in the README as config-only, which is exactly
+  how DBLP survived.
+
 ## 3.4.2 — 2026-09-04
 
 - Keys are read from the process environment; `.env` is one way to fill it in,

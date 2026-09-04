@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: b9a5751826afc198 -->
+<!-- source-digest: 5aa2524bea7c059a -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -181,7 +181,7 @@ conception :
   blocs de sorte qu'un *petit* nombre soit le résultat informatif, exécutez
   les mêmes blocs dans le temps, surveillez les nombres — puis lisez chaque
   résultat à la main avant d'affirmer une lacune.
-- **Testable hors ligne.** 301 vérifications s'exécutent sans réseau et sans
+- **Testable hors ligne.** 305 vérifications s'exécutent sans réseau et sans
   clés (les backends sont exercés contre des réponses d'API enregistrées ; le
   répertoire de recherche, les analyseurs d'ingestion, le magasin des revues
   et le générateur de rapports contre des répertoires synthétiques) ; CI sur
@@ -304,7 +304,9 @@ L'authentification est une variable d'environnement associée à un en-tête.
 Les chemins de champs acceptent l'indexation `[0]`, l'application `[]` sur
 des listes, les alternatives `a|b` et des transformations nommées.
 `docs/FUTURE_BACKENDS.md` contient des points de départ vérifiés pour Europe
-PMC, CORE, DOAJ, OpenAIRE, DBLP et PubMed. Les entrées de `backends.json`
+PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo, ClinicalTrials.gov et CORE, chacun
+revérifié contre l'API en direct, ainsi que le test booléen qu'un candidat doit
+réussir avant de valoir la peine. Les entrées de `backends.json`
 recouvrent les valeurs intégrées par nom ; `"disabled": true` en supprime
 une.
 
@@ -617,10 +619,12 @@ agent — cet outil a été construit dans exactement ce flux de travail.
 
 ## Feuille de route
 
-- Plus de bases de données en configuration : Europe PMC, CORE, DOAJ,
-  OpenAIRE, DBLP, PubMed (`docs/FUTURE_BACKENDS.md` contient les détails
-  d'API vérifiés — les contributions d'entrées `backends.json` fonctionnelles
-  sont très bienvenues).
+- Plus de bases de données en configuration : Europe PMC, OpenAIRE, DOAJ,
+  ERIC, EconBiz, Zenodo et ClinicalTrials.gov n'ont besoin d'aucune clé ; CORE
+  en demande une gratuite (`docs/FUTURE_BACKENDS.md` contient les détails d'API
+  revérifiés, le test booléen que chacun a réussi et ce que les offices de
+  brevets exigeraient — les contributions d'entrées `backends.json`
+  fonctionnelles sont très bienvenues).
 - Téléchargement légal de PDF en libre accès à partir des liens Unpaywall
   déjà collectés.
 - Envoi vers l'API web de Zotero (une exécution directement dans une
@@ -634,7 +638,7 @@ agent — cet outil a été construit dans exactement ce flux de travail.
 python tests/test_librarian.py
 ```
 
-301 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
+305 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
 — les backends s'exécutent contre des réponses d'API enregistrées ; les
 analyseurs d'ingestion, la fusion du répertoire de recherche, le magasin des
 revues et le générateur de rapports contre des répertoires synthétiques — de
@@ -672,7 +676,7 @@ recherche, de l'ingestion, des indicateurs des revues et des manuels le
 | **Conceptualisation** | Une requête sur toutes les bases de données comme instrument reproductible ; la méthode des nombres comme vérification de nouveauté ; la position stricte sur les conditions d'utilisation (WoS manuel plutôt que scraping) ; le rapport PRISMA à trois niveaux ; le répertoire de recherche comme unité du laboratoire, sources manuelles avec provenance, indicateurs des revues suivis dans le temps | Le schéma de requête structurelle ; le moteur des bases de données en configuration ; le modèle de document du rapport et la chaîne de repli PDF ; la conception du répertoire comme index |
 | **Méthodologie** | Discipline de conception des requêtes (« un petit nombre est la découverte — puis lire chaque résultat ») ; sélection des bases de données et stratégie d'accès institutionnel | Quantification des revues déchets ; la correction de limitation des groupes arXiv ; la conception point de reprise après chaque appel |
 | **Logiciel** | — | Tout |
-| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 301 vérifications ; CI ; autotests en direct |
+| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 305 vérifications ; CI ; autotests en direct |
 | **Investigation** | Le labyrinthe de l'accès institutionnel (CAPES/CAFe, VPN, obtention des clés) | Documentation des API de 8+ bases de données ; analyse du code des concurrents |
 | **Rédaction** | Relecture et édition | Première version |
 | **Ressources · Supervision · Administration du projet · Obtention de financements** | Tout | — |

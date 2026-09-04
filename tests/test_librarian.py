@@ -1122,6 +1122,36 @@ for script in ("librarian.py", "project.py", "report.py", "journals.py", "wos_ma
                     _missing.append(f"{name}:{script}{' ' + sub[0] if sub else ''} {fl}")
 check("docs guard: every CLI flag appears in USER_MANUAL.md and AGENTS.md", not _missing, "; ".join(_missing))
 
+# roadmap guard: the README's Roadmap and docs/FUTURE_BACKENDS.md are one list.
+# 3.4.3 came from these two drifting -- the roadmap advertised DBLP as a
+# config-only addition for a year after it turned out to honour no boolean
+# operator, and a reader wiring it from the README would have counted nonsense.
+_FB = (HERE.parent / "docs" / "FUTURE_BACKENDS.md").read_text(encoding="utf-8")
+_RM = (HERE.parent / "README.md").read_text(encoding="utf-8")
+_road = _RM.split("## Roadmap")[1].split("\n## ")[0]
+
+
+def _bolded(heading: str) -> set:
+    """Names in the first column of the table under a FUTURE_BACKENDS heading."""
+    body = _FB.split(heading)[1].split("\n## ")[0]
+    return set(_re.findall(r"\|\s*\*\*([^*]+)\*\*", body))
+
+
+_ready = _bolded("## Databases ready to configure")
+_excluded = _bolded("## Config-only, but")
+check("roadmap guard: FUTURE_BACKENDS lists keyless and excluded candidates",
+      len(_ready) >= 5 and len(_excluded) >= 3,
+      f"ready={sorted(_ready)} excluded={sorted(_excluded)}")
+check("roadmap guard: every keyless ready-to-configure backend is named in the README roadmap",
+      not [n for n in _ready if n not in _road],
+      f"missing from README Roadmap: {sorted(n for n in _ready if n not in _road)}")
+check("roadmap guard: the README roadmap never advertises a default_exclude backend",
+      not [n for n in _excluded if n in _road],
+      f"advertised but counts nothing: {sorted(n for n in _excluded if n in _road)}")
+check("roadmap guard: FUTURE_BACKENDS records when its API details were verified",
+      _re.search(r"re-verified \d{4}-\d{2}-\d{2} against live endpoints", _FB) is not None,
+      "no 're-verified <date> against live endpoints' line")
+
 # githubify rule 17: the warranty disclaimer and limitation of liability must
 # survive every rewrite -- in LICENSE and, visibly, in the README.
 _licence = (HERE.parent / "LICENSE").read_text(encoding="utf-8", errors="replace")
