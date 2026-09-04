@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Benutzerhandbuch"
-subtitle: "Version 3.4.1"
-date: "2026-09-02"
+subtitle: "Version 3.4.2"
+date: "2026-09-04"
 lang: "de"
-source-digest: "451b6ba383fbd69e"
+source-digest: "28f9f034539b4b57"
 ---
 
 [English](USER_MANUAL.md) · [Português (Brasil)](USER_MANUAL.pt-BR.md) · [Español](USER_MANUAL.es.md) · **Deutsch** · [Français](USER_MANUAL.fr.md)
@@ -25,8 +25,8 @@ wie die Trefferzahlen gedriftet sind, welche Zeitschriften zählen.
 
 Es besteht aus fünf Python-Skripten plus zwei gemeinsamen Modulen
 (`render.py`, `i18n.py`), ohne Abhängigkeiten jenseits der
-Standardbibliothek. Es gibt nichts zu installieren: Dateien kopieren, `.env`
-ausfüllen, `queries.json` schreiben, ausführen.
+Standardbibliothek. Es gibt nichts zu installieren: Dateien kopieren,
+Schlüssel bereitstellen, `queries.json` schreiben, ausführen.
 
 | Datei | Rolle |
 |---|---|
@@ -54,12 +54,19 @@ sie erzeugt ein eingebauter Klartext-Writer das PDF.
 ```
 git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest
 ```
 
-`.env`-Schlüssel:
+Die Schlüssel werden aus der Prozessumgebung gelesen. Kopieren Sie
+`.env.example` nach `.env` und füllen Sie diese Datei aus, oder setzen Sie
+dieselben Variablennamen in Ihrer Shell, in der Konfiguration Ihres Agenten
+oder Starters, oder als CI-Secrets — `.env` liefert nur, was die Umgebung noch
+nicht gesetzt hat; eine außerhalb gesetzte Variable gewinnt also immer und die
+Datei ist optional.
+
+Schlüssel:
 
 | Schlüssel | Nötig für | Beschaffung |
 |---|---|---|
@@ -72,7 +79,9 @@ python librarian.py --selftest
 | `WOS_STARTER_KEY` | Web of Science Starter API (eingeschränkte Grammatik) | selten lohnend |
 
 Fünf Backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
-brauchen weder Schlüssel noch Institution.
+brauchen weder Schlüssel noch Institution. `python librarian.py --list` meldet,
+welche Schlüssel auf einem der beiden Wege gefunden wurden; `--selftest`
+beweist, dass sie funktionieren.
 
 **Einbettung in ein anderes Projekt.** Legen Sie die sieben Dateien in ein
 Unterverzeichnis `tools/`; `.env`, `queries.json` und `lit/` werden dann im
@@ -523,7 +532,7 @@ schlüssellose Backends; NASA ADS und INSPIRE für Physik; legale OA-PDF-Links
 über Unpaywall; dreistufige Berichte in fünf Formaten mit PRISMA 2020 und
 PRISMA-S; Forschungsverzeichnisse mit manuellen Quellen, Herkunft,
 Zeitverlauf und Differenzberichten; Zeitschriftenkennzahlen mit Jahresreihe;
-Audit-Logs; eine Offline-Testsuite (294 Prüfungen) und CI.
+Audit-Logs; eine Offline-Testsuite (301 Prüfungen) und CI.
 
 Einschränkungen, alle konstruktionsbedingt oder durch die Welt:
 

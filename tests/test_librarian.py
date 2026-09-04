@@ -355,6 +355,50 @@ finally:
         os.environ.pop(k, None)
 
 # ---------------------------------------------------------------------------
+print("\nkey configuration (the environment is the source; .env only fills it in)")
+import subprocess as _sp  # noqa: E402
+
+# A user may set keys in the shell, in a launcher's env block or as a CI secret
+# and never create a .env at all. load_env uses setdefault, so those win -- and
+# every user-facing "missing key" message must name both routes, not just .env.
+_savedkeys = {k: os.environ.get(k) for k in ("WOS_STARTER_KEY", "SCOPUS_API_KEY")}
+os.environ.pop("WOS_STARTER_KEY", None)
+try:
+    lib._auth_headers(lib.BACKENDS_CFG["wos"])
+    _msg = "<no error raised>"
+except RuntimeError as e:
+    _msg = str(e)
+check("missing-key error names the variable", "WOS_STARTER_KEY" in _msg, _msg)
+check("missing-key error points at the environment, not only at .env",
+      "environment" in _msg.lower(), _msg)
+check("missing-key error does not claim the key must live in .env",
+      "not set in .env" not in _msg, _msg)
+check("wos hint says where to get the key, not where to put it",
+      "clarivate.com" in lib.BACKENDS_CFG["wos"]["auth"]["hint"],
+      lib.BACKENDS_CFG["wos"]["auth"]["hint"])
+check("scopus hint says where to get the key, not where to put it",
+      "elsevier.com" in lib.BACKENDS_CFG["scopus"]["auth"]["hint"],
+      lib.BACKENDS_CFG["scopus"]["auth"]["hint"])
+
+# --list is the readiness report a user reads first; --selftest is the one they
+# run first. Neither may tell someone whose keys come from the environment that
+# the key is missing "in .env".
+_lenv = dict(os.environ, PYTHONIOENCODING="utf-8")
+_lenv.pop("SCOPUS_API_KEY", None)
+_lr = _sp.run([sys.executable, str(HERE.parent / "librarian.py"), "--list"],
+              capture_output=True, text=True, env=_lenv, cwd=str(HERE.parent))
+_lline = next((ln for ln in _lr.stdout.splitlines() if "SCOPUS_API_KEY" in ln), "")
+check("--list reports a missing key against the environment or .env",
+      "environment or .env" in _lline, _lline or (_lr.stdout or _lr.stderr)[-200:])
+_srcs = {n: (HERE.parent / n).read_text(encoding="utf-8")
+         for n in ("librarian.py", "docs/USER_MANUAL.md", "README.md", "AGENTS.md", "SKILL.md")}
+_stale = [n for n, s in _srcs.items() if "in .env" in s or "not set in .env" in s]
+check("no source or English doc says a key must be 'in .env'", not _stale, f"{_stale}")
+for _k, _v in _savedkeys.items():
+    if _v is not None:
+        os.environ[_k] = _v
+
+# ---------------------------------------------------------------------------
 print("\nreport generation (report.py against a synthetic run directory)")
 import render  # noqa: E402
 import report  # noqa: E402

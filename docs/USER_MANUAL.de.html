@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-02" />
+  <meta name="dcterms.date" content="2026-09-04" />
   <title>scitech-librarian — Benutzerhandbuch</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Benutzerhandbuch</h1>
-<p class="subtitle">Version 3.4.1</p>
-<p class="date">2026-09-02</p>
+<p class="subtitle">Version 3.4.2</p>
+<p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -163,8 +163,8 @@ Zeitschriften zählen.</p>
 <p>Es besteht aus fünf Python-Skripten plus zwei gemeinsamen Modulen
 (<code>render.py</code>, <code>i18n.py</code>), ohne Abhängigkeiten
 jenseits der Standardbibliothek. Es gibt nichts zu installieren: Dateien
-kopieren, <code>.env</code> ausfüllen, <code>queries.json</code>
-schreiben, ausführen.</p>
+kopieren, Schlüssel bereitstellen, <code>queries.json</code> schreiben,
+ausführen.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -227,10 +227,17 @@ oder pandoc; ohne sie erzeugt ein eingebauter Klartext-Writer das
 PDF.</p>
 <pre><code>git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest</code></pre>
-<p><code>.env</code>-Schlüssel:</p>
+<p>Die Schlüssel werden aus der Prozessumgebung gelesen. Kopieren Sie
+<code>.env.example</code> nach <code>.env</code> und füllen Sie diese
+Datei aus, oder setzen Sie dieselben Variablennamen in Ihrer Shell, in
+der Konfiguration Ihres Agenten oder Starters, oder als CI-Secrets —
+<code>.env</code> liefert nur, was die Umgebung noch nicht gesetzt hat;
+eine außerhalb gesetzte Variable gewinnt also immer und die Datei ist
+optional.</p>
+<p>Schlüssel:</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -283,7 +290,10 @@ python librarian.py --selftest</code></pre>
 </tbody>
 </table>
 <p>Fünf Backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) brauchen weder Schlüssel noch Institution.</p>
+Crossref) brauchen weder Schlüssel noch Institution.
+<code>python librarian.py --list</code> meldet, welche Schlüssel auf
+einem der beiden Wege gefunden wurden; <code>--selftest</code> beweist,
+dass sie funktionieren.</p>
 <p><strong>Einbettung in ein anderes Projekt.</strong> Legen Sie die
 sieben Dateien in ein Unterverzeichnis <code>tools/</code>;
 <code>.env</code>, <code>queries.json</code> und <code>lit/</code>
@@ -864,7 +874,7 @@ Backends; NASA ADS und INSPIRE für Physik; legale OA-PDF-Links über
 Unpaywall; dreistufige Berichte in fünf Formaten mit PRISMA 2020 und
 PRISMA-S; Forschungsverzeichnisse mit manuellen Quellen, Herkunft,
 Zeitverlauf und Differenzberichten; Zeitschriftenkennzahlen mit
-Jahresreihe; Audit-Logs; eine Offline-Testsuite (294 Prüfungen) und
+Jahresreihe; Audit-Logs; eine Offline-Testsuite (301 Prüfungen) und
 CI.</p>
 <p>Einschränkungen, alle konstruktionsbedingt oder durch die Welt:</p>
 <ul>

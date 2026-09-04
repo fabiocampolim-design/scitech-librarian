@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 0cd7413cdb445825 -->
+<!-- source-digest: b9a5751826afc198 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ datos que toca — no como letra pequeña, sino como principio de diseño:
   que un número *pequeño* sea el resultado informativo, ejecuta los mismos
   bloques a lo largo del tiempo, observa los recuentos — y luego lee cada
   resultado a mano antes de afirmar una laguna.
-- **Comprobable sin conexión.** 294 comprobaciones se ejecutan sin red y sin
+- **Comprobable sin conexión.** 301 comprobaciones se ejecutan sin red y sin
   claves (los backends se ejercitan contra respuestas de API grabadas; el
   directorio de investigación, los analizadores de ingesta, el almacén de
   revistas y el generador de informes contra directorios sintéticos); CI en
@@ -205,8 +205,19 @@ Scopus + ADS + arXiv es, en la práctica, un superconjunto de WoS.
 
 ## Obtener las claves
 
-Copia `.env.example` a `.env` y rellénalo — el script lo lee automáticamente,
-sin variables de shell que definir.
+La herramienta lee sus claves del entorno del proceso. Dos rutas las llevan
+allí, y puedes mezclarlas:
+
+- **Un archivo `.env`** — copia `.env.example` a `.env` y rellénalo; el script
+  lo lee automáticamente, sin variables de shell que definir. Está ignorado
+  por git.
+- **Variables de entorno** — expórtalas desde tu shell, defínelas en la
+  configuración de tu agente o lanzador, o suminístralas como secretos de CI.
+  Tienen precedencia: `.env` sólo rellena lo que no esté ya definido, así que
+  si configuras las claves así nunca necesitarás un `.env`.
+
+En cualquier caso, `python librarian.py --list` muestra qué claves llegaron y
+`--selftest` demuestra que funcionan.
 
 - **NASA ADS** — <https://ui.adsabs.harvard.edu/user/settings/token>. Inicia
   sesión, genera, pega. El mayor valor por minuto invertido.
@@ -609,7 +620,7 @@ esta herramienta se construyó dentro de exactamente ese flujo de trabajo.
 python tests/test_librarian.py
 ```
 
-294 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
+301 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
 backends se ejecutan contra respuestas de API grabadas; los analizadores de
 ingesta, la fusión del directorio de investigación, el almacén de revistas y
 el generador de informes contra directorios sintéticos — de modo que la suite
@@ -648,7 +659,7 @@ manuales el 28 de agosto de 2026. En términos de
 | **Conceptualización** | Una consulta en todas las bases de datos como instrumento reproducible; el método de recuentos como comprobación de novedad; la postura estricta sobre los términos de servicio (WoS manual en vez de scraping); el informe PRISMA de tres niveles; el directorio de investigación como unidad del laboratorio, fuentes manuales con procedencia, métricas de revistas seguidas en el tiempo | El esquema de consulta estructural; el motor de bases de datos como configuración; el modelo de documento del informe y la cadena de respaldo del PDF; el diseño del directorio como índice |
 | **Metodología** | Disciplina de diseño de consultas ("un número pequeño es el hallazgo — luego lee cada resultado"); selección de bases de datos y estrategia de acceso institucional | Cuantificación de revistas basura; la corrección de limitación de grupos de arXiv; el diseño de punto de control tras cada llamada |
 | **Software** | — | Todo |
-| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 294 comprobaciones; CI; autopruebas en vivo |
+| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 301 comprobaciones; CI; autopruebas en vivo |
 | **Investigación** | El laberinto del acceso institucional (CAPES/CAFe, VPN, obtención de claves) | Documentación de API de 8+ bases de datos; análisis del código de la competencia |
 | **Redacción** | Revisión y edición | Borrador original |
 | **Recursos · Supervisión · Administración del proyecto · Obtención de financiación** | Todo | — |

@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Manual do Usuário"
-subtitle: "versão 3.4.1"
-date: "2026-09-02"
+subtitle: "versão 3.4.2"
+date: "2026-09-04"
 lang: "pt-BR"
-source-digest: "451b6ba383fbd69e"
+source-digest: "28f9f034539b4b57"
 ---
 
 [English](USER_MANUAL.md) · **Português (Brasil)** · [Español](USER_MANUAL.es.md) · [Deutsch](USER_MANUAL.de.md) · [Français](USER_MANUAL.fr.md)
@@ -25,7 +25,8 @@ quais veículos importam.
 
 São cinco scripts Python mais dois módulos compartilhados (`render.py`,
 `i18n.py`), sem dependências além da biblioteca padrão. Não há nada a
-instalar: copie os arquivos, preencha `.env`, escreva `queries.json`, rode.
+instalar: copie os arquivos, forneça suas chaves, escreva `queries.json`,
+rode.
 
 | Arquivo | Papel |
 |---|---|
@@ -53,12 +54,18 @@ pandoc; sem eles o PDF é produzido por um escritor de texto puro embutido.
 ```
 git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest
 ```
 
-Chaves do `.env`:
+As chaves são lidas do ambiente do processo. Copie `.env.example` para `.env`
+e preencha esse arquivo, ou defina os mesmos nomes de variável no seu shell, na
+configuração do seu agente ou lançador, ou como segredos de CI — o `.env` só
+fornece o que o ambiente ainda não tiver definido, então uma variável definida
+fora sempre vence e o arquivo é opcional.
+
+Chaves:
 
 | Chave | Necessária para | Como obter |
 |---|---|---|
@@ -71,7 +78,9 @@ Chaves do `.env`:
 | `WOS_STARTER_KEY` | Web of Science Starter API (gramática restrita) | raramente vale a pena |
 
 Cinco backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
-não precisam de chave nem de instituição.
+não precisam de chave nem de instituição. `python librarian.py --list` informa
+quais chaves foram encontradas por qualquer um dos caminhos; `--selftest` prova
+que elas funcionam.
 
 **Uso embutido em outro projeto.** Coloque os sete arquivos em um
 subdiretório `tools/`; `.env`, `queries.json` e `lit/` são então procurados
@@ -515,7 +524,7 @@ chave; NASA ADS e INSPIRE para física; links legais de PDF de acesso aberto
 via Unpaywall; relatórios em três níveis e cinco formatos com PRISMA 2020 e
 PRISMA-S; diretórios de pesquisa com fontes manuais, proveniência, linha do
 tempo e relatórios diferenciais; métricas de periódicos com série por ano;
-logs de auditoria; uma suíte de testes offline (294 verificações) e CI.
+logs de auditoria; uma suíte de testes offline (301 verificações) e CI.
 
 Limitações, todas por projeto ou pelo mundo:
 

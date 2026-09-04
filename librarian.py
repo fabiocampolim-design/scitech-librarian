@@ -29,7 +29,10 @@ key needed:     scopus (SCOPUS_API_KEY + institutional network/VPN)
                 ads    (ADS_TOKEN)
                 wos    (WOS_STARTER_KEY; restricted grammar, see .env.example)
 
-Keys live in `.env` next to this file (gitignored). See `.env.example`.
+Keys are read from the process environment. A `.env` next to this file
+(gitignored) is loaded automatically to fill in what the environment does
+not already set -- a variable exported by your shell, your agent's settings
+or a CI secret always wins. See `.env.example`.
 Stdlib only -- no pip install required.
 
 LEGAL: documented public APIs only. Never point a scraper at the Web of
@@ -53,7 +56,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.4.1"
+VERSION = "3.4.2"
 
 
 def _report_lang(value: str) -> str:
@@ -77,10 +80,15 @@ OUTDIR = ROOT / "lit"
 
 
 # ---------------------------------------------------------------------------
-# .env loading
+# environment / .env loading
 # ---------------------------------------------------------------------------
 
 def load_env(path: Path = None) -> None:
+    """Fill in from `.env` what the environment does not already define.
+
+    setdefault, never overwrite: a key exported in the shell, injected by a
+    launcher or supplied as a CI secret takes precedence over the file, and
+    the file is entirely optional."""
     path = Path(path) if path else ROOT / ".env"
     if not path.exists():
         return
@@ -252,7 +260,8 @@ def _get(url: str, headers: dict | None = None, tries: int = 3,
             if e.code == 429 and "budget" in body.lower():
                 raise RuntimeError(
                     f"{last}\n      -> OpenAlex daily free budget exhausted (resets at midnight UTC). "
-                    f"Set OPENALEX_API_KEY in .env (free key, prepaid credits raise the "
+                    f"Set OPENALEX_API_KEY in the environment or .env (free key, prepaid "
+                    f"credits raise the "
                     f"budget: https://openalex.org/pricing) or rerun tomorrow.") from None
             if e.code in (429, 500, 502, 503):
                 time.sleep(5 * (attempt + 1))
@@ -485,7 +494,7 @@ DEFAULT_BACKENDS: dict[str, dict] = {
     "scopus": {
         "syntax": {"group": "TITLE-ABS-KEY({g})"},
         "auth": {"env": "SCOPUS_API_KEY", "header": "X-ELS-APIKey",
-                 "hint": "not set in .env",
+                 "hint": "free at https://dev.elsevier.com/apikey/manage; entitlement comes from your institution (be on its network or use an InstToken)",
                  "extra": [{"env": "SCOPUS_INSTTOKEN", "header": "X-ELS-Insttoken",
                             "optional": True}],
                  "static": {"Accept": "application/json"}},
@@ -504,7 +513,8 @@ DEFAULT_BACKENDS: dict[str, dict] = {
     },
     "wos": {
         "syntax": {"outer": "TS=({q})"},
-        "auth": {"env": "WOS_STARTER_KEY", "header": "X-ApiKey", "hint": "not set in .env"},
+        "auth": {"env": "WOS_STARTER_KEY", "header": "X-ApiKey",
+                 "hint": "Starter key at https://developer.clarivate.com/apis/wos-starter -- restricted grammar, wos_manual.py is usually better"},
         "request": {"url": "https://api.clarivate.com/apis/wos-starter/v1/documents",
                     "params": {"q": "{q}", "db": "WOS", "limit": "{n}", "page": "{page}"},
                     "paging": {"style": "page", "size": 50, "sleep": 0.35}},
@@ -602,7 +612,8 @@ def _auth_headers(entry: dict) -> dict:
         if not val:
             if a.get("optional"):
                 continue
-            raise RuntimeError(f"{a['env']} not set -- {a.get('hint', 'see .env.example')}")
+            raise RuntimeError(f"{a['env']} not set in the environment or .env"
+                               f" -- {a.get('hint', 'see .env.example')}")
         hdr[a["header"]] = a.get("value", "{key}").format(key=val)
     return hdr
 
@@ -944,7 +955,7 @@ def main() -> int:
             if b in args.skip:
                 continue
             if keyname and not os.environ.get(keyname):
-                print(f"  {b:16s} SKIP     no {keyname} in .env")
+                print(f"  {b:16s} SKIP     no {keyname} in environment or .env")
                 bad.append((b, f"no {keyname}"))
                 continue
             print(f"  {b:16s} ...", end="", flush=True)
@@ -990,7 +1001,8 @@ def main() -> int:
             print(f"  {n:4s} {b['title']}")
         print("\nBACKENDS:")
         for b, (_, _, k) in BACKENDS.items():
-            state = "ready" if (k is None or os.environ.get(k)) else f"MISSING {k} in .env"
+            state = ("ready" if (k is None or os.environ.get(k))
+                     else f"MISSING {k} in environment or .env")
             if b in DEFAULT_EXCLUDE:
                 state += "  (excluded from default run: no boolean support)"
             print(f"  {b:16s} {state}")

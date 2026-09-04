@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 0cd7413cdb445825 -->
+<!-- source-digest: b9a5751826afc198 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -181,7 +181,7 @@ conception :
   blocs de sorte qu'un *petit* nombre soit le résultat informatif, exécutez
   les mêmes blocs dans le temps, surveillez les nombres — puis lisez chaque
   résultat à la main avant d'affirmer une lacune.
-- **Testable hors ligne.** 294 vérifications s'exécutent sans réseau et sans
+- **Testable hors ligne.** 301 vérifications s'exécutent sans réseau et sans
   clés (les backends sont exercés contre des réponses d'API enregistrées ; le
   répertoire de recherche, les analyseurs d'ingestion, le magasin des revues
   et le générateur de rapports contre des répertoires synthétiques) ; CI sur
@@ -209,8 +209,20 @@ complet — donc Scopus + ADS + arXiv est, en pratique, un sur-ensemble de WoS.
 
 ## Obtenir les clés
 
-Copiez `.env.example` vers `.env` et remplissez-le — le script le lit
-automatiquement, aucune variable de shell à définir.
+L'outil lit ses clés depuis l'environnement du processus. Deux voies les y
+placent, et vous pouvez les mélanger :
+
+- **Un fichier `.env`** — copiez `.env.example` vers `.env` et remplissez-le ;
+  le script le lit automatiquement, aucune variable de shell à définir. Il est
+  ignoré par git.
+- **Des variables d'environnement** — exportez-les depuis votre shell,
+  définissez-les dans la configuration de votre agent ou lanceur, ou
+  fournissez-les comme secrets de CI. Elles ont la priorité : `.env` ne
+  remplit que ce qui n'est pas déjà défini, donc si vous configurez les clés
+  ainsi vous n'aurez jamais besoin d'un `.env`.
+
+Dans les deux cas, `python librarian.py --list` montre quelles clés sont
+arrivées et `--selftest` prouve qu'elles fonctionnent.
 
 - **NASA ADS** — <https://ui.adsabs.harvard.edu/user/settings/token>.
   Connectez-vous, générez, collez. Le meilleur rendement par minute.
@@ -622,7 +634,7 @@ agent — cet outil a été construit dans exactement ce flux de travail.
 python tests/test_librarian.py
 ```
 
-294 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
+301 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
 — les backends s'exécutent contre des réponses d'API enregistrées ; les
 analyseurs d'ingestion, la fusion du répertoire de recherche, le magasin des
 revues et le générateur de rapports contre des répertoires synthétiques — de
@@ -660,7 +672,7 @@ recherche, de l'ingestion, des indicateurs des revues et des manuels le
 | **Conceptualisation** | Une requête sur toutes les bases de données comme instrument reproductible ; la méthode des nombres comme vérification de nouveauté ; la position stricte sur les conditions d'utilisation (WoS manuel plutôt que scraping) ; le rapport PRISMA à trois niveaux ; le répertoire de recherche comme unité du laboratoire, sources manuelles avec provenance, indicateurs des revues suivis dans le temps | Le schéma de requête structurelle ; le moteur des bases de données en configuration ; le modèle de document du rapport et la chaîne de repli PDF ; la conception du répertoire comme index |
 | **Méthodologie** | Discipline de conception des requêtes (« un petit nombre est la découverte — puis lire chaque résultat ») ; sélection des bases de données et stratégie d'accès institutionnel | Quantification des revues déchets ; la correction de limitation des groupes arXiv ; la conception point de reprise après chaque appel |
 | **Logiciel** | — | Tout |
-| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 294 vérifications ; CI ; autotests en direct |
+| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 301 vérifications ; CI ; autotests en direct |
 | **Investigation** | Le labyrinthe de l'accès institutionnel (CAPES/CAFe, VPN, obtention des clés) | Documentation des API de 8+ bases de données ; analyse du code des concurrents |
 | **Rédaction** | Relecture et édition | Première version |
 | **Ressources · Supervision · Administration du projet · Obtention de financements** | Tout | — |

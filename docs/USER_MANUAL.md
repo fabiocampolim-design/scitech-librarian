@@ -1,7 +1,7 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.4.1"
-date: "2026-09-02"
+subtitle: "version 3.4.2"
+date: "2026-09-04"
 lang: "en"
 ---
 
@@ -21,7 +21,7 @@ contributed, how counts drifted, which venues matter.
 
 It is five Python scripts plus two shared modules (`render.py`, `i18n.py`),
 with no dependencies beyond the standard library. There is nothing to install: copy
-the files, fill `.env`, write `queries.json`, run.
+the files, supply your keys, write `queries.json`, run.
 
 | File | Role |
 |---|---|
@@ -48,12 +48,17 @@ the PDF is produced by a built-in plain-text writer.
 ```
 git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest
 ```
 
-`.env` keys:
+Keys are read from the process environment. Copy `.env.example` to `.env` and
+fill that in, or set the same variable names in your shell, in your agent's or
+launcher's configuration, or as CI secrets — `.env` only supplies what the
+environment has not already set, so a variable set outside always wins and the
+file is optional.
+
 
 | Key | Needed for | How to get it |
 |---|---|---|
@@ -66,7 +71,8 @@ python librarian.py --selftest
 | `WOS_STARTER_KEY` | Web of Science Starter API (restricted grammar) | rarely worth it |
 
 Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref)
-need no key and no institution.
+need no key and no institution. `python librarian.py --list` reports which
+keys were found by either route; `--selftest` proves they work.
 
 **Drop-in use inside another project.** Put the seven files in a `tools/`
 subdirectory; `.env`, `queries.json` and `lit/` are then looked for in the
@@ -491,7 +497,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (294 checks) and
+with a per-year series; audit logs; an offline test suite (301 checks) and
 CI.
 
 Limitations, all by design or by the world:

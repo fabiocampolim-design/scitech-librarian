@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-02" />
+  <meta name="dcterms.date" content="2026-09-04" />
   <title>scitech-librarian — Manual do Usuário</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Manual do Usuário</h1>
-<p class="subtitle">versão 3.4.1</p>
-<p class="date">2026-09-02</p>
+<p class="subtitle">versão 3.4.2</p>
+<p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -161,8 +161,8 @@ que cada busca acrescentou, o que cada base contribuiu, como as
 contagens derivaram, quais veículos importam.</p>
 <p>São cinco scripts Python mais dois módulos compartilhados
 (<code>render.py</code>, <code>i18n.py</code>), sem dependências além da
-biblioteca padrão. Não há nada a instalar: copie os arquivos, preencha
-<code>.env</code>, escreva <code>queries.json</code>, rode.</p>
+biblioteca padrão. Não há nada a instalar: copie os arquivos, forneça
+suas chaves, escreva <code>queries.json</code>, rode.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -224,10 +224,17 @@ o pandoc; sem eles o PDF é produzido por um escritor de texto puro
 embutido.</p>
 <pre><code>git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest</code></pre>
-<p>Chaves do <code>.env</code>:</p>
+<p>As chaves são lidas do ambiente do processo. Copie
+<code>.env.example</code> para <code>.env</code> e preencha esse
+arquivo, ou defina os mesmos nomes de variável no seu shell, na
+configuração do seu agente ou lançador, ou como segredos de CI — o
+<code>.env</code> só fornece o que o ambiente ainda não tiver definido,
+então uma variável definida fora sempre vence e o arquivo é
+opcional.</p>
+<p>Chaves:</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -280,7 +287,10 @@ python librarian.py --selftest</code></pre>
 </tbody>
 </table>
 <p>Cinco backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) não precisam de chave nem de instituição.</p>
+Crossref) não precisam de chave nem de instituição.
+<code>python librarian.py --list</code> informa quais chaves foram
+encontradas por qualquer um dos caminhos; <code>--selftest</code> prova
+que elas funcionam.</p>
 <p><strong>Uso embutido em outro projeto.</strong> Coloque os sete
 arquivos em um subdiretório <code>tools/</code>; <code>.env</code>,
 <code>queries.json</code> e <code>lit/</code> são então procurados no
@@ -847,7 +857,7 @@ links legais de PDF de acesso aberto via Unpaywall; relatórios em três
 níveis e cinco formatos com PRISMA 2020 e PRISMA-S; diretórios de
 pesquisa com fontes manuais, proveniência, linha do tempo e relatórios
 diferenciais; métricas de periódicos com série por ano; logs de
-auditoria; uma suíte de testes offline (294 verificações) e CI.</p>
+auditoria; uma suíte de testes offline (301 verificações) e CI.</p>
 <p>Limitações, todas por projeto ou pelo mundo:</p>
 <ul>
 <li>As contagens não são comparáveis entre bases; operadores de

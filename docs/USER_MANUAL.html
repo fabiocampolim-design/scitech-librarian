@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-02" />
+  <meta name="dcterms.date" content="2026-09-04" />
   <title>scitech-librarian — User Manual</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — User Manual</h1>
-<p class="subtitle">version 3.4.1</p>
-<p class="date">2026-09-02</p>
+<p class="subtitle">version 3.4.2</p>
+<p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -159,7 +159,7 @@ counts drifted, which venues matter.</p>
 <p>It is five Python scripts plus two shared modules
 (<code>render.py</code>, <code>i18n.py</code>), with no dependencies
 beyond the standard library. There is nothing to install: copy the
-files, fill <code>.env</code>, write <code>queries.json</code>, run.</p>
+files, supply your keys, write <code>queries.json</code>, run.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -216,10 +216,15 @@ a LaTeX distribution (xelatex, lualatex or pdflatex) or pandoc; without
 them the PDF is produced by a built-in plain-text writer.</p>
 <pre><code>git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest</code></pre>
-<p><code>.env</code> keys:</p>
+<p>Keys are read from the process environment. Copy
+<code>.env.example</code> to <code>.env</code> and fill that in, or set
+the same variable names in your shell, in your agent’s or launcher’s
+configuration, or as CI secrets — <code>.env</code> only supplies what
+the environment has not already set, so a variable set outside always
+wins and the file is optional.</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -272,7 +277,9 @@ python librarian.py --selftest</code></pre>
 </tbody>
 </table>
 <p>Five backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) need no key and no institution.</p>
+Crossref) need no key and no institution.
+<code>python librarian.py --list</code> reports which keys were found by
+either route; <code>--selftest</code> proves they work.</p>
 <p><strong>Drop-in use inside another project.</strong> Put the seven
 files in a <code>tools/</code> subdirectory; <code>.env</code>,
 <code>queries.json</code> and <code>lit/</code> are then looked for in
@@ -817,7 +824,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (294 checks) and CI.</p>
+logs; an offline test suite (301 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are

@@ -55,7 +55,9 @@ imports) or clone, and run.
 
 ## Setup checklist
 
-1. `cp .env.example .env` and fill what the researcher has: `CONTACT_EMAIL`
+1. `cp .env.example .env` and fill what the researcher has — or set the same
+   variable names in the environment (shell, agent/launcher config, CI secret),
+   which takes precedence and makes the file unnecessary: `CONTACT_EMAIL`
    (always; it puts requests in the polite pool), `ADS_TOKEN` (free),
    `SCOPUS_API_KEY` (free key; results need the institution's network/VPN),
    optional `S2_API_KEY`, `CORE_API_KEY`, `WOS_STARTER_KEY`.
@@ -264,6 +266,6 @@ blocks.
 ## Tests
 
 `python tests/test_librarian.py` — offline, stdlib only, no keys,
-294 checks; must pass
+301 checks; must pass
 before any change is proposed. CI runs it on Linux, Windows and macOS,
 Python 3.9 and 3.13.

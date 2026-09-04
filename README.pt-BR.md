@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 0cd7413cdb445825 -->
+<!-- source-digest: b9a5751826afc198 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -169,7 +169,7 @@ não como letra miúda, mas como princípio de projeto:
   que um número *pequeno* seja o resultado informativo, rode os mesmos blocos
   ao longo do tempo, observe as contagens — e leia cada resultado à mão antes
   de afirmar uma lacuna.
-- **Testável offline.** 294 verificações rodam sem rede e sem chaves (os
+- **Testável offline.** 301 verificações rodam sem rede e sem chaves (os
   backends são exercitados contra respostas de API gravadas; o diretório de
   pesquisa, os parsers de ingestão, o armazém de periódicos e o gerador de
   relatórios contra diretórios sintéticos); CI em Linux, Windows e macOS,
@@ -197,8 +197,19 @@ Scopus + ADS + arXiv é, na prática, um superconjunto da WoS.
 
 ## Obtendo as chaves
 
-Copie `.env.example` para `.env` e preencha — o script o lê automaticamente,
-sem variáveis de shell para definir.
+A ferramenta lê suas chaves do ambiente do processo. Dois caminhos as colocam
+lá, e você pode misturá-los:
+
+- **Um arquivo `.env`** — copie `.env.example` para `.env` e preencha; o script
+  o lê automaticamente, sem variáveis de shell para definir. Ele é ignorado
+  pelo git.
+- **Variáveis de ambiente** — exporte-as do seu shell, defina-as na
+  configuração do seu agente ou lançador, ou forneça-as como segredos de CI.
+  Elas têm precedência: o `.env` só preenche o que ainda não estiver definido,
+  então, se você configurar as chaves assim, nunca precisará de um `.env`.
+
+De qualquer forma, `python librarian.py --list` mostra quais chaves chegaram e
+`--selftest` prova que elas funcionam.
 
 - **NASA ADS** — <https://ui.adsabs.harvard.edu/user/settings/token>. Entre,
   gere, cole. Maior valor por minuto gasto.
@@ -594,7 +605,7 @@ foi construída dentro de exatamente esse fluxo de trabalho.
 python tests/test_librarian.py
 ```
 
-294 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
+301 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
 rodam contra respostas de API gravadas; os parsers de ingestão, a mesclagem do
 diretório de pesquisa, o armazém de periódicos e o gerador de relatórios
 contra diretórios sintéticos — de modo que a suíte exercita offline os
@@ -631,7 +642,7 @@ periódicos e dos manuais em 28 de agosto de 2026. Em termos de
 | **Conceituação** | Uma consulta em todas as bases como instrumento reprodutível; o método de contagens como verificação de novidade; a postura estrita quanto aos termos de serviço (WoS manual em vez de raspagem); o relatório PRISMA em três níveis; o diretório de pesquisa como unidade do laboratório, fontes manuais com proveniência, métricas de veículos acompanhadas ao longo do tempo | O esquema de consulta estrutural; o motor de bases como configuração; o modelo de documento do relatório e a cadeia de fallback do PDF; o projeto do diretório como índice |
 | **Metodologia** | Disciplina de projeto de consultas ("um número pequeno é o achado — depois leia cada resultado"); seleção de bases e estratégia de acesso institucional | Quantificação de veículos lixo; a correção de limitação de grupos do arXiv; o projeto de checkpoint após cada chamada |
 | **Software** | — | Todo ele |
-| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 294 verificações; CI; autotestes ao vivo |
+| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 301 verificações; CI; autotestes ao vivo |
 | **Investigação** | O labirinto do acesso institucional (CAPES/CAFe, VPN, obtenção de chaves) | Documentação de API de 8+ bases; análise do código de concorrentes |
 | **Redação** | Revisão e edição | Rascunho original |
 | **Recursos · Supervisão · Administração do projeto · Obtenção de financiamento** | Tudo | — |

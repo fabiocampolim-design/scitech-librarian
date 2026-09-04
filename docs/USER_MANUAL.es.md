@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Manual del usuario"
-subtitle: "versión 3.4.1"
-date: "2026-09-02"
+subtitle: "versión 3.4.2"
+date: "2026-09-04"
 lang: "es"
-source-digest: "451b6ba383fbd69e"
+source-digest: "28f9f034539b4b57"
 ---
 
 [English](USER_MANUAL.md) · [Português (Brasil)](USER_MANUAL.pt-BR.md) · **Español** · [Deutsch](USER_MANUAL.de.md) · [Français](USER_MANUAL.fr.md)
@@ -25,7 +25,7 @@ datos, cómo derivaron los recuentos, qué revistas importan.
 
 Son cinco scripts de Python más dos módulos compartidos (`render.py`,
 `i18n.py`), sin dependencias más allá de la biblioteca estándar. No hay nada
-que instalar: copia los archivos, rellena `.env`, escribe `queries.json`,
+que instalar: copia los archivos, aporta tus claves, escribe `queries.json`,
 ejecuta.
 
 | Archivo | Función |
@@ -54,12 +54,18 @@ sin ellos el PDF lo produce un escritor de texto plano integrado.
 ```
 git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest
 ```
 
-Claves de `.env`:
+Las claves se leen del entorno del proceso. Copia `.env.example` a `.env` y
+rellena ese archivo, o define los mismos nombres de variable en tu shell, en la
+configuración de tu agente o lanzador, o como secretos de CI — `.env` sólo
+aporta lo que el entorno no haya definido ya, así que una variable definida
+fuera siempre gana y el archivo es opcional.
+
+Claves:
 
 | Clave | Necesaria para | Cómo obtenerla |
 |---|---|---|
@@ -72,7 +78,9 @@ Claves de `.env`:
 | `WOS_STARTER_KEY` | Web of Science Starter API (gramática restringida) | rara vez vale la pena |
 
 Cinco backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar, Crossref) no
-necesitan clave ni institución.
+necesitan clave ni institución. `python librarian.py --list` informa de qué
+claves se encontraron por cualquiera de las dos vías; `--selftest` demuestra
+que funcionan.
 
 **Uso integrado dentro de otro proyecto.** Coloca los siete archivos en un
 subdirectorio `tools/`; `.env`, `queries.json` y `lit/` se buscan entonces en
@@ -522,7 +530,7 @@ enlaces legales a PDF de acceso abierto vía Unpaywall; informes de tres
 niveles en cinco formatos con PRISMA 2020 y PRISMA-S; directorios de
 investigación con fuentes manuales, procedencia, línea de tiempo e informes
 diferenciales; métricas de revistas con serie por año; logs de auditoría; una
-suite de pruebas sin conexión (294 comprobaciones) y CI.
+suite de pruebas sin conexión (301 comprobaciones) y CI.
 
 Limitaciones, todas por diseño o por el mundo:
 

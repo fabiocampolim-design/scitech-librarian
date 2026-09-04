@@ -2,6 +2,18 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.4.2 — 2026-09-04
+
+- Keys are read from the process environment; `.env` is one way to fill it in,
+  never the only one. Every message that said a key was missing "in .env" now
+  names both routes (`--selftest`, `--list`, the auth error), `load_env` says in
+  its docstring that it uses `setdefault` and never overrides a variable already
+  set, and the Scopus and WoS hints say where to *get* the key instead of
+  repeating where to put it. README, User Manual, `AGENTS.md`, `SKILL.md` and
+  `.env.example` document both routes; the four translations were redone.
+- Suite: 301 checks (+7), including a guard that no source file or English doc
+  tells the user a key must live in `.env`.
+
 ## 3.4.1 — 2026-09-02
 
 - The 3.4.0 post-release review's one finding: `docs/build_manual.py

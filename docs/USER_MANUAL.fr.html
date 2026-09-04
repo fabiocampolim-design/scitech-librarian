@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-02" />
+  <meta name="dcterms.date" content="2026-09-04" />
   <title>scitech-librarian — Manuel utilisateur</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Manuel utilisateur</h1>
-<p class="subtitle">version 3.4.1</p>
-<p class="date">2026-09-02</p>
+<p class="subtitle">version 3.4.2</p>
+<p class="date">2026-09-04</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -165,8 +165,8 @@ ont dérivé, quelles revues comptent.</p>
 <p>Ce sont cinq scripts Python plus deux modules partagés
 (<code>render.py</code>, <code>i18n.py</code>), sans dépendance au-delà
 de la bibliothèque standard. Il n’y a rien à installer : copiez les
-fichiers, remplissez <code>.env</code>, écrivez
-<code>queries.json</code>, exécutez.</p>
+fichiers, fournissez vos clés, écrivez <code>queries.json</code>,
+exécutez.</p>
 <table>
 <colgroup>
 <col style="width: 50%" />
@@ -230,10 +230,17 @@ pandoc ; sans eux, le PDF est produit par un moteur texte brut
 intégré.</p>
 <pre><code>git clone https://github.com/fabiocampolim-design/scitech-librarian
 cd scitech-librarian
-cp .env.example .env            # fill in what you have
+cp .env.example .env            # fill in what you have (or use the environment)
 cp queries.example.json queries.json
 python librarian.py --selftest</code></pre>
-<p>Clés de <code>.env</code> :</p>
+<p>Les clés sont lues depuis l’environnement du processus. Copiez
+<code>.env.example</code> vers <code>.env</code> et remplissez ce
+fichier, ou définissez les mêmes noms de variable dans votre shell, dans
+la configuration de votre agent ou lanceur, ou comme secrets de CI —
+<code>.env</code> ne fournit que ce que l’environnement n’a pas déjà
+défini, donc une variable définie à l’extérieur l’emporte toujours et le
+fichier est facultatif.</p>
+<p>Clés :</p>
 <table>
 <colgroup>
 <col style="width: 33%" />
@@ -286,7 +293,10 @@ python librarian.py --selftest</code></pre>
 </tbody>
 </table>
 <p>Cinq backends (OpenAlex, arXiv, INSPIRE-HEP, Semantic Scholar,
-Crossref) n’ont besoin ni de clé ni d’institution.</p>
+Crossref) n’ont besoin ni de clé ni d’institution.
+<code>python librarian.py --list</code> indique quelles clés ont été
+trouvées par l’une ou l’autre voie ; <code>--selftest</code> prouve
+qu’elles fonctionnent.</p>
 <p><strong>Utilisation intégrée dans un autre projet.</strong> Placez
 les sept fichiers dans un sous-répertoire <code>tools/</code> ;
 <code>.env</code>, <code>queries.json</code> et <code>lit/</code> sont
@@ -872,7 +882,7 @@ PDF en libre accès via Unpaywall ; rapports à trois niveaux en cinq
 formats avec PRISMA 2020 et PRISMA-S ; répertoires de recherche avec
 sources manuelles, provenance, chronologie et rapports différentiels ;
 indicateurs des revues avec série par année ; journaux d’audit ; une
-suite de tests hors ligne (294 vérifications) et CI.</p>
+suite de tests hors ligne (301 vérifications) et CI.</p>
 <p>Limitations, toutes par conception ou par le monde :</p>
 <ul>
 <li>Les nombres ne sont pas comparables entre bases de données ; les

@@ -45,9 +45,12 @@ every log stay English — a project rule, guarded by the suite. Sample:
 
 ## Workflow
 
-1. **Keys**: `.env` lives next to the scripts (gitignored; Scopus, ADS, CORE,
-   WoS Starter, `OPENALEX_API_KEY`, contact email; template `.env.example` in
-   the repository). Never copy it into a project, never commit it, and
+1. **Keys**: read from the environment (Scopus, ADS, CORE, WoS Starter,
+   `OPENALEX_API_KEY`, contact email). Either set those variable names in the
+   shell / agent / launcher configuration, or put them in a `.env` next to the
+   scripts (gitignored; template `.env.example` in the repository) — the file
+   only fills in what the environment has not set. Never copy a `.env` into a
+   project, never commit it, and
    **rotate any key that ends up in a chat transcript** — Scopus keys have no
    revoke button. `librarian.py --selftest` says which backends are reachable.
 2. **Queries**: copy the repository's `queries.example.json` to
