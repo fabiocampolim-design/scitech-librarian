@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 7565b449338de027 -->
+<!-- source-digest: 44343a37e1c07e63 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -302,7 +302,7 @@ Umgebungsvariable, die auf einen Header abgebildet wird. Feldpfade
 unterstützen `[0]`-Indizierung, `[]`-Abbildung über Listen,
 `a|b`-Alternativen und benannte Transformationen. `docs/FUTURE_BACKENDS.md`
 enthält geprüfte Ausgangspunkte für Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz,
-Zenodo, ClinicalTrials.gov und CORE, jeweils erneut gegen die Live-API geprüft,
+Zenodo und ClinicalTrials.gov, jeweils erneut gegen die Live-API geprüft,
 zusammen mit dem Booleschen Test, den ein Kandidat bestehen muss, bevor er sich
 lohnt. Einträge in `backends.json` überlagern die eingebauten
 Voreinstellungen namentlich; `"disabled": true` entfernt einen.
@@ -617,8 +617,8 @@ Arbeitsablauf gebaut.
 ## Fahrplan
 
 - Mehr Datenbanken als Konfiguration: Europe PMC, OpenAIRE, DOAJ, ERIC,
-  EconBiz, Zenodo und ClinicalTrials.gov brauchen gar keinen Schlüssel; CORE
-  braucht einen kostenlosen (`docs/FUTURE_BACKENDS.md` enthält die erneut
+  EconBiz, Zenodo und ClinicalTrials.gov brauchen gar keinen Schlüssel (CORE ist seit 3.5.0 fester Bestandteil)
+  (`docs/FUTURE_BACKENDS.md` enthält die erneut
   geprüften API-Details, den Booleschen Test, den jeder bestanden hat, und was
   die Patentämter verlangen würden — Beiträge funktionierender
   `backends.json`-Einträge sind sehr willkommen).

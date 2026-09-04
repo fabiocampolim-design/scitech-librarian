@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 7565b449338de027 -->
+<!-- source-digest: 44343a37e1c07e63 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -289,7 +289,7 @@ variável de ambiente mapeada para um cabeçalho. Os caminhos de campo aceitam
 indexação `[0]`, mapeamento `[]` sobre listas, alternativas `a|b` e
 transformações nomeadas. `docs/FUTURE_BACKENDS.md` tem pontos de partida
 verificados para Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo,
-ClinicalTrials.gov e CORE, cada um reverificado contra a API ao vivo, junto
+ClinicalTrials.gov, cada um reverificado contra a API ao vivo, junto
 com o teste booleano que um candidato precisa passar antes de valer a pena
 adicioná-lo. As entradas
 em `backends.json` sobrepõem os padrões embutidos pelo nome;
@@ -594,8 +594,8 @@ foi construída dentro de exatamente esse fluxo de trabalho.
 ## Roteiro
 
 - Mais bases como configuração: Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz,
-  Zenodo e ClinicalTrials.gov não precisam de chave alguma; CORE precisa de uma
-  gratuita (`docs/FUTURE_BACKENDS.md` tem os detalhes de API reverificados, o
+  Zenodo e ClinicalTrials.gov não precisam de chave alguma (CORE passou a integrar a ferramenta na 3.5.0)
+  (`docs/FUTURE_BACKENDS.md` tem os detalhes de API reverificados, o
   teste booleano que cada um passou e o que os escritórios de patentes
   exigiriam — contribuições de entradas de `backends.json` funcionais são muito
   bem-vindas).

@@ -85,9 +85,10 @@ Note `journalInfo.journal.title` — there is **no** `journalTitle` key in a
 
 ## Ready to configure — free key, no institution
 
+*CORE v3 left this table in 3.5.0: it ships as the `core` backend, key optional.*
+
 | Backend | Key | Endpoint | Notes |
 |---|---|---|---|
-| **CORE v3** | `CORE_API_KEY`, Bearer | `https://api.core.ac.uk/v3/search/works` | 300 M+ open-access outputs from ~10 k repositories: theses, technical reports, institutional deposits. Field grammar with range operators (`yearPublished>2020`). Total `totalHits`, items `results`. Answered keyless in the 2026-09-04 probe, but CORE documents a key and rate-limits anonymous callers — configure one. |
 | **IEEE Xplore** | free metadata key | `https://ieeexploreapi.ieee.org/api/v1/search/articles` | The conference literature in electrical engineering and computing that Scopus indexes thinly and arXiv not at all. Full text needs a subscription; metadata does not. Returned 403 without a key, as expected. |
 | **Springer Nature Meta** | free non-commercial key | `https://api.springernature.com/meta/v2/json` | Real boolean grammar, but largely redundant against OpenAlex and Crossref. Low marginal value — add last, if at all. Returned 401 without a key, as expected. |
 

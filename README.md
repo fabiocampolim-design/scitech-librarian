@@ -268,8 +268,8 @@ lives in the response:
 Paging styles: `cursor`, `page`, `offset`, `none`. Auth is an env var mapped
 to a header. Field paths support `[0]` indexing, `[]` mapping over lists,
 `a|b` fallbacks, and named transforms. `docs/FUTURE_BACKENDS.md` has vetted
-starting points for Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo,
-ClinicalTrials.gov and CORE, each re-verified against the live API, together
+starting points for Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo
+and ClinicalTrials.gov, each re-verified against the live API, together
 with the boolean test a candidate has to pass before it is worth adding.
 Entries in `backends.json` overlay the built-in defaults by name;
 `"disabled": true` removes one.
@@ -563,7 +563,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 ## Roadmap
 
 - More databases as config: Europe PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo
-  and ClinicalTrials.gov need no key at all; CORE needs a free one
+  and ClinicalTrials.gov need no key at all (CORE shipped in 3.5.0)
   (`docs/FUTURE_BACKENDS.md` has the re-verified API details, the boolean test
   each one passed, and what the patent offices would take — contributions of
   working `backends.json` entries are very welcome).

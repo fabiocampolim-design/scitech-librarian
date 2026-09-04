@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 7565b449338de027 -->
+<!-- source-digest: 44343a37e1c07e63 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -305,7 +305,7 @@ L'authentification est une variable d'environnement associée à un en-tête.
 Les chemins de champs acceptent l'indexation `[0]`, l'application `[]` sur
 des listes, les alternatives `a|b` et des transformations nommées.
 `docs/FUTURE_BACKENDS.md` contient des points de départ vérifiés pour Europe
-PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo, ClinicalTrials.gov et CORE, chacun
+PMC, OpenAIRE, DOAJ, ERIC, EconBiz, Zenodo, ClinicalTrials.gov, chacun
 revérifié contre l'API en direct, ainsi que le test booléen qu'un candidat doit
 réussir avant de valoir la peine. Les entrées de `backends.json`
 recouvrent les valeurs intégrées par nom ; `"disabled": true` en supprime
@@ -621,8 +621,8 @@ agent — cet outil a été construit dans exactement ce flux de travail.
 ## Feuille de route
 
 - Plus de bases de données en configuration : Europe PMC, OpenAIRE, DOAJ,
-  ERIC, EconBiz, Zenodo et ClinicalTrials.gov n'ont besoin d'aucune clé ; CORE
-  en demande une gratuite (`docs/FUTURE_BACKENDS.md` contient les détails d'API
+  ERIC, EconBiz, Zenodo et ClinicalTrials.gov n'ont besoin d'aucune clé (CORE est intégré depuis la 3.5.0)
+  (`docs/FUTURE_BACKENDS.md` contient les détails d'API
   revérifiés, le test booléen que chacun a réussi et ce que les offices de
   brevets exigeraient — les contributions d'entrées `backends.json`
   fonctionnelles sont très bienvenues).
