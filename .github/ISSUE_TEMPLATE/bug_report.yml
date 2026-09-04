@@ -1,0 +1,89 @@
+name: Bug report
+description: A count that looks wrong, a backend that misbehaves, a grammar trap
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. CONTRIBUTING.md asks for the backend, your query
+        block, the exact query string the run recorded, and the relevant lines of
+        the log — this form collects exactly those.
+
+        **Never paste an API key.** If one ended up in a transcript or a log
+        excerpt, rotate it before posting.
+
+  - type: input
+    id: backend
+    attributes:
+      label: Which backend
+      description: OpenAlex, NASA ADS, arXiv, INSPIRE-HEP, Scopus, Semantic Scholar, CORE, Crossref, Unpaywall, Web of Science — or a `backends.json` entry of your own.
+      placeholder: "NASA ADS"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what you expected instead
+      description: >
+        For a wrong count, say what the same query returns in the database's own
+        web interface — that comparison is what makes a count bug actionable.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Output of `python librarian.py --version`."
+      placeholder: "3.4.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - Linux
+        - macOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: query-block
+    attributes:
+      label: Your query block
+      description: The block from your `queries.json`, or a minimal one that reproduces it.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: recorded-query
+    attributes:
+      label: The exact query string the run recorded
+      description: "From `lit/runs/<stamp>/queries.json` — the translated string actually sent to the backend, not the one you typed."
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Relevant lines of run.log
+      description: "From `lit/runs/<stamp>/run.log`. Redact any key before pasting."
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Before submitting
+      options:
+        - label: No API key appears anywhere in this report.
+          required: true
+        - label: "`python librarian.py --selftest` passes on my machine."
+          required: false

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: How to contribute
+    url: https://github.com/fabiocampolim-design/scitech-librarian/blob/main/CONTRIBUTING.md
+    about: What is welcome, the ground rules, and the checks a change has to pass.
+  - name: Adding a database
+    url: https://github.com/fabiocampolim-design/scitech-librarian/blob/main/docs/FUTURE_BACKENDS.md
+    about: Vetted starting points before you propose a new backend.

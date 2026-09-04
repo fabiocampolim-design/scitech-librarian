@@ -1,0 +1,60 @@
+name: New database (backends.json entry)
+description: Propose a bibliographic database the project does not ship
+labels: ["backend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Databases are configuration, not code (README, *Adding a database*).
+        `docs/FUTURE_BACKENDS.md` has vetted starting points. Documented APIs
+        only: no scraping, no Google Scholar, no paywall circumvention — a
+        proposal that needs any of those will be closed however good it is.
+
+  - type: input
+    id: database
+    attributes:
+      label: The database
+      description: Name and the documentation URL for its API.
+    validations:
+      required: true
+
+  - type: textarea
+    id: entry
+    attributes:
+      label: The `backends.json` entry
+      description: The entry as you would add it, with the query grammar it expects.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: A query, its hit count here, and its hit count there
+      description: >
+        The query you ran, the count the tool returned, and the same query pasted
+        into the database's own web interface. The two numbers are how a backend
+        is accepted.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: auth
+    attributes:
+      label: Does it need a key?
+      options:
+        - No key needed
+        - Free key, self-service
+        - Key requires an institutional subscription
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      options:
+        - label: The API's terms of service permit programmatic access of this kind.
+          required: true
+        - label: I have checked whether its records may be redistributed (some may not).
+          required: true
