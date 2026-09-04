@@ -33,6 +33,16 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 
 import librarian as lib  # noqa: E402
+
+# The canned Unpaywall checks below (oa pass, --pdfs cache) run on machines
+# with no keys and no CONTACT_EMAIL -- CI above all. Since 3.5.1 the pass
+# refuses without an address, so the suite supplies one; the refusal itself
+# is exercised further down with CONTACT cleared. (3.5.1's CI was red on all
+# six runners because this line was missing: the guard had only been run on
+# a machine whose environment carried the address.)
+if not lib.CONTACT:
+    lib.CONTACT = "suite@example.invalid"
+
 from librarian import (_q, _rec, is_junk, load_blocks, load_env,  # noqa: E402
                      q_ads, q_arxiv, q_crossref, q_inspire, q_openalex,
                      q_s2, q_scopus, q_wos, q_wos_bare, write_csv, write_ris)

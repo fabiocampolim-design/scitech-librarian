@@ -2,6 +2,15 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.5.2 - 2026-09-04
+
+- **Suite fix, no behaviour change.** 3.5.1's CI was red on all six runners:
+  the new Unpaywall refusal fired inside the suite's own canned open-access
+  checks, which run with no keys and no `CONTACT_EMAIL` -- exactly the
+  environment CI has and the release machine did not. The suite now supplies
+  a contact address for those checks and clears it only where the refusal
+  itself is under test. Nothing in the tool changed; 3.5.1's fixes stand.
+
 ## 3.5.1 - 2026-09-04
 
 The independent review of 3.5.0 read every module line by line; these are
