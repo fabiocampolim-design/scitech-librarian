@@ -565,7 +565,7 @@ la physique ; liens légaux vers des PDF en libre accès via Unpaywall ;
 rapports à trois niveaux en cinq formats avec PRISMA 2020 et PRISMA-S ;
 répertoires de recherche avec sources manuelles, provenance, chronologie et
 rapports différentiels ; indicateurs des revues avec série par année ;
-journaux d'audit ; une suite de tests hors ligne (374 vérifications) et CI.
+journaux d'audit ; une suite de tests hors ligne (375 vérifications) et CI.
 
 Limitations, toutes par conception ou par le monde :
 

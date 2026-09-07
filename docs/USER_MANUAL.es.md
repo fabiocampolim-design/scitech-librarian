@@ -559,7 +559,7 @@ enlaces legales a PDF de acceso abierto vía Unpaywall; informes de tres
 niveles en cinco formatos con PRISMA 2020 y PRISMA-S; directorios de
 investigación con fuentes manuales, procedencia, línea de tiempo e informes
 diferenciales; métricas de revistas con serie por año; logs de auditoría; una
-suite de pruebas sin conexión (374 comprobaciones) y CI.
+suite de pruebas sin conexión (375 comprobaciones) y CI.
 
 Limitaciones, todas por diseño o por el mundo:
 

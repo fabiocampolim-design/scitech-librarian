@@ -153,7 +153,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 374 checks run with no network and no keys (backends
+- **Offline-testable.** 375 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux, Windows and macOS, Python 3.9 and 3.13.
@@ -499,12 +499,13 @@ not scrape it.
 
 [`samples/`](samples/) holds one real run of the four example blocks in
 `queries.example.json` against the three **CC0-licensed** databases
-(OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5,705 hits identified, 1,286
-records retrieved, 1,226 unique) rendered at every level in every format —
-`simple` is 6 pages, `intermediate` 68, `full` 427. They were produced by
-versions 3.2 and 3.2.2 — each report's own metadata table names the one
-that made it — so what has been added since, the Diagnostics section and the
-CORE backend, is not in them. Excerpts from the PDFs:
+(OpenAlex, arXiv, INSPIRE-HEP; 2026-09-07: 5,722 hits identified, 1,289
+records retrieved, 1,230 unique) rendered at every level in every format —
+`simple` is 6 pages, `intermediate` 69, `full` 434. They were produced by
+version 3.6.0. There is no Diagnostics section in them because there is
+nothing wrong with the run: every database answered, and the one block that
+returns zero everywhere is the novelty-check example, which is the point of
+it. Excerpts from the PDFs:
 
 | `simple`, p. 1 — run metadata and search strategy | `simple`, p. 3 — PRISMA 2020 flow |
 |---|---|
@@ -523,10 +524,12 @@ in Brazilian Portuguese (`--lang pt-BR`).
 
 [`samples/project/`](samples/project/) is the same example as a **research
 directory**: two runs (an OpenAlex-only first pass and the full CC0 run)
-plus a colleague's reference list ingested as a manual source, with
-OpenAlex 2-year mean citedness on file for 103 venues —
+plus the reference list of a real review article ingested as a manual source
+(eight of its references; the review is
+doi:10.1021/acs.energyfuels.1c02190, and its DOI is in the source's provenance too),
+with OpenAlex 2-year mean citedness on file for 448 venues —
 `report.md/html/tex/pdf/txt` (simple), `report_intermediate.md`, and
-`report_diff.md` (`--since 2026-08-28 --diff`).
+`report_diff.md` (`--since 2026-09-07 --diff`).
 
 | `project`, p. 1 — sources and what each added | `project`, p. 3 — PRISMA with both identification columns |
 |---|---|
@@ -607,7 +610,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-374 checks, stdlib only, no network and no keys — backends run against
+375 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -642,7 +645,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 374-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 375-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |

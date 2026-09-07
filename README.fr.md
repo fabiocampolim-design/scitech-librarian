@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 564626a613f3cb40 -->
+<!-- source-digest: 731934619c710d06 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -181,7 +181,7 @@ conception :
   blocs de sorte qu'un *petit* nombre soit le résultat informatif, exécutez
   les mêmes blocs dans le temps, surveillez les nombres — puis lisez chaque
   résultat à la main avant d'affirmer une lacune.
-- **Testable hors ligne.** 374 vérifications s'exécutent sans réseau et sans
+- **Testable hors ligne.** 375 vérifications s'exécutent sans réseau et sans
   clés (les backends sont exercés contre des réponses d'API enregistrées ; le
   répertoire de recherche, les analyseurs d'ingestion, le magasin des revues
   et le générateur de rapports contre des répertoires synthétiques) ; CI sur
@@ -555,13 +555,13 @@ licence. L'outil ne le scrapera pas.
 
 [`samples/`](samples/) contient une exécution réelle des quatre blocs
 d'exemple de `queries.example.json` contre les trois bases de données **sous
-licence CC0** (OpenAlex, arXiv, INSPIRE-HEP ; 2026-08-28 : 5 705 résultats
-identifiés, 1 286 notices récupérées, 1 226 uniques) rendue à chaque niveau
-et dans chaque format — `simple` fait 6 pages, `intermediate` 68, `full` 427.
-Ils ont été produits par les versions 3.2 et 3.2.2 — le tableau de
-métadonnées de chaque rapport nomme celle qui l'a produit —, de sorte que ce
-qui a été ajouté depuis, la section Diagnostic et la base CORE, n'y figure
-pas. Extraits des PDF :
+licence CC0** (OpenAlex, arXiv, INSPIRE-HEP ; 2026-09-07 : 5 722 résultats
+identifiés, 1 289 notices récupérées, 1 230 uniques) rendue à chaque niveau
+et dans chaque format — `simple` fait 6 pages, `intermediate` 69, `full` 434.
+Ils ont été produits par la version 3.6.0. Aucun ne comporte de section
+Diagnostic, parce que rien ne cloche dans l'exécution : toutes les bases ont
+répondu, et le seul bloc qui renvoie zéro partout est l'exemple de
+vérification de nouveauté, ce qui est sa raison d'être. Extraits des PDF :
 
 | `simple`, p. 1 — métadonnées de l'exécution et stratégie de recherche | `simple`, p. 3 — flux PRISMA 2020 |
 |---|---|
@@ -580,10 +580,11 @@ exécution en portugais du Brésil (`--lang pt-BR`).
 
 [`samples/project/`](samples/project/) est le même exemple sous forme de
 **répertoire de recherche** : deux exécutions (une première passe OpenAlex
-seul et l'exécution CC0 complète) plus la liste de références d'un collègue
-ingérée comme source manuelle, avec la citation moyenne sur 2 ans d'OpenAlex
-enregistrée pour 103 revues — `report.md/html/tex/pdf/txt` (simple),
-`report_intermediate.md` et `report_diff.md` (`--since 2026-08-28 --diff`).
+seul et l'exécution CC0 complète) plus la bibliographie d'un article de synthèse réel
+ingérée comme source manuelle (huit de ses références ; l'article est
+doi:10.1021/acs.energyfuels.1c02190, et son DOI figure aussi dans la provenance de la source), avec la citation moyenne sur 2 ans
+d'OpenAlex enregistrée pour 448 revues — `report.md/html/tex/pdf/txt` (simple),
+`report_intermediate.md` et `report_diff.md` (`--since 2026-09-07 --diff`).
 
 | `project`, p. 1 — sources et ce que chacune a apporté | `project`, p. 3 — PRISMA avec les deux colonnes d'identification |
 |---|---|
@@ -672,7 +673,7 @@ agent — cet outil a été construit dans exactement ce flux de travail.
 python tests/test_librarian.py
 ```
 
-374 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
+375 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
 — les backends s'exécutent contre des réponses d'API enregistrées ; les
 analyseurs d'ingestion, la fusion du répertoire de recherche, le magasin des
 revues et le générateur de rapports contre des répertoires synthétiques — de
@@ -710,7 +711,7 @@ recherche, de l'ingestion, des indicateurs des revues et des manuels le
 | **Conceptualisation** | Une requête sur toutes les bases de données comme instrument reproductible ; la méthode des nombres comme vérification de nouveauté ; la position stricte sur les conditions d'utilisation (WoS manuel plutôt que scraping) ; le rapport PRISMA à trois niveaux ; le répertoire de recherche comme unité du laboratoire, sources manuelles avec provenance, indicateurs des revues suivis dans le temps | Le schéma de requête structurelle ; le moteur des bases de données en configuration ; le modèle de document du rapport et la chaîne de repli PDF ; la conception du répertoire comme index |
 | **Méthodologie** | Discipline de conception des requêtes (« un petit nombre est la découverte — puis lire chaque résultat ») ; sélection des bases de données et stratégie d'accès institutionnel | Quantification des revues déchets ; la correction de limitation des groupes arXiv ; la conception point de reprise après chaque appel |
 | **Logiciel** | — | Tout |
-| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 374 vérifications ; CI ; autotests en direct |
+| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 375 vérifications ; CI ; autotests en direct |
 | **Investigation** | Le labyrinthe de l'accès institutionnel (CAPES/CAFe, VPN, obtention des clés) | Documentation des API de 8+ bases de données ; analyse du code des concurrents |
 | **Rédaction** | Relecture et édition | Première version |
 | **Ressources · Supervision · Administration du projet · Obtention de financements** | Tout | — |

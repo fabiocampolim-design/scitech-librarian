@@ -1756,7 +1756,19 @@ check("docs/THIRD_PARTY.md inventories every backend and the OA service",
       "missing: " + str([_b for _b in list(lib.DEFAULT_BACKENDS) + ["Unpaywall"]
                          if _b not in (HERE.parent / "docs" / "THIRD_PARTY.md").read_text(encoding="utf-8")]))
 check("the README says which version produced the committed samples",
-      "3.2.2" in _readme, "")
+      _re2.search(r"produced by\s+version ([0-9]+(?:\.[0-9]+)*)", _readme) is not None, "")
+# ...and says the RIGHT one. The 3.6.0 review found the README naming a single
+# version for a sample set built across two; the reports carry their own
+# version, so the claim is checkable instead of trusted.
+_claimed = _re2.search(r"produced by\s+version ([0-9]+(?:\.[0-9]+)*)", _readme)
+_sample_versions = set()
+for _samp in sorted((HERE.parent / "samples").glob("*/report*.md")):
+    _m = _re2.search(r"scitech-librarian ([0-9]+(?:\.[0-9]+)*)", _samp.read_text(encoding="utf-8"))
+    if _m:
+        _sample_versions.add(_m.group(1))
+check("every committed sample report was produced by the version the README claims",
+      _claimed is not None and _sample_versions == {_claimed.group(1)},
+      f"README says {_claimed.group(1) if _claimed else '?'}, samples say {sorted(_sample_versions)}")
 # (g) dead code and per-record rework found by reading
 check("journals.py asks 'no subcommand?' once, not twice",
       (HERE.parent / "journals.py").read_text(encoding="utf-8").count("if not args.cmd:") == 1)

@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 564626a613f3cb40 -->
+<!-- source-digest: 731934619c710d06 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -169,7 +169,7 @@ não como letra miúda, mas como princípio de projeto:
   que um número *pequeno* seja o resultado informativo, rode os mesmos blocos
   ao longo do tempo, observe as contagens — e leia cada resultado à mão antes
   de afirmar uma lacuna.
-- **Testável offline.** 374 verificações rodam sem rede e sem chaves (os
+- **Testável offline.** 375 verificações rodam sem rede e sem chaves (os
   backends são exercitados contra respostas de API gravadas; o diretório de
   pesquisa, os parsers de ingestão, o armazém de periódicos e o gerador de
   relatórios contra diretórios sintéticos); CI em Linux, Windows e macOS,
@@ -531,12 +531,13 @@ importação de uma exportação licenciada. A ferramenta não vai raspá-lo.
 
 [`samples/`](samples/) contém uma rodada real dos quatro blocos de exemplo de
 `queries.example.json` contra as três bases **licenciadas em CC0** (OpenAlex,
-arXiv, INSPIRE-HEP; 2026-08-28: 5.705 resultados identificados, 1.286
-registros recuperados, 1.226 únicos), renderizada em todos os níveis e todos
-os formatos — `simple` tem 6 páginas, `intermediate` 68, `full` 427. Foram
-produzidos pelas versões 3.2 e 3.2.2 — a tabela de metadados de cada
-relatório nomeia a que o gerou —, de modo que o que veio depois, a seção
-Diagnóstico e a base CORE, não aparece ali. Trechos dos PDFs:
+arXiv, INSPIRE-HEP; 2026-09-07: 5.722 resultados identificados, 1.289
+registros recuperados, 1.230 únicos), renderizada em todos os níveis e todos
+os formatos — `simple` tem 6 páginas, `intermediate` 69, `full` 434. Foram
+produzidos pela versão 3.6.0. Não há seção Diagnóstico neles porque nada
+está errado com a execução: todas as bases responderam, e o único bloco que
+devolve zero em todas é o exemplo de verificação de novidade, que é o
+propósito dele. Trechos dos PDFs:
 
 | `simple`, p. 1 — metadados da rodada e estratégia de busca | `simple`, p. 3 — fluxo PRISMA 2020 |
 |---|---|
@@ -555,10 +556,12 @@ português do Brasil (`--lang pt-BR`).
 
 [`samples/project/`](samples/project/) é o mesmo exemplo como **diretório de
 pesquisa**: duas rodadas (uma primeira passada só com OpenAlex e a rodada CC0
-completa) mais a lista de referências de um colega ingerida como fonte manual,
-com a citação média em 2 anos do OpenAlex registrada para 103 veículos —
+completa) mais a lista de referências de um artigo de revisão real ingerida como
+fonte manual (oito de suas referências; a revisão é
+doi:10.1021/acs.energyfuels.1c02190, e seu DOI também está na proveniência da fonte), com a citação média em 2 anos do OpenAlex registrada para 448
+veículos —
 `report.md/html/tex/pdf/txt` (simple), `report_intermediate.md` e
-`report_diff.md` (`--since 2026-08-28 --diff`).
+`report_diff.md` (`--since 2026-09-07 --diff`).
 
 | `project`, p. 1 — fontes e o que cada uma acrescentou | `project`, p. 3 — PRISMA com as duas colunas de identificação |
 |---|---|
@@ -644,7 +647,7 @@ foi construída dentro de exatamente esse fluxo de trabalho.
 python tests/test_librarian.py
 ```
 
-374 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
+375 verificações, só biblioteca padrão, sem rede e sem chaves — os backends
 rodam contra respostas de API gravadas; os parsers de ingestão, a mesclagem do
 diretório de pesquisa, o armazém de periódicos e o gerador de relatórios
 contra diretórios sintéticos — de modo que a suíte exercita offline os
@@ -681,7 +684,7 @@ periódicos e dos manuais em 28 de agosto de 2026. Em termos de
 | **Conceituação** | Uma consulta em todas as bases como instrumento reprodutível; o método de contagens como verificação de novidade; a postura estrita quanto aos termos de serviço (WoS manual em vez de raspagem); o relatório PRISMA em três níveis; o diretório de pesquisa como unidade do laboratório, fontes manuais com proveniência, métricas de veículos acompanhadas ao longo do tempo | O esquema de consulta estrutural; o motor de bases como configuração; o modelo de documento do relatório e a cadeia de fallback do PDF; o projeto do diretório como índice |
 | **Metodologia** | Disciplina de projeto de consultas ("um número pequeno é o achado — depois leia cada resultado"); seleção de bases e estratégia de acesso institucional | Quantificação de veículos lixo; a correção de limitação de grupos do arXiv; o projeto de checkpoint após cada chamada |
 | **Software** | — | Todo ele |
-| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 374 verificações; CI; autotestes ao vivo |
+| **Validação** | Varreduras de novidade ao vivo em consultas de pesquisa reais; pegou as armadilhas de gramática da WoS, o travamento do arXiv, a discrepância de contagens OpenAlex/Scopus | A suíte offline de 375 verificações; CI; autotestes ao vivo |
 | **Investigação** | O labirinto do acesso institucional (CAPES/CAFe, VPN, obtenção de chaves) | Documentação de API de 8+ bases; análise do código de concorrentes |
 | **Redação** | Revisão e edição | Rascunho original |
 | **Recursos · Supervisão · Administração do projeto · Obtenção de financiamento** | Tudo | — |

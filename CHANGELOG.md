@@ -2,6 +2,29 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## Unreleased
+
+- **`samples/` regenerated with 3.6.0** (run of 2026-09-07). They had been
+  built across 3.2 and 3.2.2 and were four releases behind. The example run
+  is the same shape as before -- the four blocks of `queries.example.json`
+  against the three CC0 databases -- now 5,722 hits identified, 1,289
+  records retrieved, 1,230 unique; `simple` 6 pages, `intermediate` 69,
+  `full` 434; journal metrics on file for 448 venues. The six page
+  screenshots were re-rendered from the new PDFs.
+- **The project sample's manual source is now a real reference list.** It is
+  eight entries from the bibliography of doi:10.1021/acs.energyfuels.1c02190
+  (*Mini-Review on Efficiency and Stability of Perovskite Solar Cells with
+  Spiro-OMeTAD Hole Transport Layer*, Energy & Fuels 2021), read from
+  OpenAlex; the review's DOI is in the ingested source's provenance and in
+  the README. All eight are new to the search, which is what citation
+  searching is for.
+- The samples carry no Diagnostics section, and the README says why: nothing
+  is wrong with that run. Every database answers, and the one block that
+  returns zero everywhere is the novelty-check example.
+- New guard: the version the README claims produced the samples must equal
+  the version the sample reports carry. The 3.6.0 review found the README
+  naming one version for a set built across two.
+
 ## 3.6.0 - 2026-09-06
 
 - **The run diagnoses itself.** A zero is only evidence if the database was

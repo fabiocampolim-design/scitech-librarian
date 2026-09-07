@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 564626a613f3cb40 -->
+<!-- source-digest: 731934619c710d06 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
   *kleine* Zahl das informative Ergebnis ist, lassen Sie dieselben Blöcke
   über die Zeit laufen, beobachten Sie die Trefferzahlen — und lesen Sie
   jeden Treffer von Hand, bevor Sie eine Lücke behaupten.
-- **Offline testbar.** 374 Prüfungen laufen ohne Netz und ohne Schlüssel
+- **Offline testbar.** 375 Prüfungen laufen ohne Netz und ohne Schlüssel
   (Backends werden gegen aufgezeichnete API-Antworten geprüft; das
   Forschungsverzeichnis, die Import-Parser, der Zeitschriftenspeicher und
   der Berichtsgenerator gegen synthetische Verzeichnisse); CI auf Linux,
@@ -552,12 +552,13 @@ wird ihn nicht scrapen.
 
 [`samples/`](samples/) enthält einen realen Lauf der vier Beispielblöcke aus
 `queries.example.json` gegen die drei **CC0-lizenzierten** Datenbanken
-(OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5.705 identifizierte Treffer,
-1.286 abgerufene Datensätze, 1.226 eindeutige), gerendert in jeder Stufe und
-jedem Format — `simple` hat 6 Seiten, `intermediate` 68, `full` 427. Erzeugt
-wurden sie mit den Versionen 3.2 und 3.2.2 — die Metadatentabelle jedes
-Berichts nennt die, die ihn erzeugt hat —, sodass das seither Hinzugekommene,
-der Abschnitt Diagnose und die Datenbank CORE, nicht darin steht. Ausschnitte aus den PDFs:
+(OpenAlex, arXiv, INSPIRE-HEP; 2026-09-07: 5.722 identifizierte Treffer,
+1.289 abgerufene Datensätze, 1.230 eindeutige), gerendert in jeder Stufe und
+jedem Format — `simple` hat 6 Seiten, `intermediate` 69, `full` 434. Erzeugt
+wurden sie mit Version 3.6.0. Einen Abschnitt Diagnose enthält keiner von
+ihnen, weil am Lauf nichts falsch ist: jede Datenbank hat geantwortet, und
+der einzige Block, der überall null liefert, ist das Neuheitsprüfungs-
+beispiel, und genau dazu ist er da. Ausschnitte aus den PDFs:
 
 | `simple`, S. 1 — Laufmetadaten und Suchstrategie | `simple`, S. 3 — PRISMA-2020-Fluss |
 |---|---|
@@ -576,10 +577,11 @@ auf brasilianischem Portugiesisch (`--lang pt-BR`).
 
 [`samples/project/`](samples/project/) ist dasselbe Beispiel als
 **Forschungsverzeichnis**: zwei Läufe (ein erster Durchgang nur mit OpenAlex
-und der vollständige CC0-Lauf) plus die als manuelle Quelle importierte
-Literaturliste einer Kollegin, mit der mittleren 2-Jahres-Zitiertheit von
-OpenAlex für 103 Zeitschriften — `report.md/html/tex/pdf/txt` (simple),
-`report_intermediate.md` und `report_diff.md` (`--since 2026-08-28 --diff`).
+und der vollständige CC0-Lauf) plus das als manuelle Quelle importierte
+Literaturverzeichnis eines echten Übersichtsartikels (acht seiner Referenzen; der Artikel ist
+doi:10.1021/acs.energyfuels.1c02190, und sein DOI steht auch in der Herkunft der Quelle), mit der mittleren
+2-Jahres-Zitiertheit von OpenAlex für 448 Zeitschriften — `report.md/html/tex/pdf/txt` (simple),
+`report_intermediate.md` und `report_diff.md` (`--since 2026-09-07 --diff`).
 
 | `project`, S. 1 — Quellen und was jede beigetragen hat | `project`, S. 3 — PRISMA mit beiden Identifikationsspalten |
 |---|---|
@@ -667,7 +669,7 @@ Arbeitsablauf gebaut.
 python tests/test_librarian.py
 ```
 
-374 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
+375 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
 Backends laufen gegen aufgezeichnete API-Antworten; die Import-Parser, die
 Zusammenführung des Forschungsverzeichnisses, der Zeitschriftenspeicher und
 der Berichtsgenerator gegen synthetische Verzeichnisse — sodass die Suite die
@@ -705,7 +707,7 @@ Zeitschriftenkennzahlen und Handbücher ergänzt. In
 | **Konzeption** | Eine Abfrage über jede Datenbank als reproduzierbares Instrument; die Methode Trefferzahlen-als-Neuheitsprüfung; die strikte Haltung zu Nutzungsbedingungen (manuelles WoS statt Scraping); der dreistufige PRISMA-Bericht; das Forschungsverzeichnis als laborweite Einheit, manuelle Quellen mit Herkunft, über die Zeit verfolgte Zeitschriftenkennzahlen | Das strukturelle Abfrageschema; die Datenbanken-als-Konfiguration-Engine; das Dokumentmodell des Berichts und die PDF-Rückfallkette; das Verzeichnis-als-Index-Design |
 | **Methodik** | Disziplin im Abfrageentwurf („eine kleine Zahl ist der Befund — dann jeden Treffer lesen"); Datenbankauswahl und Strategie für den institutionellen Zugang | Quantifizierung der Schrott-Zeitschriften; die arXiv-Gruppenbegrenzung; das Checkpoint-nach-jedem-Aufruf-Design |
 | **Software** | — | Alles |
-| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 374 Prüfungen; CI; Live-Selbsttests |
+| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 375 Prüfungen; CI; Live-Selbsttests |
 | **Untersuchung** | Das Labyrinth des institutionellen Zugangs (CAPES/CAFe, VPN, Schlüsselbeschaffung) | API-Dokumentation von 8+ Datenbanken; Codeanalyse der Konkurrenz |
 | **Schreiben** | Durchsicht und Redaktion | Erstentwurf |
 | **Ressourcen · Betreuung · Projektverwaltung · Mitteleinwerbung** | Alles | — |

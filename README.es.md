@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 564626a613f3cb40 -->
+<!-- source-digest: 731934619c710d06 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ datos que toca — no como letra pequeña, sino como principio de diseño:
   que un número *pequeño* sea el resultado informativo, ejecuta los mismos
   bloques a lo largo del tiempo, observa los recuentos — y luego lee cada
   resultado a mano antes de afirmar una laguna.
-- **Comprobable sin conexión.** 374 comprobaciones se ejecutan sin red y sin
+- **Comprobable sin conexión.** 375 comprobaciones se ejecutan sin red y sin
   claves (los backends se ejercitan contra respuestas de API grabadas; el
   directorio de investigación, los analizadores de ingesta, el almacén de
   revistas y el generador de informes contra directorios sintéticos); CI en
@@ -545,13 +545,13 @@ no le hará scraping.
 
 [`samples/`](samples/) contiene una ejecución real de los cuatro bloques de
 ejemplo de `queries.example.json` contra las tres bases de datos **con
-licencia CC0** (OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5.705 resultados
-identificados, 1.286 registros recuperados, 1.226 únicos) renderizada en
+licencia CC0** (OpenAlex, arXiv, INSPIRE-HEP; 2026-09-07: 5.722 resultados
+identificados, 1.289 registros recuperados, 1.230 únicos) renderizada en
 todos los niveles y todos los formatos — `simple` tiene 6 páginas,
-`intermediate` 68, `full` 427. Fueron producidos por las versiones 3.2 y 3.2.2
-— la tabla de metadatos de cada informe nombra la que lo generó —, de modo
-que lo añadido después, la sección Diagnóstico y la base CORE, no aparece en
-ellos. Extractos
+`intermediate` 69, `full` 434. Fueron producidos por la versión 3.6.0. No hay
+sección Diagnóstico en ellos porque nada va mal en la ejecución: todas las
+bases respondieron, y el único bloque que devuelve cero en todas es el
+ejemplo de comprobación de novedad, que es su propósito. Extractos
 de los PDF:
 
 | `simple`, p. 1 — metadatos de la ejecución y estrategia de búsqueda | `simple`, p. 3 — flujo PRISMA 2020 |
@@ -571,10 +571,11 @@ ejecución en portugués de Brasil (`--lang pt-BR`).
 
 [`samples/project/`](samples/project/) es el mismo ejemplo como **directorio
 de investigación**: dos ejecuciones (una primera pasada solo con OpenAlex y la
-ejecución CC0 completa) más la lista de referencias de un colega ingerida como
-fuente manual, con la citación media a 2 años de OpenAlex registrada para 103
-revistas — `report.md/html/tex/pdf/txt` (simple), `report_intermediate.md` y
-`report_diff.md` (`--since 2026-08-28 --diff`).
+ejecución CC0 completa) más la lista de referencias de un artículo de revisión real
+ingerida como fuente manual (ocho de sus referencias; la revisión es
+doi:10.1021/acs.energyfuels.1c02190, y su DOI está también en la procedencia de la fuente), con la citación media a 2 años de
+OpenAlex registrada para 448 revistas — `report.md/html/tex/pdf/txt` (simple), `report_intermediate.md` y
+`report_diff.md` (`--since 2026-09-07 --diff`).
 
 | `project`, p. 1 — fuentes y qué aportó cada una | `project`, p. 3 — PRISMA con ambas columnas de identificación |
 |---|---|
@@ -661,7 +662,7 @@ esta herramienta se construyó dentro de exactamente ese flujo de trabajo.
 python tests/test_librarian.py
 ```
 
-374 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
+375 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
 backends se ejecutan contra respuestas de API grabadas; los analizadores de
 ingesta, la fusión del directorio de investigación, el almacén de revistas y
 el generador de informes contra directorios sintéticos — de modo que la suite
@@ -700,7 +701,7 @@ manuales el 28 de agosto de 2026. En términos de
 | **Conceptualización** | Una consulta en todas las bases de datos como instrumento reproducible; el método de recuentos como comprobación de novedad; la postura estricta sobre los términos de servicio (WoS manual en vez de scraping); el informe PRISMA de tres niveles; el directorio de investigación como unidad del laboratorio, fuentes manuales con procedencia, métricas de revistas seguidas en el tiempo | El esquema de consulta estructural; el motor de bases de datos como configuración; el modelo de documento del informe y la cadena de respaldo del PDF; el diseño del directorio como índice |
 | **Metodología** | Disciplina de diseño de consultas ("un número pequeño es el hallazgo — luego lee cada resultado"); selección de bases de datos y estrategia de acceso institucional | Cuantificación de revistas basura; la corrección de limitación de grupos de arXiv; el diseño de punto de control tras cada llamada |
 | **Software** | — | Todo |
-| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 374 comprobaciones; CI; autopruebas en vivo |
+| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 375 comprobaciones; CI; autopruebas en vivo |
 | **Investigación** | El laberinto del acceso institucional (CAPES/CAFe, VPN, obtención de claves) | Documentación de API de 8+ bases de datos; análisis del código de la competencia |
 | **Redacción** | Revisión y edición | Borrador original |
 | **Recursos · Supervisión · Administración del proyecto · Obtención de financiación** | Todo | — |
