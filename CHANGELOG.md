@@ -2,8 +2,19 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
-## Unreleased
+## 3.6.1 - 2026-09-07
 
+- **The `wos` backend has now been run against a real key.** It shipped in
+  3.0 and had never been exercised: no Web of Science Starter key existed
+  until Clarivate issued one. `--selftest` reports all ten sources reachable
+  — openalex, arxiv, inspire, semanticscholar, crossref, core, ads, scopus,
+  wos, unpaywall — and a three-block run returned 85 / 121 / 946 hits with
+  records, DOIs and RIS export. The generated nested form,
+  `TS=((a OR b) AND (c OR d))`, is accepted by the Starter API; the tool's
+  own hint that Starter rejects complex queries describes the auth error,
+  not this grammar. No code change: the backend worked as written.
+- CI actions bumped by Dependabot, which the 3.6.0 `dependabot.yml` set
+  running: `actions/checkout` v4 → v7, `actions/setup-python` v5 → v7.
 - **`samples/` regenerated with 3.6.0** (run of 2026-09-07). They had been
   built across 3.2 and 3.2.2 and were four releases behind. The example run
   is the same shape as before -- the four blocks of `queries.example.json`

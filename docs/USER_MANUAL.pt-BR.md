@@ -1,7 +1,7 @@
 ---
 title: "scitech-librarian — Manual do Usuário"
-subtitle: "versão 3.6.0"
-date: "2026-09-06"
+subtitle: "versão 3.6.1"
+date: "2026-09-07"
 lang: "pt-BR"
 source-digest: "807a8e5918a310c8"
 ---

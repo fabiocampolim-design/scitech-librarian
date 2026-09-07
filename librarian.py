@@ -58,7 +58,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.6.0"
+VERSION = "3.6.1"
 
 
 def _report_lang(value: str) -> str:
