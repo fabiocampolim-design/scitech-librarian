@@ -1,0 +1,14 @@
+# scitech-librarian has no runtime dependencies -- the Python standard library
+# only -- so there is no pip ecosystem to watch. What CI does depend on is the
+# set of actions it pins, and those are what go stale.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"

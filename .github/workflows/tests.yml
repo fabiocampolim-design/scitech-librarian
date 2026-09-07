@@ -17,9 +17,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Static check (pyflakes)
+      # `.` and not a hand-written list of modules: the list had silently
+      # omitted i18n.py, the one module every report passes through (3.6.0).
+      - name: Static check (pyflakes, every .py in the repo)
         run: |
           python -m pip install --quiet pyflakes
-          python -m pyflakes librarian.py project.py report.py render.py journals.py wos_manual.py tests docs
+          python -m pyflakes .
       - name: Run offline test suite (stdlib only, no network, no keys)
         run: python tests/test_librarian.py
+      # the vendored-checker wiring test: its byte-identity half skips without
+      # the private rules file, but the half that runs the checker works
+      # anywhere -- and was never run in CI until 3.6.0
+      - name: Run the vendored conformance checker's wiring test
+        run: python tests/test_githubify_conformance.py

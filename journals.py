@@ -488,9 +488,6 @@ def main() -> int:
         return 2
     outdir = resolve_outdir(args.outdir)
     log = setup_logging("journals", args, outdir)
-    if not args.cmd:
-        ap.print_help()
-        return 2
     if args.cmd == "fetch":
         fetch(outdir, args.providers, args.refresh, log)
     elif args.cmd == "import-scimago":

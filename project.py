@@ -568,6 +568,19 @@ def main() -> int:
         return 2
     outdir = resolve_outdir(args.outdir)
     log = setup_logging("project", args, outdir)
+    try:
+        return _dispatch(args, outdir, log)
+    except RuntimeError as e:
+        # a refusal from the tool itself (no CONTACT_EMAIL for the Unpaywall
+        # pass, say) is a message, not a traceback -- librarian.py --pdfs has
+        # said so since 3.5.1 and this second caller had been left behind
+        log.error("%s", e)
+        return 2
+    finally:
+        close_logging(log)
+
+
+def _dispatch(args, outdir: Path, log: logging.Logger) -> int:
     p = load_project(outdir)
     if args.cmd == "init":
         outdir.mkdir(parents=True, exist_ok=True)
@@ -605,7 +618,6 @@ def main() -> int:
     elif args.cmd == "alias":
         p["block_aliases"][args.old] = args.new
         save_project(outdir, p)
-    close_logging(log)
     return 0
 
 

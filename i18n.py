@@ -621,16 +621,6 @@ _C = {
 
     # --- suggestions ------------------------------------------------------------------------------
     "Suggestions": ("Sugestões", "Sugerencias", "Empfehlungen", "Suggestions"),
-    "{n} backend call(s) failed ({bad}); rerun those with `--backends {flags}` or exclude them with "
-    "`--skip` so the counts table is complete.": (
-        "{n} chamada(s) a backend falharam ({bad}); repita-as com `--backends {flags}` ou exclua-as "
-        "com `--skip` para que a tabela de contagens fique completa.",
-        "{n} llamada(s) a backend fallaron ({bad}); repítalas con `--backends {flags}` o exclúyalas "
-        "con `--skip` para que la tabla de recuentos esté completa.",
-        "{n} Backend-Aufruf(e) fehlgeschlagen ({bad}); mit `--backends {flags}` wiederholen oder mit "
-        "`--skip` ausschließen, damit die Trefferzahlentabelle vollständig ist.",
-        "{n} appel(s) de backend en échec ({bad}) ; relancez-les avec `--backends {flags}` ou "
-        "excluez-les avec `--skip` pour que la table des décomptes soit complète."),
     "Block {n}: {big} hits -- a generic term is probably driving this; tighten a group or add a more "
     "specific one before reading.": (
         "Bloco {n}: {big} acertos -- provavelmente um termo genérico está por trás disso; restrinja um "
@@ -860,4 +850,175 @@ _C = {
     "Identification": ("Identificação", "Identificación", "Identifikation", "Identification"),
     "Screening": ("Triagem", "Cribado", "Sichtung", "Sélection"),
     "Included": ("Incluídos", "Incluidos", "Eingeschlossen", "Inclus"),
+
+    # --- diagnostics (3.6.0) --------------------------------------------------
+    # Backend names, flags, HTTP codes and the hints that come from
+    # backends.json are data: they appear verbatim inside these sentences.
+    "Diagnostics": ("Diagnóstico", "Diagnóstico", "Diagnose", "Diagnostic"),
+    "The run checked itself and found {n} problem(s). Each line below is computed from the "
+    "hit counts and the failed calls, not from the records: a credential, a database, or the "
+    "query vocabulary. Read them before quoting any number in this report.": (
+        "A execução verificou a si mesma e encontrou {n} problema(s). Cada linha abaixo é "
+        "calculada a partir das contagens e das chamadas que falharam, não dos registros: uma "
+        "credencial, uma base de dados ou o vocabulário da consulta. Leia-as antes de citar "
+        "qualquer número deste relatório.",
+        "La ejecución se verificó a sí misma y encontró {n} problema(s). Cada línea siguiente se "
+        "calcula a partir de los recuentos y de las llamadas fallidas, no de los registros: una "
+        "credencial, una base de datos o el vocabulario de la consulta. Léalas antes de citar "
+        "cualquier número de este informe.",
+        "Der Lauf hat sich selbst geprüft und {n} Problem(e) gefunden. Jede Zeile unten wird aus "
+        "den Trefferzahlen und den fehlgeschlagenen Aufrufen berechnet, nicht aus den "
+        "Datensätzen: eine Zugangsberechtigung, eine Datenbank oder das Suchvokabular. Lesen Sie "
+        "sie, bevor Sie eine Zahl aus diesem Bericht zitieren.",
+        "L'exécution s'est vérifiée elle-même et a trouvé {n} problème(s). Chaque ligne ci-dessous "
+        "est calculée à partir des comptages et des appels en échec, non des notices : un "
+        "identifiant, une base de données ou le vocabulaire de la requête. Lisez-les avant de "
+        "citer le moindre chiffre de ce rapport."),
+    "every call was": ("todas as chamadas foram", "todas las llamadas fueron",
+                       "alle Aufrufe wurden", "tous les appels ont été"),
+    "{k} of {n} calls were": ("{k} de {n} chamadas foram", "{k} de {n} llamadas fueron",
+                              "{k} von {n} Aufrufen wurden", "{k} appels sur {n} ont été"),
+    "{b}: {scope} refused as unauthorised (HTTP {code}). That is a credential or entitlement "
+    "problem, not the query: on a VPN-gated database (Scopus) it usually means you are off your "
+    "institution's network.": (
+        "{b}: {scope} recusadas como não autorizadas (HTTP {code}). Isso é problema de "
+        "credencial ou de direito de acesso, não da consulta: numa base protegida por VPN "
+        "(Scopus) costuma significar que você está fora da rede da sua instituição.",
+        "{b}: {scope} rechazadas por falta de autorización (HTTP {code}). Es un problema de "
+        "credencial o de derecho de acceso, no de la consulta: en una base protegida por VPN "
+        "(Scopus) suele significar que está fuera de la red de su institución.",
+        "{b}: {scope} als nicht autorisiert abgewiesen (HTTP {code}). Das ist ein Zugangs- oder "
+        "Lizenzproblem, nicht die Suchanfrage: bei einer VPN-geschützten Datenbank (Scopus) "
+        "heißt es meist, dass Sie außerhalb des Netzes Ihrer Einrichtung sind.",
+        "{b} : {scope} refusés comme non autorisés (HTTP {code}). C'est un problème "
+        "d'identifiant ou de droits d'accès, pas de requête : sur une base protégée par VPN "
+        "(Scopus), cela signifie en général que vous êtes hors du réseau de votre établissement."),
+    "{b}: {scope} rate-limited (HTTP {code}). The database works; the calls came too fast or "
+    "without a key.": (
+        "{b}: {scope} limitadas por taxa (HTTP {code}). A base funciona; as chamadas vieram "
+        "rápido demais ou sem chave.",
+        "{b}: {scope} limitadas por tasa (HTTP {code}). La base funciona; las llamadas llegaron "
+        "demasiado rápido o sin clave.",
+        "{b}: {scope} durch ein Ratenlimit abgewiesen (HTTP {code}). Die Datenbank funktioniert; "
+        "die Aufrufe kamen zu schnell oder ohne Schlüssel.",
+        "{b} : {scope} limités en débit (HTTP {code}). La base fonctionne ; les appels sont "
+        "arrivés trop vite ou sans clé."),
+    "{b}: {scope} rejected as a malformed query (HTTP {code}). This engine parsed the generated "
+    "string and refused it -- check the block's synonyms for characters it treats as operators, "
+    "or drop the backend with `--skip`.": (
+        "{b}: {scope} rejeitadas como consulta malformada (HTTP {code}). Este motor leu a string "
+        "gerada e a recusou -- verifique nos sinônimos do bloco os caracteres que ele trata como "
+        "operadores, ou descarte a base com `--skip`.",
+        "{b}: {scope} rechazadas como consulta mal formada (HTTP {code}). Este motor analizó la "
+        "cadena generada y la rechazó -- revise en los sinónimos del bloque los caracteres que "
+        "trata como operadores, o descarte la base con `--skip`.",
+        "{b}: {scope} als fehlerhafte Anfrage abgewiesen (HTTP {code}). Diese Suchmaschine hat "
+        "die erzeugte Zeichenkette gelesen und verworfen -- prüfen Sie die Synonyme des Blocks "
+        "auf Zeichen, die sie als Operatoren behandelt, oder lassen Sie die Datenbank mit "
+        "`--skip` weg.",
+        "{b} : {scope} rejetés comme requête mal formée (HTTP {code}). Ce moteur a analysé la "
+        "chaîne produite et l'a refusée -- vérifiez dans les synonymes du bloc les caractères "
+        "qu'il traite comme des opérateurs, ou écartez la base avec `--skip`."),
+    "{b}: {scope} failed on the database's side (HTTP {code}). That is the database, not your "
+    "query.": (
+        "{b}: {scope} falharam do lado da base (HTTP {code}). Isso é a base, não a sua consulta.",
+        "{b}: {scope} fallaron del lado de la base (HTTP {code}). Es la base, no su consulta.",
+        "{b}: {scope} auf Seiten der Datenbank fehlgeschlagen (HTTP {code}). Das ist die "
+        "Datenbank, nicht Ihre Anfrage.",
+        "{b} : {scope} en échec du côté de la base (HTTP {code}). C'est la base, pas votre "
+        "requête."),
+    "{b}: {scope} unreachable (network error or timeout). That is the connection, not your "
+    "query.": (
+        "{b}: {scope} inalcançáveis (erro de rede ou tempo esgotado). Isso é a conexão, não a "
+        "sua consulta.",
+        "{b}: {scope} inalcanzables (error de red o tiempo agotado). Es la conexión, no su "
+        "consulta.",
+        "{b}: {scope} nicht erreichbar (Netzwerkfehler oder Zeitüberschreitung). Das ist die "
+        "Verbindung, nicht Ihre Anfrage.",
+        "{b} : {scope} injoignables (erreur réseau ou délai dépassé). C'est la connexion, pas "
+        "votre requête."),
+    "{b}: not configured, so it was never asked.": (
+        "{b}: não configurada, portanto nunca foi consultada.",
+        "{b}: no configurada, por lo que nunca se consultó.",
+        "{b}: nicht konfiguriert und daher nie abgefragt.",
+        "{b} : non configurée, elle n'a donc jamais été interrogée."),
+    "{b}: {scope} failed.": ("{b}: {scope} falharam.", "{b}: {scope} fallaron.",
+                             "{b}: {scope} fehlgeschlagen.", "{b} : {scope} en échec."),
+    " Hint: {hint}.": (" Dica: {hint}.", " Sugerencia: {hint}.", " Hinweis: {hint}.",
+                       " Indice : {hint}."),
+    " Blocks with no {b} records: {blocks} (rerun: `--blocks {blocks} --backends {b}`).": (
+        " Blocos sem registros de {b}: {blocks} (reexecute: `--blocks {blocks} --backends {b}`).",
+        " Bloques sin registros de {b}: {blocks} (reejecute: `--blocks {blocks} --backends {b}`).",
+        " Blöcke ohne {b}-Datensätze: {blocks} (erneut ausführen: `--blocks {blocks} "
+        "--backends {b}`).",
+        " Blocs sans notices de {b} : {blocks} (relancer : `--blocks {blocks} --backends {b}`)."),
+    "{b} returned {prev} hits on {when} and nothing today. Unless you changed the queries, that "
+    "is an outage or an expired credential, not a result -- do not report today's zero.": (
+        "{b} devolveu {prev} resultados em {when} e nada hoje. A menos que você tenha mudado as "
+        "consultas, isso é uma indisponibilidade ou uma credencial vencida, não um resultado -- "
+        "não relate o zero de hoje.",
+        "{b} devolvió {prev} resultados el {when} y nada hoy. A menos que haya cambiado las "
+        "consultas, es una caída del servicio o una credencial caducada, no un resultado -- no "
+        "informe el cero de hoy.",
+        "{b} lieferte am {when} {prev} Treffer und heute nichts. Sofern Sie die Anfragen nicht "
+        "geändert haben, ist das ein Ausfall oder eine abgelaufene Zugangsberechtigung, kein "
+        "Ergebnis -- berichten Sie die heutige Null nicht.",
+        "{b} a renvoyé {prev} résultats le {when} et rien aujourd'hui. Sauf si vous avez modifié "
+        "les requêtes, c'est une panne ou un identifiant expiré, pas un résultat -- ne rapportez "
+        "pas le zéro d'aujourd'hui."),
+    "{b} returned 0 hits on every block while other databases found up to {max}. Either it does "
+    "not index this subject at all, or it ignored the query silently -- check one block by hand "
+    "in its web interface before reporting its zero as evidence.": (
+        "{b} devolveu 0 resultados em todos os blocos, enquanto outras bases encontraram até "
+        "{max}. Ou ela não indexa este assunto, ou ignorou a consulta em silêncio -- verifique um "
+        "bloco à mão na interface web dela antes de relatar esse zero como evidência.",
+        "{b} devolvió 0 resultados en todos los bloques, mientras que otras bases encontraron "
+        "hasta {max}. O no indexa este tema, o ignoró la consulta en silencio -- compruebe un "
+        "bloque a mano en su interfaz web antes de informar ese cero como evidencia.",
+        "{b} lieferte in jedem Block 0 Treffer, während andere Datenbanken bis zu {max} fanden. "
+        "Entweder erschließt sie dieses Fachgebiet gar nicht, oder sie hat die Anfrage still "
+        "ignoriert -- prüfen Sie einen Block von Hand in ihrer Weboberfläche, bevor Sie diese "
+        "Null als Befund berichten.",
+        "{b} a renvoyé 0 résultat sur tous les blocs alors que d'autres bases en ont trouvé "
+        "jusqu'à {max}. Soit elle n'indexe pas ce domaine, soit elle a ignoré la requête en "
+        "silence -- vérifiez un bloc à la main dans son interface web avant de rapporter ce zéro "
+        "comme un résultat."),
+    "Block {n}: exactly 0 hits on {bs} -- databases that answered other blocks of this run (up to "
+    "{max} hits). Independent indexes returning zero point at the vocabulary, not at an empty "
+    "field: one synonym group probably holds no term these databases use. Drop one group at a "
+    "time and rerun the block before reading this as a gap.": (
+        "Bloco {n}: exatamente 0 resultados em {bs} -- bases que responderam a outros blocos "
+        "desta execução (até {max} resultados). Índices independentes devolvendo zero apontam "
+        "para o vocabulário, não para um campo vazio: provavelmente um grupo de sinônimos não "
+        "contém nenhum termo que essas bases usem. Retire um grupo de cada vez e reexecute o "
+        "bloco antes de ler isso como uma lacuna.",
+        "Bloque {n}: exactamente 0 resultados en {bs} -- bases que respondieron a otros bloques "
+        "de esta ejecución (hasta {max} resultados). Que índices independientes devuelvan cero "
+        "apunta al vocabulario, no a un campo vacío: probablemente un grupo de sinónimos no "
+        "contiene ningún término que esas bases usen. Quite un grupo cada vez y reejecute el "
+        "bloque antes de leerlo como una laguna.",
+        "Block {n}: genau 0 Treffer bei {bs} -- Datenbanken, die andere Blöcke dieses Laufs "
+        "beantwortet haben (bis zu {max} Treffer). Wenn unabhängige Indizes null liefern, deutet "
+        "das auf das Vokabular hin, nicht auf ein leeres Feld: wahrscheinlich enthält eine "
+        "Synonymgruppe keinen Begriff, den diese Datenbanken verwenden. Lassen Sie eine Gruppe "
+        "nach der anderen weg und wiederholen Sie den Block, bevor Sie dies als Lücke lesen.",
+        "Bloc {n} : exactement 0 résultat sur {bs} -- des bases qui ont répondu aux autres blocs "
+        "de cette exécution (jusqu'à {max} résultats). Des index indépendants renvoyant zéro "
+        "désignent le vocabulaire, non un domaine vide : un groupe de synonymes ne contient "
+        "probablement aucun terme employé par ces bases. Retirez un groupe à la fois et relancez "
+        "le bloc avant d'y voir une lacune."),
+    "{n} backend call(s) failed ({bad}); Diagnostics above says why for each. Rerun those with "
+    "`--backends {flags}` or exclude them with `--skip` so the counts table is complete.": (
+        "{n} chamada(s) de base falharam ({bad}); o Diagnóstico acima diz por quê em cada caso. "
+        "Reexecute-as com `--backends {flags}` ou exclua-as com `--skip` para que a tabela de "
+        "contagens fique completa.",
+        "{n} llamada(s) a bases fallaron ({bad}); el Diagnóstico anterior dice por qué en cada "
+        "caso. Reejecútelas con `--backends {flags}` o exclúyalas con `--skip` para que la tabla "
+        "de recuentos quede completa.",
+        "{n} Datenbankaufruf(e) fehlgeschlagen ({bad}); die Diagnose oben nennt für jeden den "
+        "Grund. Wiederholen Sie sie mit `--backends {flags}` oder lassen Sie sie mit `--skip` "
+        "weg, damit die Trefferzahlentabelle vollständig ist.",
+        "{n} appel(s) de base en échec ({bad}) ; le Diagnostic ci-dessus en donne la raison pour "
+        "chacun. Relancez-les avec `--backends {flags}` ou écartez-les avec `--skip` pour que le "
+        "tableau des comptages soit complet."),
 }

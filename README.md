@@ -153,7 +153,7 @@ not as fine print, but as a design principle:
 - **Novelty checks as a workflow.** Design blocks so a *small* number is the
   informative outcome, run the same blocks over time, watch the counts —
   then read every hit by hand before claiming a gap.
-- **Offline-testable.** 325 checks run with no network and no keys (backends
+- **Offline-testable.** 374 checks run with no network and no keys (backends
   are exercised against canned API responses; the research directory, ingest
   parsers, journal store and report generator against synthetic
   directories); CI on Linux, Windows and macOS, Python 3.9 and 3.13.
@@ -451,6 +451,32 @@ Report filters (both modes): `--since/--until DATE`, `--latest`, `--diff`,
 in PRISMA-S item 9, so a filtered report is never mistaken for the whole
 search.
 
+## Diagnostics: the run checks itself
+
+A zero is only evidence if the database was actually asked. Every report
+opens with a **Diagnostics** section, before the counts, and the run prints
+the same findings under `DIAGNOSIS` when it ends:
+
+- **calls refused (HTTP 401/403)** — a credential or an entitlement, not the
+  query; on Scopus it usually means you are off your institution's VPN;
+- **rate limits, server errors, timeouts** — the database or the connection,
+  named as such, with the free key the backend's own hint points to;
+- **a query the engine rejected (HTTP 400/422)** — its grammar refused the
+  generated string;
+- **a database that answered in the previous run and answers nothing now** —
+  an outage or an expired key, caught by comparing `counts_history.csv`;
+- **a database returning 0 on every block** while the others find records;
+- **a block that several healthy databases return exactly 0 for** — that is
+  the vocabulary, not an empty field: one synonym group holds no term those
+  databases use.
+
+The last one is the finding that costs a review. A block with 3 hits reads
+like a gap; when two large indexes return *exactly* zero for it while
+answering every other block with thousands, it is a broken synonym group.
+There the report withholds its usual "novelty-check territory" advice and
+says so instead. Every failed call is archived with its cause and HTTP code
+in the run's `errors.json`.
+
 ## Journal metrics
 
 ```bash
@@ -475,7 +501,10 @@ not scrape it.
 `queries.example.json` against the three **CC0-licensed** databases
 (OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5,705 hits identified, 1,286
 records retrieved, 1,226 unique) rendered at every level in every format —
-`simple` is 6 pages, `intermediate` 68, `full` 427. Excerpts from the PDFs:
+`simple` is 6 pages, `intermediate` 68, `full` 427. They were produced by
+version 3.2.2, which is the version their own metadata table reports; the
+sections added since (Diagnostics, and the CORE backend) are therefore not
+in them. Excerpts from the PDFs:
 
 | `simple`, p. 1 — run metadata and search strategy | `simple`, p. 3 — PRISMA 2020 flow |
 |---|---|
@@ -578,7 +607,7 @@ agent to write and audit — this tool was built inside exactly that workflow.
 python tests/test_librarian.py
 ```
 
-325 checks, stdlib only, no network and no keys — backends run against
+374 checks, stdlib only, no network and no keys — backends run against
 canned API responses; the ingest parsers, research-directory merge, journal
 store and report generator against synthetic directories — so the suite
 exercises the real parsing, merging and rendering paths offline. CI runs it
@@ -613,7 +642,7 @@ August 28, 2026. In
 | **Conceptualization** | One query across every database as a reproducible instrument; the counts-as-novelty-check method; the strict ToS stance (manual WoS rather than scraping); the three-level PRISMA report; the research directory as the lab-wide unit, manual sources with provenance, venue metrics tracked over time | The structural query schema; the databases-as-config engine; the report's document model and PDF fallback chain; the directory-as-index design |
 | **Methodology** | Query-design discipline ("a small number is the finding — then read every hit"); database selection and institutional-access strategy | Junk-venue quantification; the arXiv group-limiting fix; checkpoint-after-every-call design |
 | **Software** | — | All of it |
-| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 325-check offline suite; CI; live selftests |
+| **Validation** | Live novelty scans on real research queries; caught the WoS grammar traps, the arXiv hang, the OpenAlex/Scopus count discrepancy | The 374-check offline suite; CI; live selftests |
 | **Investigation** | The institutional-access maze (CAPES/CAFe, VPN, key acquisition) | API documentation of 8+ databases; competitor code analysis |
 | **Writing** | Review and editing | Original draft |
 | **Resources · Supervision · Project administration · Funding acquisition** | All | — |
@@ -625,6 +654,12 @@ redistribute it, including commercially, provided the licence and notice
 travel with it; contributions are accepted under the same terms (section 5).
 And respect the terms of service of every database you query; this tool is
 built to make that the easy path.
+
+[`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) inventories every dependency,
+data source and standard this project uses, with the terms each comes under;
+[`SECURITY.md`](SECURITY.md) is how to report a vulnerability privately; and
+[`docs/platforms.md`](docs/platforms.md) records the platforms the tool has
+actually been run on, dated.
 
 ### Disclaimer
 

@@ -77,12 +77,13 @@ try:
 except ImportError:                     # report.py copied alone: single-run mode only
     _project = _journals = None
 try:
-    from librarian import VERSION          # single source of the version number
+    import librarian as _lib                # single source of the version number
 except ImportError:
     try:
-        from litscan import VERSION        # type: ignore
+        import litscan as _lib              # type: ignore
     except ImportError:
-        VERSION = "unknown"
+        _lib = None
+VERSION = getattr(_lib, "VERSION", "unknown")
 LEVELS = ("simple", "intermediate", "full")
 FORMATS = ("md", "html", "tex", "pdf", "txt")
 
@@ -162,6 +163,7 @@ def load_run(run: Path) -> dict:
     run = Path(run)
     meta = _json(run / "meta.json", {})
     counts = _json(run / "counts.json", {})
+    errors = _json(run / "errors.json", {})     # runs made before 3.6.0 have none
     queries = _json(run / "queries.json", {})
     blocks = _json(run / "blocks.json", {})
     uniq = _json(run / "all_records.json", [])
@@ -181,7 +183,7 @@ def load_run(run: Path) -> dict:
     for r in uniq:
         r.setdefault("found_by", [r.get("backend", "?")])
     return {"run": run, "stamp": meta.get("stamp") or run.name, "meta": meta,
-            "counts": counts, "queries": queries, "blocks": blocks,
+            "counts": counts, "errors": errors, "queries": queries, "blocks": blocks,
             "block_names": block_names, "backends": backends,
             "unique": uniq, "raw": raw, "junk": junk, "prisma": prisma,
             "log": log, "history": _history(outdir), "project": None, "members": [],
@@ -217,6 +219,7 @@ def load_project(outdir: Path, since: str = "", until: str = "", latest: bool = 
                    "source": {"origin": str(f), "method": "other"}, "_records": recs})
     aliases = p["block_aliases"]
     raw, junk, counts, queries, blocks = {}, [], defaultdict(dict), {}, {}
+    errors: dict = defaultdict(dict)
     all_recs, backends, cfg = [], [], {}
     limit, keep_junk, pdfs = 0, False, False
     for m in ms:
@@ -243,6 +246,9 @@ def load_project(outdir: Path, since: str = "", until: str = "", latest: bool = 
                         counts[n][b] = (_int(counts[n].get(b)) or 0) + _int(v)
                     elif b not in counts[n]:
                         counts[n][b] = v
+            for n, c in _json(m["path"] / "errors.json", {}).items():
+                for b, e in c.items():      # the latest run's reason wins, as its count does
+                    errors[aliases.get(n, n)][b] = e
             m["queries"] = _json(m["path"] / "queries.json", {})
             for n, q in m["queries"].items():
                 queries[aliases.get(n, n)] = q          # latest run wins (members are sorted)
@@ -260,6 +266,9 @@ def load_project(outdir: Path, since: str = "", until: str = "", latest: bool = 
                 counts[blk][b] = counts[blk].get(b, 0) + 1
                 blocks.setdefault(blk, {"title": "records from manual sources", "note": "", "groups": []})
     uniq = _project.merge(all_recs)
+    # a later run that answered supersedes an earlier one's failure
+    errors = {n: {b: e for b, e in c.items() if counts.get(n, {}).get(b) == "ERR"}
+              for n, c in errors.items()}
     block_names = list(blocks) + [n for n in counts if n not in blocks]
     dates = [m["date"][:10] for m in ms]
     meta = {"version": VERSION, "stamp": "project", "blocks": block_names, "backends": backends,
@@ -268,7 +277,7 @@ def load_project(outdir: Path, since: str = "", until: str = "", latest: bool = 
             "interrupted": False, "backend_config": cfg, "query_file": "per run",
             "environment": {"python": platform.python_version(), "platform": sys.platform}}
     return {"run": outdir, "stamp": f"{p['name']}", "meta": meta, "counts": dict(counts),
-            "queries": queries, "blocks": blocks, "block_names": block_names,
+            "errors": errors, "queries": queries, "blocks": blocks, "block_names": block_names,
             "backends": backends, "unique": uniq, "raw": raw, "junk": junk,
             "prisma": _json(outdir / "screening.json", {}), "log": "",
             "history": _history(outdir), "project": p, "members": ms,
@@ -443,8 +452,9 @@ def suggest(d: dict, s: dict, lang: str = "en") -> list[str]:
     counts, blocks, backends, meta = d["counts"], d["block_names"], d["backends"], d["meta"]
     if s["errors"]:
         bad = sorted({b for _, b in s["errors"]})
-        out.append(_("{n} backend call(s) failed ({bad}); rerun those with `--backends {flags}` "
-                     "or exclude them with `--skip` so the counts table is complete.",
+        out.append(_("{n} backend call(s) failed ({bad}); Diagnostics above says why for each. "
+                     "Rerun those with `--backends {flags}` or exclude them with `--skip` so the "
+                     "counts table is complete.",
                      n=len(s["errors"]), bad=", ".join(bad), flags=" ".join(bad)))
     for n in blocks:
         vals = {b: _int(v) for b, v in counts.get(n, {}).items()
@@ -461,7 +471,11 @@ def suggest(d: dict, s: dict, lang: str = "en") -> list[str]:
             out.append(_("Block {n}: zero hits on every backend. Either the intersection is "
                          "genuinely empty (a finding -- check the synonyms first) or one group "
                          "is too narrow; try dropping one group and rerunning.", n=n))
-        elif tot <= 10:
+        elif tot <= 10 and n not in _vocab_blocks(d):
+            # NOT for a block Diagnostics flagged as a vocabulary problem: there
+            # the small total is an artefact of a synonym group nothing matches,
+            # and calling it "novelty-check territory" invites exactly the wrong
+            # conclusion (the 2026-09-06 report that read a broken query as a gap).
             out.append(_("Block {n}: only {tot} hit(s) in total -- novelty-check territory. Read "
                          "every record by hand before claiming a gap, and quote the Scopus / Web "
                          "of Science count in the paper.", n=n, tot=tot))
@@ -524,6 +538,80 @@ def suggest(d: dict, s: dict, lang: str = "en") -> list[str]:
     if not out:
         out.append(_("Nothing flagged: counts are in a sensible range on every backend and "
                      "every call succeeded. Next step is reading the small blocks by hand."))
+    return out
+
+
+DIAG_CAUSE_MSG = {
+    "auth": "{b}: {scope} refused as unauthorised (HTTP {code}). That is a credential or "
+            "entitlement problem, not the query: on a VPN-gated database (Scopus) it usually "
+            "means you are off your institution's network.",
+    "rate": "{b}: {scope} rate-limited (HTTP {code}). The database works; the calls came too "
+            "fast or without a key.",
+    "query": "{b}: {scope} rejected as a malformed query (HTTP {code}). This engine parsed the "
+             "generated string and refused it -- check the block's synonyms for characters it "
+             "treats as operators, or drop the backend with `--skip`.",
+    "server": "{b}: {scope} failed on the database's side (HTTP {code}). That is the database, "
+              "not your query.",
+    "network": "{b}: {scope} unreachable (network error or timeout). That is the connection, "
+               "not your query.",
+    "config": "{b}: not configured, so it was never asked.",
+    "other": "{b}: {scope} failed.",
+}
+
+
+def _findings(d: dict) -> list[dict]:
+    """librarian.diagnose over this report's data; [] when report.py runs
+    without librarian.py next to it. Cached on d -- suggest() and the
+    Diagnostics section both need it."""
+    if "_findings" not in d:
+        d["_findings"] = ([] if _lib is None or not hasattr(_lib, "diagnose") else
+                          _lib.diagnose(d["counts"], d.get("errors") or {}, d["backends"],
+                                        d["block_names"], getattr(_lib, "BACKENDS_CFG", {}),
+                                        d["history"], d["stamp"]))
+    return d["_findings"]
+
+
+def _vocab_blocks(d: dict) -> set:
+    return {f["block"] for f in _findings(d) if f["kind"] == "vocabulary"}
+
+
+def diagnostics(d: dict, lang: str = "en") -> list[str]:
+    """The run's self-diagnosis (librarian.diagnose) in the report language.
+    Empty when nothing is wrong, and empty when report.py runs without
+    librarian.py next to it."""
+    _ = _i18n.translator(lang)
+    findings = _findings(d)
+    out = []
+    for f in findings:
+        if f["kind"] == "backend_failed":
+            scope = (_("every call was") if f["all_failed"]
+                     else _("{k} of {n} calls were", k=f["n_failed"], n=f["n_total"]))
+            line = _(DIAG_CAUSE_MSG.get(f["cause"], DIAG_CAUSE_MSG["other"]),
+                     b=f["backend"], scope=scope, code=f.get("code") or "?")
+            if f.get("hint"):
+                line += _(" Hint: {hint}.", hint=f["hint"])
+            if not f["all_failed"]:
+                line += _(" Blocks with no {b} records: {blocks} (rerun: `--blocks {blocks} "
+                          "--backends {b}`).", b=f["backend"], blocks=" ".join(f["blocks"]))
+            out.append(line)
+        elif f["kind"] == "regression":
+            out.append(_("{b} returned {prev} hits on {when} and nothing today. Unless you "
+                         "changed the queries, that is an outage or an expired credential, not "
+                         "a result -- do not report today's zero.",
+                         b=f["backend"], prev=_.num(f["prev"]), when=f["when"]))
+        elif f["kind"] == "silent_zero":
+            out.append(_("{b} returned 0 hits on every block while other databases found up to "
+                         "{max}. Either it does not index this subject at all, or it ignored the "
+                         "query silently -- check one block by hand in its web interface before "
+                         "reporting its zero as evidence.",
+                         b=f["backend"], max=_.num(f["best_other"])))
+        elif f["kind"] == "vocabulary":
+            out.append(_("Block {n}: exactly 0 hits on {bs} -- databases that answered other "
+                         "blocks of this run (up to {max} hits). Independent indexes returning "
+                         "zero point at the vocabulary, not at an empty field: one synonym group "
+                         "probably holds no term these databases use. Drop one group at a time "
+                         "and rerun the block before reading this as a gap.",
+                         n=f["block"], bs=", ".join(f["zero_on"]), max=_.num(f["healthy_max"])))
     return out
 
 
@@ -642,15 +730,27 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
         rows.append([_("Interrupted"), _("yes -- partial run") if meta.get("interrupted") else _("no")])
     N.append(("table", [_("Item"), _("Value")], rows))
 
+    # --- 1b. diagnostics ------------------------------------------------------
+    # Before anything a reader might scroll past: a zero produced by an expired
+    # key or a wrong synonym must never be read as a result (3.6.0).
+    diag = diagnostics(d, lang)
+    if diag:
+        N.append(("h", 2, _("Diagnostics")))
+        N.append(("p", _("The run checked itself and found {n} problem(s). Each line below is "
+                         "computed from the hit counts and the failed calls, not from the "
+                         "records: a credential, a database, or the query vocabulary. Read them "
+                         "before quoting any number in this report.", n=len(diag))))
+        N.append(("ul", diag))
+
     # --- 2. sources (project) -------------------------------------------------
     if proj:
         N.append(("h", 2, _("Sources")))
         N.append(("p", _("Every search that feeds this report, oldest first. 'New here' counts "
                          "unique records that no earlier source had found -- what each search added.")))
         first = Counter()
+        dates = {m["id"]: m["date"] for m in d["members"]}
         for r in d["unique"]:
             fb = [x.split("@", 1)[1] for x in r.get("found_by", []) if "@" in x]
-            dates = {m["id"]: m["date"] for m in d["members"]}
             if fb:
                 first[min(fb, key=lambda i: dates.get(i, ""))] += 1
         rows = []
@@ -718,13 +818,15 @@ def build(d: dict, level: str = "simple", top: int | None = None, sort: str = "c
             N.append(("p", _("Per-block hit totals in each automated run (sum over backends), "
                              "oldest first; drift shows how the indexes -- or the queries -- changed.")))
             hdr = [_("Block")] + [m["id"] for m in runs]
+            # once per run, not once per (block, run): this reread every
+            # counts.json len(blocks) times
+            _run_counts = {m["id"]: _json(m["path"] / "counts.json", {}) for m in runs}
+            al = proj["block_aliases"]
             rows = []
             for n in blocks:
                 row = [n]
                 for m in runs:
-                    c = _json(m["path"] / "counts.json", {})
-                    al = proj["block_aliases"]
-                    vals = [v for k, v in c.items() if al.get(k, k) == n]
+                    vals = [v for k, v in _run_counts[m["id"]].items() if al.get(k, k) == n]
                     row.append(_.num(sum(_int(x) or 0 for c_ in vals for x in c_.values())) if vals else "-")
                 rows.append(row)
             N.append(("table", hdr, rows))
@@ -1082,24 +1184,32 @@ def write_reports(run: Path | None = None, level: str = "simple", formats=("md",
     if "txt" in need:
         rendered["txt"] = render_txt(title, nodes)
     for f, text in rendered.items():
-        if f in formats or (f == "tex" and "pdf" in formats):
+        if f in formats:
             p = out_dir / f"{basename}.{f}"
             p.write_text(text, encoding="utf-8")
-            if f in formats:
-                written[f] = p
+            written[f] = p
     if "pdf" in formats:
-        tex_p = out_dir / f"{basename}.tex"
-        md_p = out_dir / f"{basename}.md"
-        tmp_md = None
-        if "md" not in formats:
-            md_p.write_text(rendered["md"], encoding="utf-8")
-            tmp_md = md_p
+        # The LaTeX and Markdown a PDF is built from are intermediates. They
+        # get their OWN name unless the caller asked for those formats: under
+        # the report's name they overwrote, and then deleted, the report.md
+        # that librarian.py writes at the end of every run (3.6.0).
+        def _src(fmt):
+            if fmt in formats:
+                return out_dir / f"{basename}.{fmt}", False
+            p = out_dir / f"{basename}_pdfsrc.{fmt}"
+            p.write_text(rendered[fmt], encoding="utf-8")
+            return p, True
+
+        tex_p, tex_tmp = _src("tex")
+        md_p, md_tmp = _src("md")
         pdf_p = out_dir / f"{basename}.pdf"
         how = make_pdf(tex_p, md_p, rendered["txt"], pdf_p)
-        if tmp_md:
-            tmp_md.unlink()
-        if "tex" not in formats:
-            tex_p.unlink()
+        for p, tmp in ((tex_p, tex_tmp), (md_p, md_tmp)):
+            if tmp:
+                try:
+                    p.unlink()
+                except OSError:
+                    pass
         written["pdf"] = pdf_p
         if not quiet:
             print(f"    pdf via {how}" + ("  (install TeX Live or pandoc for a typeset PDF)"

@@ -58,7 +58,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-VERSION = "3.5.2"
+VERSION = "3.6.0"
 
 
 def _report_lang(value: str) -> str:
@@ -123,7 +123,7 @@ NO_CONTACT_MSG = ("CONTACT_EMAIL not set in the environment or .env -- Unpaywall
 # sync across nine databases instead of being maintained nine times.
 #
 # Where proximity operators matter (WoS NEAR/n, Scopus W/n) the hand-written
-# strings in SEARCH_QUERIES.md remain authoritative for manual UI runs; the
+# proximity strings you keep by hand for the WoS/Scopus UI stay authoritative; the
 # generated forms below drop proximity, which is why counts are NOT comparable
 # across backends. Use these for discovery; quote WoS/Scopus in the paper.
 
@@ -145,11 +145,13 @@ def load_blocks(path: str | Path | None = None) -> dict[str, dict]:
     Every backend's native syntax is generated from this one definition, so you
     write a query once instead of once per database.
     """
+    global QUERY_FILE
     cands = [Path(path)] if path else [HERE / "queries.json", ROOT / "queries.json",
                                        HERE / "queries.example.json",
                                        ROOT / "queries.example.json"]
     for p in cands:
         if p and p.exists():
+            QUERY_FILE = str(p)          # provenance: the file READ, not the one assumed
             blocks = json.loads(p.read_text(encoding="utf-8"))
             for name, b in blocks.items():
                 if "groups" not in b:
@@ -162,6 +164,23 @@ def load_blocks(path: str | Path | None = None) -> dict[str, dict]:
 
 
 BLOCKS: dict[str, dict] = {}     # populated in main() from the JSON file
+# The query file load_blocks actually read. meta.json and --list used to name
+# "queries.json" whatever had been read, so a fresh clone -- which falls back
+# to queries.example.json -- archived a provenance record pointing at a file
+# that does not exist (3.6.0).
+QUERY_FILE: str = ""
+
+
+def query_file_label() -> str:
+    """QUERY_FILE relative to the project root when it lives there, so the
+    report shows `queries.example.json` and not a machine-specific path."""
+    if not QUERY_FILE:
+        return "queries.json"
+    p = Path(QUERY_FILE)
+    try:
+        return str(p.resolve().relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(p)
 
 
 # ---------------------------------------------------------------------------
@@ -249,11 +268,37 @@ def q_wos_bare(g, blk=None):
 TIMEOUT = 45          # per-request socket timeout, seconds (overridable via --timeout)
 
 
+class BackendError(RuntimeError):
+    """A backend call that failed, carrying WHY so the run can diagnose itself.
+
+    `kind` is one of auth, rate, query, server, network, config, other. The
+    distinction is the whole point: "you are off the VPN", "you are asking too
+    fast", "this engine rejected the query string" and "the database is down"
+    need four different actions from the user, and a bare traceback line in
+    the counts table (`ERR`) told them apart from nothing (3.6.0)."""
+
+    def __init__(self, message: str, kind: str = "other", code: int | None = None):
+        super().__init__(message)
+        self.kind = kind
+        self.code = code
+
+
+# HTTP status -> failure kind. 400/422 mean the engine parsed the query and
+# refused it; 404 on a search endpoint means the endpoint moved, not that the
+# query found nothing.
+_HTTP_KIND = {400: "query", 401: "auth", 403: "auth", 422: "query", 429: "rate",
+              500: "server", 502: "server", 503: "server", 504: "server"}
+
+
+def _http_kind(code: int) -> str:
+    return _HTTP_KIND.get(code, "server" if code >= 500 else "other")
+
+
 def _get(url: str, headers: dict | None = None, tries: int = 3,
          timeout: float | None = None) -> bytes:
     hdr = {"User-Agent": f"scitech-librarian/{VERSION} (mailto:{CONTACT})", **(headers or {})}
     tmo = timeout or TIMEOUT
-    last = None
+    last, last_kind, last_code = None, "network", None
     for attempt in range(tries):
         if attempt:
             print(f" retry {attempt+1}/{tries}...", end="", flush=True)
@@ -263,25 +308,28 @@ def _get(url: str, headers: dict | None = None, tries: int = 3,
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "replace")[:400]
             last = f"HTTP {e.code}: {body}"
+            last_kind, last_code = _http_kind(e.code), e.code
             if e.code in (401, 403):
-                raise RuntimeError(
+                raise BackendError(
                     f"{last}\n      -> auth/entitlement. Scopus: are you on your institution's "
-                    f"VPN and is the key valid? WoS: Starter keys reject complex queries."
-                ) from None
+                    f"VPN and is the key valid? WoS: Starter keys reject complex queries.",
+                    kind="auth", code=e.code) from None
             if e.code == 429 and "budget" in body.lower():
-                raise RuntimeError(
+                raise BackendError(
                     f"{last}\n      -> OpenAlex daily free budget exhausted (resets at midnight UTC). "
                     f"Set OPENALEX_API_KEY in the environment or .env (free key, prepaid "
                     f"credits raise the "
-                    f"budget: https://openalex.org/pricing) or rerun tomorrow.") from None
+                    f"budget: https://openalex.org/pricing) or rerun tomorrow.",
+                    kind="rate", code=e.code) from None
             if e.code in (429, 500, 502, 503):
                 time.sleep(5 * (attempt + 1))
                 continue
-            raise RuntimeError(last) from None
+            raise BackendError(last, kind=last_kind, code=e.code) from None
         except Exception as e:  # noqa: BLE001
             last = f"{type(e).__name__}: {e}"
+            last_kind, last_code = "network", None
         time.sleep(2 * (attempt + 1))
-    raise RuntimeError(f"failed after {tries} tries: {last}")
+    raise BackendError(f"failed after {tries} tries: {last}", kind=last_kind, code=last_code)
 
 
 def _json(url: str, headers: dict | None = None) -> dict:
@@ -292,11 +340,18 @@ def _json(url: str, headers: dict | None = None) -> dict:
 # 2026-08-15 run these were 15.3% of OpenAlex records (223/1455) and 0% of ADS,
 # Scopus, Semantic Scholar and INSPIRE -- and they were the entire difference
 # between OpenAlex's 16 hits and Scopus's 3 on the decisive CD cross-query.
-JUNK_VENUE = re.compile(r"zenodo|figshare|open mind|ssrn|preprints\.org|researchgate", re.I)
+# Word-anchored: an unanchored `ssrn` would also match inside a longer name.
+JUNK_VENUE = re.compile(r"\b(zenodo|figshare|ssrn|preprints\.org|researchgate)\b", re.I)
+# Case matters for exactly one venue. OpenAlex carries BOTH a repository
+# "Open MIND" and the MIT Press peer-reviewed journal "Open Mind"
+# (ISSN 2470-2986); the old case-insensitive `open mind` removed the journal
+# before screening, silently, in any cognitive-science search (3.6.0).
+JUNK_VENUE_CASED = re.compile(r"\bOpen MIND\b")
 
 
 def is_junk(rec: dict) -> bool:
-    return bool(JUNK_VENUE.search(rec.get("journal") or ""))
+    j = rec.get("journal") or ""
+    return bool(JUNK_VENUE.search(j) or JUNK_VENUE_CASED.search(j))
 
 
 def _rec(title, year, doi, journal, authors, url, abstract="", cited=0, issn="") -> dict:
@@ -396,7 +451,8 @@ def unpaywall(doi: str) -> dict:
 # ---------------------------------------------------------------------------
 # Declarative backends: every JSON-REST database is DATA, not code.
 # ---------------------------------------------------------------------------
-# A backend entry has four parts (see also docs/ADDING_A_DATABASE.md):
+# A backend entry has four parts (README, "Adding a database (no code)", and
+# docs/DESIGN.md 2.2 walk through one end to end):
 #   syntax   how to render the structural query in this engine's grammar
 #   request  url, param templates ({q} query, {n} page size, {page}/{start}/
 #            {cursor} pagination, {contact} CONTACT_EMAIL), paging style
@@ -651,8 +707,8 @@ def _auth_headers(entry: dict) -> dict:
         if not val:
             if a.get("optional"):
                 continue
-            raise RuntimeError(f"{a['env']} not set in the environment or .env"
-                               f" -- {a.get('hint', 'see .env.example')}")
+            raise BackendError(f"{a['env']} not set in the environment or .env"
+                               f" -- {a.get('hint', 'see .env.example')}", kind="config")
         hdr[a["header"]] = a.get("value", "{key}").format(key=val)
     return hdr
 
@@ -897,13 +953,184 @@ def run_meta(stamp: str, args, backends: list, t_start: float, interrupted: bool
     return {"version": VERSION, "stamp": stamp,
             "started": time.strftime("%Y-%m-%d %H:%M:%S", time.strptime(stamp, "%Y%m%dT%H%M%S")),
             "duration_s": round(time.time() - t_start, 1),
-            "query_file": str(args.queries or "queries.json"),
+            "query_file": query_file_label(),
             "blocks": list(args.blocks), "backends": list(backends),
             "counts_only": bool(args.counts_only), "limit": args.limit,
             "keep_junk": bool(args.keep_junk), "pdfs": bool(args.pdfs),
             "interrupted": interrupted, "backend_config": cfg, "outdir": str(OUTDIR),
             "environment": {"python": sys.version.split()[0],
                             "platform": f"{sys.platform}"}}
+
+
+# ---------------------------------------------------------------------------
+# Diagnosis: turn a run's counts and failures into plain statements about what
+# went wrong and what to do next.
+# ---------------------------------------------------------------------------
+# Four questions a user cannot answer from a counts table alone, and the run
+# has the data for all four:
+#   "is my VPN off?"            every call to one backend refused with 401/403
+#   "did a database break?"     it answered before (counts_history) and does not now
+#   "is it silently ignoring me?"  0 hits on every block while others found records
+#   "is my vocabulary wrong?"   0 hits on several databases that answered the
+#                               other blocks of the same run
+# The renderers live elsewhere: librarian.py prints these in English (its logs
+# are never translated), report.py translates them into the report language.
+# Both call this one function, so the rules exist once.
+
+DIAG_CAUSE_TEXT = {
+    "auth": "refused as unauthorised (HTTP {code})",
+    "rate": "rate-limited (HTTP {code})",
+    "query": "rejected as a malformed query (HTTP {code})",
+    "server": "failed on the database's side (HTTP {code})",
+    "network": "unreachable (network or timeout)",
+    "config": "not configured",
+    "other": "failed",
+}
+
+
+def _prev_counts(history: list, stamp: str) -> tuple:
+    """({backend: hits}, stamp) of the most recent earlier run in
+    counts_history.csv, or ({}, "") when there is no earlier run."""
+    rows = [r for r in (history or []) if r.get("timestamp") and r.get("timestamp") != stamp]
+    if not rows:
+        return {}, ""
+    last = max(r["timestamp"] for r in rows)
+    prev: dict = {}
+    for r in rows:
+        if r["timestamp"] != last:
+            continue
+        try:
+            n = int(r.get("count") or 0)
+        except (TypeError, ValueError):
+            continue                       # an earlier "ERR" is not a hit count
+        prev[r["backend"]] = prev.get(r["backend"], 0) + n
+    return prev, last
+
+
+def diagnose(counts: dict, errors: dict, backends: list, blocks: list,
+             cfg: dict | None = None, history: list | None = None,
+             stamp: str = "") -> list[dict]:
+    """-> a list of findings, each a dict with `kind` and the fields its
+    message needs. Pure: no I/O, no network, so both renderers and the test
+    suite can call it with plain dictionaries.
+
+    kinds: backend_failed (cause=auth|rate|query|server|network|config|other),
+           regression, silent_zero, vocabulary."""
+    cfg = BACKENDS_CFG if cfg is None else cfg
+    blocks = [n for n in blocks if n in counts]
+    db = [b for b in backends if not str(b).startswith("manual:")]
+    out: list[dict] = []
+
+    def hint(b):
+        return ((cfg.get(b) or {}).get("auth") or {}).get("hint", "")
+
+    def val(n, b):
+        return (counts.get(n) or {}).get(b)
+
+    def num(n, b):
+        v = val(n, b)
+        return v if isinstance(v, int) else None
+
+    # --- failures, grouped per backend so one outage is one message ---------
+    failed_all = set()
+    for b in db:
+        bad = [(n, (errors.get(n) or {}).get(b) or {}) for n in blocks if val(n, b) == "ERR"]
+        if not bad:
+            continue
+        causes = [e.get("kind") or "other" for _n, e in bad]
+        cause = max(set(causes), key=causes.count)          # the dominant one
+        code = next((e.get("code") for _n, e in bad if e.get("code")), None)
+        if len(bad) == len(blocks):
+            failed_all.add(b)
+        out.append({"kind": "backend_failed", "backend": b, "cause": cause, "code": code,
+                    "blocks": [n for n, _e in bad], "n_failed": len(bad), "n_total": len(blocks),
+                    "all_failed": len(bad) == len(blocks), "hint": hint(b),
+                    "message": next((e.get("message", "") for _n, e in bad if e.get("message")), "")})
+
+    # --- a backend that used to answer and does not any more ---------------
+    prev, when = _prev_counts(history or [], stamp)
+    for b in db:
+        got = [num(n, b) for n in blocks]
+        alive = any(v for v in got if v)
+        if alive or not prev.get(b):
+            continue
+        out.append({"kind": "regression", "backend": b, "prev": prev[b], "when": when,
+                    "failed": b in failed_all})
+
+    # --- 0 hits everywhere while the others found records ------------------
+    best_other = 0
+    for b in db:
+        best_other = max([best_other] + [v for v in (num(n, b) for n in blocks) if v])
+    for b in db:
+        got = [num(n, b) for n in blocks]
+        if b in failed_all or not got or any(v is None for v in got):
+            continue                       # never asked, or asked and errored
+        if any(got) or not best_other:
+            continue
+        out.append({"kind": "silent_zero", "backend": b, "best_other": best_other})
+
+    # --- a block that several healthy databases return exactly 0 for -------
+    healthy = [b for b in db if any(num(n, b) for n in blocks)]
+    if len(healthy) >= 3:
+        for n in blocks:
+            zero = [b for b in healthy if num(n, b) == 0]
+            if len(zero) < 2 or not any(num(n, b) for b in db):
+                continue                   # 1 zero is noise; all-zero is the empty-intersection case
+            out.append({"kind": "vocabulary", "block": n, "zero_on": zero,
+                        "healthy_max": max(max((num(m, b) or 0) for m in blocks)
+                                           for b in zero)})
+    return out
+
+
+def diagnosis_lines(findings: list) -> list[str]:
+    """The English rendering, for the console and run.log (never translated --
+    runs made in different languages stay greppable together, rule 28)."""
+    out = []
+    for f in findings:
+        if f["kind"] == "backend_failed":
+            what = DIAG_CAUSE_TEXT.get(f["cause"], DIAG_CAUSE_TEXT["other"]).format(
+                code=f.get("code") or "?")
+            scope = ("every call was" if f["all_failed"]
+                     else f"{f['n_failed']} of {f['n_total']} calls were")
+            line = f"{f['backend']}: {scope} {what}."
+            if f["cause"] == "auth":
+                line += (" That is a credential or entitlement problem, not the query: for a"
+                         " VPN-gated database (Scopus) it usually means you are off your"
+                         " institution's network.")
+            elif f["cause"] == "rate":
+                line += (" The database works; the calls came too fast or without a key."
+                         " Rerun the affected blocks when it lets you.")
+            elif f["cause"] == "query":
+                line += (" This engine parsed the generated string and refused it -- check the"
+                         " block's synonyms for characters it treats as operators, or --skip it.")
+            elif f["cause"] in ("server", "network"):
+                line += " That is the database or the connection, not your query."
+            if f.get("hint"):
+                line += f" Hint: {f['hint']}."
+            if not f["all_failed"]:
+                line += (f" Blocks with no {f['backend']} records: {' '.join(f['blocks'])}"
+                         f" (rerun: --blocks {' '.join(f['blocks'])} --backends {f['backend']}).")
+            out.append(line)
+        elif f["kind"] == "regression":
+            out.append(
+                f"{f['backend']} returned {f['prev']:,} hits on {f['when']} and "
+                + ("every call failed today." if f["failed"] else "nothing today.")
+                + " Unless you changed the queries, that is an outage or an expired"
+                  " credential, not a result -- do not report today's zero.")
+        elif f["kind"] == "silent_zero":
+            out.append(
+                f"{f['backend']} returned 0 hits on every block while other databases found up "
+                f"to {f['best_other']:,}. Either it does not index this subject at all, or it "
+                f"ignored the query silently -- check one block by hand in its web interface "
+                f"before reporting its zero as evidence.")
+        elif f["kind"] == "vocabulary":
+            out.append(
+                f"Block {f['block']}: exactly 0 hits on {', '.join(f['zero_on'])} -- databases "
+                f"that answered other blocks of this run (up to {f['healthy_max']:,} hits). "
+                f"Independent indexes returning zero point at the vocabulary, not at an empty "
+                f"field: one synonym group probably holds no term these databases use. Drop one "
+                f"group at a time and rerun the block before reading this as a gap.")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -1030,6 +1257,12 @@ def main() -> int:
                 ok.append("unpaywall")
             except Exception as e:  # noqa: BLE001
                 print(f"\r  {'unpaywall':16s} FAIL     {str(e)[:120]}")
+        else:
+            # every other credential reports itself when it is missing; this one
+            # used to stay silent, so --pdfs refused later with no warning here
+            print(f"  {'unpaywall':16s} none     no CONTACT_EMAIL in the environment or .env; "
+                  f"--pdfs cannot run (any address you can be reached at)")
+            bad.append(("unpaywall", "no CONTACT_EMAIL"))
         print(f"\nworking: {', '.join(ok) or 'none'}")
         if bad:
             print("not working:")
@@ -1038,7 +1271,7 @@ def main() -> int:
         return 0 if ok else 1
 
     if args.list:
-        print(f"BLOCKS  (from {args.queries or 'queries.json'}):")
+        print(f"BLOCKS  (from {query_file_label()}):")
         for n, b in BLOCKS.items():
             print(f"  {n:4s} {b['title']}")
         print("\nBACKENDS:")
@@ -1048,6 +1281,8 @@ def main() -> int:
             if b in DEFAULT_EXCLUDE:
                 state += "  (excluded from default run: no boolean support)"
             print(f"  {b:16s} {state}")
+        print(f"  {'unpaywall (--pdfs)':16s} "
+              + ("ready" if CONTACT else "MISSING CONTACT_EMAIL in environment or .env"))
         return 0
 
     args.blocks = args.blocks or list(BLOCKS)
@@ -1063,6 +1298,7 @@ def main() -> int:
     (run / "records").mkdir(parents=True, exist_ok=True)
     (run / "ris").mkdir(exist_ok=True)
     log_lines, counts, queries, everything, junk_all = [], {}, {}, [], []
+    errors: dict = {}                 # block -> backend -> {kind, code, message}
     t_start = time.time()
 
     _audit = logging.getLogger("librarian")
@@ -1085,7 +1321,7 @@ def main() -> int:
             blk = BLOCKS[name]
             log(f"\n=== Block {name}: {blk['title']}")
             log(f"    ({blk['note']})")
-            counts[name], queries[name] = {}, {}
+            counts[name], queries[name], errors[name] = {}, {}, {}
             for bk in backends:
                 fn, qgen, _ = BACKENDS[bk]
                 q = qgen(blk["groups"], blk)
@@ -1119,9 +1355,13 @@ def main() -> int:
                     raise
                 except Exception as e:  # noqa: BLE001
                     counts[name][bk] = "ERR"
-                    log(f"    {bk:16s} ERROR: {e}")
+                    kind = getattr(e, "kind", "other")
+                    errors[name][bk] = {"kind": kind, "code": getattr(e, "code", None),
+                                        "message": str(e)}
+                    log(f"    {bk:16s} ERROR [{kind}]: {e}")
                 # checkpoint after every single call -- a later hang loses nothing
                 (run / "counts.json").write_text(json.dumps(counts, indent=2), encoding="utf-8")
+                (run / "errors.json").write_text(json.dumps(errors, indent=2), encoding="utf-8")
                 time.sleep(0.2)
     except KeyboardInterrupt:
         interrupted = True
@@ -1156,6 +1396,7 @@ def main() -> int:
 
     # ---- always persist ----
     (run / "counts.json").write_text(json.dumps(counts, indent=2), encoding="utf-8")
+    (run / "errors.json").write_text(json.dumps(errors, indent=2), encoding="utf-8")
     (run / "queries.json").write_text(json.dumps(queries, indent=2, ensure_ascii=False), encoding="utf-8")
     (run / "blocks.json").write_text(
         json.dumps({n: BLOCKS[n] for n in args.blocks if n in BLOCKS}, indent=2,
@@ -1172,6 +1413,22 @@ def main() -> int:
     table = "\n".join([hdr, sep, *rows])
     (run / "counts.md").write_text(table + "\n", encoding="utf-8")
     log("\n\n" + table)
+
+    # ---- diagnosis: say what went wrong while the numbers are on screen ----
+    # counts_history.csv still holds only EARLIER runs here (this run is
+    # appended below), which is what the regression check needs.
+    hist_rows = []
+    hfile = OUTDIR / "counts_history.csv"
+    if hfile.exists():
+        with hfile.open(encoding="utf-8", newline="") as f:
+            hist_rows = list(csv.DictReader(f))
+    findings = diagnose(counts, errors, backends, args.blocks, BACKENDS_CFG, hist_rows, stamp)
+    if findings:
+        log("\nDIAGNOSIS -- read this before the counts")
+        for line in diagnosis_lines(findings):
+            log("  * " + line)
+        log("  (the same findings, in the report language, are in the report's "
+            "Diagnostics section)")
 
     uniq = []
     if everything:

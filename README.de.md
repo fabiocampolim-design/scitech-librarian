@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 44343a37e1c07e63 -->
+<!-- source-digest: 15ff923f1762672d -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ berührt, ernst — nicht als Kleingedrucktes, sondern als Konstruktionsprinzip:
   *kleine* Zahl das informative Ergebnis ist, lassen Sie dieselben Blöcke
   über die Zeit laufen, beobachten Sie die Trefferzahlen — und lesen Sie
   jeden Treffer von Hand, bevor Sie eine Lücke behaupten.
-- **Offline testbar.** 325 Prüfungen laufen ohne Netz und ohne Schlüssel
+- **Offline testbar.** 374 Prüfungen laufen ohne Netz und ohne Schlüssel
   (Backends werden gegen aufgezeichnete API-Antworten geprüft; das
   Forschungsverzeichnis, die Import-Parser, der Zeitschriftenspeicher und
   der Berichtsgenerator gegen synthetische Verzeichnisse); CI auf Linux,
@@ -497,6 +497,38 @@ Berichtsfilter (beide Modi): `--since/--until DATE`, `--latest`, `--diff`,
 PRISMA-S-Punkt 9 ausgegeben, sodass ein gefilterter Bericht nie mit der
 ganzen Suche verwechselt wird.
 
+## Diagnose: der Lauf prüft sich selbst
+
+Eine Null ist nur dann ein Befund, wenn die Datenbank tatsächlich gefragt
+wurde. Jeder Bericht beginnt mit einem Abschnitt **Diagnose**, vor den
+Trefferzahlen, und der Lauf gibt dieselben Befunde am Ende unter `DIAGNOSIS`
+aus:
+
+- **abgewiesene Aufrufe (HTTP 401/403)** — eine Zugangsberechtigung, nicht die
+  Suchanfrage; bei Scopus heißt das meist, dass Sie außerhalb des VPN Ihrer
+  Einrichtung sind;
+- **Ratenlimits, Serverfehler, Zeitüberschreitungen** — die Datenbank oder die
+  Verbindung, als solche benannt, mit dem kostenlosen Schlüssel, auf den der
+  Hinweis der Datenbank selbst zeigt;
+- **eine Anfrage, die die Suchmaschine abgelehnt hat (HTTP 400/422)** — ihre
+  Grammatik hat die erzeugte Zeichenkette verworfen;
+- **eine Datenbank, die im vorigen Lauf antwortete und heute nichts liefert** —
+  ein Ausfall oder ein abgelaufener Schlüssel, erkannt durch den Vergleich mit
+  `counts_history.csv`;
+- **eine Datenbank mit 0 Treffern in jedem Block**, während die anderen
+  Datensätze finden;
+- **ein Block, für den mehrere gesunde Datenbanken genau 0 liefern** — das ist
+  das Vokabular, kein leeres Feld: eine Synonymgruppe enthält keinen Begriff,
+  den diese Datenbanken verwenden.
+
+Der letzte Punkt ist der Befund, der eine Übersichtsarbeit kostet. Ein Block
+mit 3 Treffern sieht aus wie eine Lücke; wenn zwei große Indizes dafür *genau*
+null liefern und jeden anderen Block mit Tausenden beantworten, ist eine
+Synonymgruppe kaputt. Dann hält der Bericht seinen üblichen Rat
+„Neuheitsprüfung" zurück und sagt stattdessen dies. Jeder fehlgeschlagene
+Aufruf wird mit Ursache und HTTP-Code in der `errors.json` des Laufs
+archiviert.
+
 ## Zeitschriftenkennzahlen
 
 ```bash
@@ -522,8 +554,10 @@ wird ihn nicht scrapen.
 `queries.example.json` gegen die drei **CC0-lizenzierten** Datenbanken
 (OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5.705 identifizierte Treffer,
 1.286 abgerufene Datensätze, 1.226 eindeutige), gerendert in jeder Stufe und
-jedem Format — `simple` hat 6 Seiten, `intermediate` 68, `full` 427.
-Ausschnitte aus den PDFs:
+jedem Format — `simple` hat 6 Seiten, `intermediate` 68, `full` 427. Erzeugt
+wurden sie mit Version 3.2.2, die auch ihre eigene Metadatentabelle nennt;
+die seither hinzugekommenen Abschnitte (Diagnose und die Datenbank CORE)
+stehen daher nicht darin. Ausschnitte aus den PDFs:
 
 | `simple`, S. 1 — Laufmetadaten und Suchstrategie | `simple`, S. 3 — PRISMA-2020-Fluss |
 |---|---|
@@ -633,7 +667,7 @@ Arbeitsablauf gebaut.
 python tests/test_librarian.py
 ```
 
-325 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
+374 Prüfungen, nur Standardbibliothek, ohne Netz und ohne Schlüssel —
 Backends laufen gegen aufgezeichnete API-Antworten; die Import-Parser, die
 Zusammenführung des Forschungsverzeichnisses, der Zeitschriftenspeicher und
 der Berichtsgenerator gegen synthetische Verzeichnisse — sodass die Suite die
@@ -671,7 +705,7 @@ Zeitschriftenkennzahlen und Handbücher ergänzt. In
 | **Konzeption** | Eine Abfrage über jede Datenbank als reproduzierbares Instrument; die Methode Trefferzahlen-als-Neuheitsprüfung; die strikte Haltung zu Nutzungsbedingungen (manuelles WoS statt Scraping); der dreistufige PRISMA-Bericht; das Forschungsverzeichnis als laborweite Einheit, manuelle Quellen mit Herkunft, über die Zeit verfolgte Zeitschriftenkennzahlen | Das strukturelle Abfrageschema; die Datenbanken-als-Konfiguration-Engine; das Dokumentmodell des Berichts und die PDF-Rückfallkette; das Verzeichnis-als-Index-Design |
 | **Methodik** | Disziplin im Abfrageentwurf („eine kleine Zahl ist der Befund — dann jeden Treffer lesen"); Datenbankauswahl und Strategie für den institutionellen Zugang | Quantifizierung der Schrott-Zeitschriften; die arXiv-Gruppenbegrenzung; das Checkpoint-nach-jedem-Aufruf-Design |
 | **Software** | — | Alles |
-| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 325 Prüfungen; CI; Live-Selbsttests |
+| **Validierung** | Live-Neuheitsdurchläufe auf realen Forschungsabfragen; entdeckte die WoS-Grammatikfallen, den arXiv-Hänger, die OpenAlex/Scopus-Trefferdiskrepanz | Die Offline-Suite mit 374 Prüfungen; CI; Live-Selbsttests |
 | **Untersuchung** | Das Labyrinth des institutionellen Zugangs (CAPES/CAFe, VPN, Schlüsselbeschaffung) | API-Dokumentation von 8+ Datenbanken; Codeanalyse der Konkurrenz |
 | **Schreiben** | Durchsicht und Redaktion | Erstentwurf |
 | **Ressourcen · Betreuung · Projektverwaltung · Mitteleinwerbung** | Alles | — |
@@ -684,6 +718,12 @@ Lizenz und Hinweis mitreisen; Beiträge werden zu denselben Bedingungen
 angenommen (Abschnitt 5). Und respektieren Sie die Nutzungsbedingungen jeder
 Datenbank, die Sie abfragen; dieses Werkzeug ist gebaut, um das zum einfachen
 Weg zu machen.
+
+[`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) verzeichnet jede Abhängigkeit,
+Datenquelle und Norm, die dieses Projekt verwendet, mit den jeweiligen
+Bedingungen; [`SECURITY.md`](SECURITY.md) beschreibt, wie eine Schwachstelle
+vertraulich gemeldet wird; und [`docs/platforms.md`](docs/platforms.md) hält
+datiert fest, auf welchen Plattformen das Werkzeug tatsächlich gelaufen ist.
 
 ### Haftungsausschluss
 

@@ -1517,6 +1517,257 @@ check("render._tex_table escapes % inside the \\href target",
       "\\href{https://doi.org/10.1/a\\%2Fb}" in _tt, _tt[:200])
 
 
+# ---------------------------------------------------------------------------
+print("\n3.6.0: the run diagnoses itself (VPN, dead database, bad vocabulary)")
+# The case this was built from: a 2026-09-06 run where PROFILE returned 0 on
+# openalex, inspire, ads and scopus while the same backends answered other
+# blocks with thousands, and CORE failed 4 of 5 calls with HTTP 429. The
+# report called PROFILE "novelty-check territory" -- i.e. invited the user to
+# read a broken query as a gap.
+_SKY_COUNTS = {
+    "BENCH":    {"openalex": 145, "arxiv": 134, "inspire": 0, "core": "ERR", "ads": 130, "scopus": 110},
+    "PROFILE":  {"openalex": 0, "arxiv": 2, "inspire": 0, "core": "ERR", "ads": 0, "scopus": 0},
+    "HETSCHED": {"openalex": 3244, "arxiv": 1270, "inspire": 13, "core": "ERR", "ads": 1065, "scopus": 2902},
+    "SKY":      {"openalex": 6, "arxiv": 7, "inspire": 0, "core": "ERR", "ads": 286, "scopus": 1},
+    # a genuinely small block: one zero (inspire, which indexes another field)
+    # is coverage, not a broken query, so the novelty-check advice still applies
+    "TINY":     {"openalex": 3, "arxiv": 2, "inspire": 0, "core": "ERR", "ads": 1, "scopus": 1},
+}
+_SKY_ERRORS = {n: {"core": {"kind": "rate", "code": 429, "message": "HTTP 429: "}}
+               for n in _SKY_COUNTS}
+_SKY_BE = ["openalex", "arxiv", "inspire", "core", "ads", "scopus"]
+_dg = lib.diagnose(_SKY_COUNTS, _SKY_ERRORS, _SKY_BE, list(_SKY_COUNTS), {})
+_kinds = [f["kind"] for f in _dg]
+_vocab = [f for f in _dg if f["kind"] == "vocabulary"]
+check("diagnose: the block several healthy databases return 0 for is flagged as vocabulary",
+      [f["block"] for f in _vocab] == ["PROFILE"], str(_kinds))
+check("diagnose: it names the databases that returned zero and their best count elsewhere",
+      _vocab and set(_vocab[0]["zero_on"]) == {"openalex", "inspire", "ads", "scopus"}
+      and _vocab[0]["healthy_max"] == 3244, str(_vocab))
+check("diagnose: a block only ONE database returns 0 for is not flagged (that is coverage)",
+      all(f["block"] != "BENCH" for f in _vocab))
+_fail = [f for f in _dg if f["kind"] == "backend_failed"]
+check("diagnose: a backend that failed every call is one finding, not one per block",
+      len(_fail) == 1 and _fail[0]["backend"] == "core" and _fail[0]["all_failed"], str(_fail))
+check("diagnose: the failure carries its cause and HTTP code, not just 'ERR'",
+      _fail and _fail[0]["cause"] == "rate" and _fail[0]["code"] == 429, str(_fail))
+_lines = lib.diagnosis_lines(_dg)
+check("diagnosis_lines: the rate limit is explained as the database working, not as a result",
+      any("rate-limited (HTTP 429)" in ln and "database works" in ln for ln in _lines), str(_lines))
+check("diagnosis_lines: the vocabulary line tells the user to drop one group and rerun",
+      any("PROFILE" in ln and "one synonym group" in ln and "Drop one group" in ln
+          for ln in _lines), str(_lines))
+# 401/403 is the VPN case and must be named as entitlement, never as a query problem
+_auth = lib.diagnose({"A": {"scopus": "ERR"}, "B": {"scopus": "ERR"}},
+                     {"A": {"scopus": {"kind": "auth", "code": 401, "message": "HTTP 401"}},
+                      "B": {"scopus": {"kind": "auth", "code": 403, "message": "HTTP 403"}}},
+                     ["scopus"], ["A", "B"], lib.BACKENDS_CFG)
+_authl = lib.diagnosis_lines(_auth)
+check("diagnose: every call refused 401/403 is reported as entitlement, and names the VPN",
+      any("unauthorised" in ln and "VPN" in ln and "not the query" in ln for ln in _authl),
+      str(_authl))
+check("the auth line carries the backend's own hint (where to get the credential)",
+      any("dev.elsevier.com" in ln for ln in _authl), str(_authl))
+# _get classifies what it raises, so main() can record the cause
+check("librarian._get raises BackendError with a kind", issubclass(lib.BackendError, RuntimeError))
+check("HTTP status -> kind: 401/403 auth, 429 rate, 400/422 query, 5xx server",
+      (lib._http_kind(401), lib._http_kind(403), lib._http_kind(429), lib._http_kind(400),
+       lib._http_kind(422), lib._http_kind(503)) == ("auth", "auth", "rate", "query",
+                                                     "query", "server"))
+try:
+    lib._auth_headers({"auth": {"env": "LIB_TEST_ABSENT_KEY", "header": "X", "hint": "h"}})
+    _cfg_kind = "no exception"
+except lib.BackendError as e:
+    _cfg_kind = e.kind
+check("a missing required key is kind 'config', not a mystery failure", _cfg_kind == "config",
+      str(_cfg_kind))
+# a database that answered last time and answers nothing now is an outage
+_hist = [{"timestamp": "20260901T090000", "block": "A", "backend": "ads", "count": "820"},
+         {"timestamp": "20260901T090000", "block": "B", "backend": "ads", "count": "180"}]
+_reg = lib.diagnose({"A": {"ads": "ERR"}, "B": {"ads": "ERR"}},
+                    {"A": {"ads": {"kind": "server", "code": 503}},
+                     "B": {"ads": {"kind": "server", "code": 503}}},
+                    ["ads"], ["A", "B"], {}, _hist, "20260906T120000")
+_regf = [f for f in _reg if f["kind"] == "regression"]
+check("diagnose: a backend that answered in the previous run and fails now is a regression",
+      len(_regf) == 1 and _regf[0]["prev"] == 1000 and _regf[0]["when"] == "20260901T090000",
+      str(_regf))
+check("the regression line refuses to let today's zero be reported as a result",
+      any("do not report today's zero" in ln for ln in lib.diagnosis_lines(_reg)),
+      str(lib.diagnosis_lines(_reg)))
+# a backend answering 0 everywhere while others find records: scope or silence
+_sil = lib.diagnose({"A": {"x": 0, "y": 50}, "B": {"x": 0, "y": 70}}, {}, ["x", "y"], ["A", "B"], {})
+check("diagnose: 0 on every block while another database finds records is flagged",
+      [f["backend"] for f in _sil if f["kind"] == "silent_zero"] == ["x"], str(_sil))
+check("a healthy run diagnoses nothing", lib.diagnose(
+    {"A": {"x": 10, "y": 20}, "B": {"x": 5, "y": 7}}, {}, ["x", "y"], ["A", "B"], {}) == [])
+# the report: a Diagnostics section, in the report language, before the counts
+with tempfile.TemporaryDirectory() as td:
+    _rd = Path(td) / "runs" / "20260906T190443"
+    (_rd / "records").mkdir(parents=True)
+    (_rd / "counts.json").write_text(json.dumps(_SKY_COUNTS), encoding="utf-8")
+    (_rd / "errors.json").write_text(json.dumps(_SKY_ERRORS), encoding="utf-8")
+    (_rd / "queries.json").write_text(json.dumps({n: {} for n in _SKY_COUNTS}), encoding="utf-8")
+    (_rd / "blocks.json").write_text(json.dumps(
+        {n: {"title": n, "note": "", "groups": [["a"], ["b"]]} for n in _SKY_COUNTS}),
+        encoding="utf-8")
+    (_rd / "meta.json").write_text(json.dumps(
+        {"version": lib.VERSION, "stamp": "20260906T190443", "started": "2026-09-06 19:04:43",
+         "blocks": list(_SKY_COUNTS), "backends": _SKY_BE, "limit": 300, "counts_only": False,
+         "keep_junk": False, "pdfs": False, "interrupted": False, "backend_config": {}}),
+        encoding="utf-8")
+    _d = report.load_run(_rd)
+    check("report.load_run reads errors.json", _d["errors"].get("BENCH", {}).get("core", {}).get("kind") == "rate")
+    _md = report.write_reports(_rd, "simple", ["md"], quiet=True)["md"].read_text(encoding="utf-8")
+    check("the report carries a Diagnostics section", "## Diagnostics" in _md, _md[:200])
+    check("Diagnostics comes before the counts table it warns about",
+          _md.index("Diagnostics") < _md.index("Results summary"))
+    check("the report says PROFILE's zero is vocabulary, not a gap",
+          "Block PROFILE: exactly 0 hits" in _md, "")
+    check("the misleading 'novelty-check territory' advice is withheld for that block",
+          "Block PROFILE: only" not in _md, "")
+    check("a block with few hits and no vocabulary problem still gets the novelty-check advice",
+          "novelty-check territory" in _md, "")
+    _pt = report.write_reports(_rd, "simple", ["md"], basename="report_pt", quiet=True,
+                               lang="pt-BR")["md"].read_text(encoding="utf-8")
+    check("Diagnostics is translated with the rest of the scaffolding",
+          "## Diagnóstico" in _pt and "vocabulário" in _pt, _pt[:200])
+    check("backend names, flags and HTTP codes stay verbatim in the translation",
+          "openalex" in _pt and "HTTP 429" in _pt and "--backends" in _pt)
+    # a run archived before 3.6.0 has no errors.json and must still render
+    (_rd / "errors.json").unlink()
+    _old = report.write_reports(_rd, "simple", ["md"], basename="report_old",
+                                quiet=True)["md"].read_text(encoding="utf-8")
+    check("a pre-3.6.0 run without errors.json still renders (counts-only diagnosis)",
+          "Block PROFILE: exactly 0 hits" in _old and "Results summary" in _old)
+# every diagnostic string is translated into all four languages, and the
+# placeholders survive: a renamed {b} would be a KeyError mid-report
+_ph_bad = []
+for _k, _row in i18n._C.items():
+    _want = set(_re2.findall(r"\{(\w+)\}", _k))
+    for _lang2, _tr in zip(i18n._ORDER, _row):
+        if set(_re2.findall(r"\{(\w+)\}", _tr or "")) != _want:
+            _ph_bad.append(f"{_lang2}: {_k[:40]}")
+check("i18n: every translation keeps exactly the placeholders of its English msgid",
+      not _ph_bad, "; ".join(_ph_bad[:3]))
+_diag_msgids = list(report.DIAG_CAUSE_MSG.values())
+check("every diagnostic cause has a catalogue entry in all four languages",
+      all(m in i18n._C for m in _diag_msgids),
+      str([m[:30] for m in _diag_msgids if m not in i18n._C]))
+
+
+# ---------------------------------------------------------------------------
+print("\n3.6.0: the review of 3.5.2 (line-by-line read of every module)")
+# (a) --format pdf renders Markdown and LaTeX as intermediates. It used to
+# write them under the report's own name and delete them afterwards, so a
+# report.md written by an earlier run -- the one librarian.py writes at the
+# end of EVERY run -- was silently destroyed by asking for a PDF.
+with tempfile.TemporaryDirectory() as td:
+    _pr = Path(td) / "runs" / "20260906T120000"
+    (_pr / "records").mkdir(parents=True)
+    (_pr / "counts.json").write_text(json.dumps({"A": {"openalex": 7}}), encoding="utf-8")
+    (_pr / "queries.json").write_text(json.dumps({"A": {"openalex": "(x)"}}), encoding="utf-8")
+    (_pr / "blocks.json").write_text(json.dumps(
+        {"A": {"title": "T", "note": "", "groups": [["x"]]}}), encoding="utf-8")
+    (_pr / "meta.json").write_text(json.dumps(
+        {"version": lib.VERSION, "stamp": "20260906T120000", "started": "2026-09-06 12:00:00",
+         "blocks": ["A"], "backends": ["openalex"], "limit": 300, "counts_only": False,
+         "keep_junk": False, "pdfs": False, "interrupted": False, "backend_config": {}}),
+        encoding="utf-8")
+    report.write_reports(_pr, "simple", ["md", "tex"], quiet=True)
+    _md_before = (_pr / "report.md").read_text(encoding="utf-8")
+    report.write_reports(_pr, "simple", ["pdf"], quiet=True)
+    check("--format pdf keeps a report.md an earlier run wrote",
+          (_pr / "report.md").exists() and (_pr / "report.md").read_text(encoding="utf-8") == _md_before)
+    check("--format pdf keeps a report.tex an earlier run wrote", (_pr / "report.tex").exists())
+    check("--format pdf still produces the PDF", (_pr / "report.pdf").exists())
+    check("--format pdf leaves no intermediate files behind",
+          not list(_pr.glob("*_pdfsrc.*")), str(list(_pr.glob("*_pdfsrc.*"))))
+# (b) the run recorded "queries.json" as its provenance even when it had read
+# queries.example.json -- a PRISMA report naming a file that does not exist.
+_qf_saved = lib.QUERY_FILE
+load_blocks(str(HERE.parent / "queries.example.json"))
+check("load_blocks records the file it actually read",
+      Path(lib.QUERY_FILE).name == "queries.example.json", lib.QUERY_FILE)
+import argparse as _ap2  # noqa: E402
+_meta_qf = lib.run_meta("20260906T120000", _ap2.Namespace(
+    queries=None, blocks=["A"], counts_only=False, limit=300, keep_junk=False, pdfs=False),
+    ["openalex"], 0.0, False)["query_file"]
+check("meta.json names the query file that was read, not an assumed queries.json",
+      Path(_meta_qf).name == "queries.example.json", _meta_qf)
+lib.QUERY_FILE = _qf_saved
+# (c) project.py oa is the second caller of the Unpaywall pass; 3.5.1 taught
+# only librarian.py --pdfs to refuse cleanly, so this one ended in a traceback.
+with tempfile.TemporaryDirectory() as td:
+    _od = Path(td) / "lit"
+    (_od / "manual" / "src").mkdir(parents=True)
+    (_od / "manual" / "src" / "records.json").write_text(json.dumps(
+        [_rec("P", 2024, "10.1/x", "J", ["A"], "")]), encoding="utf-8")
+    (_od / "manual" / "src" / "source.json").write_text(json.dumps(
+        {"name": "src", "method": "database", "ingested": "2026-09-06 10:00:00"}), encoding="utf-8")
+    _saved_contact = lib.CONTACT
+    lib.CONTACT = ""
+    try:
+        _rc = subprocess.run([sys.executable, "-X", "utf8", str(HERE.parent / "project.py"),
+                              "oa", "--outdir", str(_od)],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace",
+                             env={**os.environ, "CONTACT_EMAIL": ""})
+    finally:
+        lib.CONTACT = _saved_contact
+    check("project.py oa refuses without CONTACT_EMAIL instead of raising a traceback",
+          "Traceback" not in _rc.stderr and _rc.returncode == 2,
+          f"rc={_rc.returncode} {_rc.stderr[-200:]}")
+    check("its refusal names the setting and both routes",
+          "CONTACT_EMAIL" in (_rc.stdout + _rc.stderr)
+          and "environment or .env" in (_rc.stdout + _rc.stderr), _rc.stdout[-200:])
+# (d) the venue filter matched "open mind" as a bare substring, which removed
+# MIT Press's peer-reviewed journal Open Mind (ISSN 2470-2986) before
+# screening. OpenAlex has both: a REPOSITORY "Open MIND" and that JOURNAL.
+check("venue filter keeps the MIT Press journal Open Mind",
+      not is_junk({"journal": "Open Mind"})
+      and not is_junk({"journal": "Open Mind: Discoveries in Cognitive Science"}))
+check("venue filter still removes the Open MIND repository",
+      is_junk({"journal": "Open MIND"}) and is_junk({"journal": "Open MIND, 2-vol. set"}))
+check("venue filter still removes the uncurated repositories it is for",
+      all(is_junk({"journal": j}) for j in
+          ("Zenodo", "figshare", "SSRN Electronic Journal", "Preprints.org", "ResearchGate")))
+check("venue filter does not match a repository name inside a longer word",
+      not is_junk({"journal": "Transactions on Zenodoxy"}))
+# (e) every repo-relative document a module points at must exist: librarian.py
+# sent readers to docs/ADDING_A_DATABASE.md and SEARCH_QUERIES.md, neither of
+# which ever shipped.
+_docrefs = set()
+for _py in sorted(HERE.parent.glob("*.py")) + [HERE.parent / "docs" / "build_manual.py"]:
+    for _line in _py.read_text(encoding="utf-8").splitlines():
+        if _re2.search(r"\b(BASE|OUTDIR|out_dir|run|dest)\s*/", _line):
+            continue                       # a path built at run time, not a repo document
+        for _m in _re2.finditer(r"(?<![\w/.])((?:docs/)?[A-Z][A-Z0-9_]*\.md)", _line):
+            _docrefs.add((_py, _m.group(1)))
+_missing_docs = sorted(f"{py.name} -> {ref}" for py, ref in _docrefs
+                       if not (py.parent / ref).exists() and not (HERE.parent / ref).exists())
+check("every repo document a module points at exists", not _missing_docs, "; ".join(_missing_docs))
+# (f) the product standard (rules 33-35): the files a published repo must carry
+for _need in ("SECURITY.md", ".github/dependabot.yml", "docs/THIRD_PARTY.md",
+              "docs/platforms.md"):
+    check(f"product standard: {_need} is present", (HERE.parent / _need).exists())
+check("docs/THIRD_PARTY.md inventories every backend and the OA service",
+      all(_b in (HERE.parent / "docs" / "THIRD_PARTY.md").read_text(encoding="utf-8")
+          for _b in list(lib.DEFAULT_BACKENDS) + ["Unpaywall"]),
+      "missing: " + str([_b for _b in list(lib.DEFAULT_BACKENDS) + ["Unpaywall"]
+                         if _b not in (HERE.parent / "docs" / "THIRD_PARTY.md").read_text(encoding="utf-8")]))
+check("the README says which version produced the committed samples",
+      "3.2.2" in _readme, "")
+# (g) dead code and per-record rework found by reading
+check("journals.py asks 'no subcommand?' once, not twice",
+      (HERE.parent / "journals.py").read_text(encoding="utf-8").count("if not args.cmd:") == 1)
+_rpt_src = (HERE.parent / "report.py").read_text(encoding="utf-8")
+check("the timeline reads each run's counts.json once, not once per block",
+      '_run_counts = {m["id"]: _json(m["path"] / "counts.json", {}) for m in runs}' in _rpt_src, "")
+check("the sources table builds the member-date map once, not once per record",
+      _re2.search(r'dates = \{m\["id"\]: m\["date"\] for m in d\["members"\]\}\s*\n\s*for r in d\["unique"\]',
+                  _rpt_src) is not None, "")
+
+
 def test_offline_suite():
     """pytest entry point: the module body above is the suite."""
     assert not FAILED, FAILED

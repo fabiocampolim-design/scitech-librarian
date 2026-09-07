@@ -1,7 +1,7 @@
 ---
 title: "scitech-librarian — User Manual"
-subtitle: "version 3.5.2"
-date: "2026-09-04"
+subtitle: "version 3.6.0"
+date: "2026-09-06"
 lang: "en"
 ---
 
@@ -31,7 +31,7 @@ the files, supply your keys, write `queries.json`, run.
 | `journals.py` | journal metrics (impact-factor-like figures) per year |
 | `wos_manual.py` | Web of Science by hand (no usable free API) |
 | `render.py` | Markdown / HTML / LaTeX / text renderers and the PDF chain (imported by `report.py`) |
-| `i18n.py` | report languages: the en / pt-BR / es / de / fr catalogue (imported by `report.py`; §7.8) |
+| `i18n.py` | report languages: the en / pt-BR / es / de / fr catalogue (imported by `report.py`; §7.9) |
 
 **For AI agents.** `AGENTS.md` at the repository root is the complete
 machine-oriented description of the tool. If you work with a coding agent
@@ -158,7 +158,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -365,7 +365,34 @@ and re-run the report:
  "prior_work": "none", "peer_review": "search strategy reviewed by the librarian"}
 ```
 
-## 7.7 Suggestions
+## 7.7 Diagnostics
+
+Every report opens with a **Diagnostics** section, placed before the counts
+so that a number produced by a broken credential is never read as a result.
+It is computed from the hit counts and the failed calls alone, and it says
+nothing when nothing is wrong.
+
+| Finding | What it means | What to do |
+|---|---|---|
+| Calls refused, HTTP 401/403 | A credential or an entitlement, never the query. On Scopus it usually means you are off your institution's network | Connect to the VPN or set `SCOPUS_INSTTOKEN`, check the key, rerun those blocks |
+| Rate limit (429), server error (5xx), timeout | The database or the connection | Rerun the affected blocks; get the free key the hint names |
+| Query rejected, HTTP 400/422 | That engine parsed the generated string and refused it | Look for characters it treats as operators, or `--skip` it |
+| A database that answered before and answers nothing now | An outage or an expired credential, found by comparing `counts_history.csv` | Do not report today's zero |
+| 0 hits on every block while others found records | It does not index the subject, or it ignored the query silently | Check one block by hand in its web interface |
+| 0 hits on several databases that answered the other blocks | The vocabulary, not an empty field: one synonym group holds no term those databases use | Drop one group at a time and rerun the block |
+
+The last row is the trap this section exists for. A block that returns three
+hits looks like a novelty finding; if two large indexes returned *exactly*
+zero for it while answering every other block with thousands, it is a broken
+synonym group. In that case the report also withholds its usual
+"novelty-check territory" advice for that block.
+
+The same findings are printed at the end of the run under `DIAGNOSIS`, and
+every failed call is archived with its cause and HTTP code in the run's
+`errors.json`. Reports translate the findings; the console and the logs stay
+English, so runs made in different languages remain greppable together.
+
+## 7.8 Suggestions
 
 Rule-based, at the end of every report: failed backend calls, blocks with
 thousands of hits, novelty-sized blocks (read every hit), `--limit` cap
@@ -374,7 +401,7 @@ backend, open-access lookup not run, PRISMA stages unfilled, no journal
 metrics, count drift between runs, and — in project mode — the absence of
 any manual source.
 
-## 7.8 Languages
+## 7.9 Languages
 
 ```
 python report.py --latest --lang pt-BR
@@ -497,7 +524,7 @@ a venue filter with receipts; five keyless backends; NASA ADS and INSPIRE
 for physics; legal OA-PDF links via Unpaywall; three-level reports in five
 formats with PRISMA 2020 and PRISMA-S; research directories with manual
 sources, provenance, timeline and differential reports; journal metrics
-with a per-year series; audit logs; an offline test suite (325 checks) and
+with a per-year series; audit logs; an offline test suite (374 checks) and
 CI.
 
 Limitations, all by design or by the world:

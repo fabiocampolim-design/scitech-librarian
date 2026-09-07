@@ -274,6 +274,56 @@ Zotero client (RIS/BibTeX/CSL-JSON out, RIS in). Counts are not comparable
 across databases and are documented as such. Google Scholar is not and will
 not be a backend.
 
+## 3b. Threat note
+
+What the tool touches, and where the risk is. The reporting route is
+`SECURITY.md`; the licence and terms of every source are in
+`docs/THIRD_PARTY.md`.
+
+**Nothing listens.** There is no server, no port, no daemon, no telemetry.
+Every connection is outbound HTTPS to a documented public API. That removes
+the largest class of exposure by construction, and it is why the tool has no
+authentication of its own to get wrong.
+
+**Credentials never land in an artefact.** Keys are read from the process
+environment; a gitignored `.env` fills in only what the environment has not
+already set, so a shell export or a CI secret always wins (rule 28). A key
+travels to the API that owns it and nowhere else. Run directories, logs,
+reports and `meta.json` record *which environment variable* a backend uses,
+never its value — `run_meta` copies `auth.env`, the name, by design. The
+failure classifier added in 3.6.0 stores an API's error body in
+`errors.json` truncated to 400 characters; a service that echoed a
+credential back in an error would put it there, which is the one place worth
+watching.
+
+**Subprocesses are argument lists, never shells.** `render.py` and
+`docs/build_manual.py` invoke `xelatex`/`lualatex`/`pdflatex`/`pandoc` when
+they are on `PATH`; `wos_manual.py` invokes `clip`/`pbcopy`/`xclip`. All go
+through `subprocess.run` with a list and no `shell=True`, and no argument is
+built from network data — the only variable parts are file names this tool
+chose. A TeX engine is nonetheless a large program being handed a file
+derived from untrusted text, which is the reason for the next paragraph.
+
+**Records are untrusted input.** Titles, abstracts, venue and author names
+come from an API or from a file you ingest, and they reach three renderers
+that can be broken out of. `render._tex` escapes the ten TeX specials and
+brackets a leading `[`; `_tex_table` additionally escapes `%` inside an
+`\href` target, because an encoded DOI once ate the rest of its row;
+`render_html` escapes through `html.escape` before linkifying. A title that
+escapes any of those three is a vulnerability, not a rendering bug.
+
+**Everything is written under the research directory.** `lit/` by default,
+`--outdir` otherwise: records, RIS/BibTeX/CSL, logs, reports, the Unpaywall
+cache. The tool creates nothing outside it except the report files in a run
+directory it already owns, and `--init-backends`, which refuses to
+overwrite an existing `backends.json`.
+
+**What is deliberately not defended.** A hostile `queries.json`,
+`backends.json` or `project.json` is a local file the user wrote; a
+`backends.json` can point a request anywhere, which is the feature that
+makes databases configuration rather than code. Treat those three files as
+you would a script.
+
 ## 4. How it was built
 
 In Claude Code, for real use: the first version in a physics project's

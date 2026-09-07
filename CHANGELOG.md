@@ -2,6 +2,78 @@
 
 All notable changes to scitech-librarian. Dates are release dates.
 
+## 3.6.0 - 2026-09-06
+
+- **The run diagnoses itself.** A zero is only evidence if the database was
+  actually asked, and until now a failed call was one word in the counts
+  table (`ERR`) with no cause. Every failure is now classified where it
+  happens -- `auth` (401/403), `rate` (429), `query` (400/422), `server`
+  (5xx), `network`, `config` -- archived with its HTTP code in the run's new
+  `errors.json`, and turned into a plain statement of what went wrong and
+  what to do about it. The findings are printed under `DIAGNOSIS` at the end
+  of the run and open every report as a **Diagnostics** section, placed
+  before the counts and translated into the report language.
+- **Four things it detects**: calls refused as unauthorised, named as a
+  credential or an entitlement problem and not as a query problem (on Scopus,
+  usually the institutional VPN); a database that answered in the previous
+  run and answers nothing now, caught by comparing `counts_history.csv`; a
+  database returning 0 on every block while the others find records; and a
+  block that several *healthy* databases return exactly 0 for -- which is the
+  query vocabulary, not an empty field.
+- **The novelty-check advice is withheld where it would mislead.** A block
+  flagged for vocabulary no longer gets "only N hits -- novelty-check
+  territory. Read every record by hand before claiming a gap": a 2026-09-06
+  run had a block return 0 on OpenAlex, INSPIRE, ADS and Scopus while the
+  same backends answered other blocks with thousands, and the report invited
+  reading a broken synonym group as a gap.
+- `--selftest` and `--list` now report a missing `CONTACT_EMAIL` the way every
+  other credential is reported; it was the one setting that stayed silent
+  until `--pdfs` refused (rule 28).
+### Also in 3.6.0 — the review of 3.5.2
+
+A line-by-line read of every module. Each finding became a failing test first.
+
+- **`--format pdf` no longer destroys a `report.md` or `report.tex` an
+  earlier run wrote.** The Markdown and LaTeX a PDF is built from are
+  intermediates; they were written under the report's own name and deleted
+  afterwards, so asking for a PDF silently removed the Markdown report
+  `librarian.py` writes at the end of every run. Intermediates now get their
+  own name and only their own name is cleaned up.
+- **A run records the query file it actually read.** `meta.json` and
+  `--list` said `queries.json` whichever file `load_blocks` had found, so a
+  fresh clone -- which falls back to `queries.example.json` -- archived a
+  PRISMA provenance record naming a file that does not exist.
+- **`project.py oa` refuses cleanly without `CONTACT_EMAIL`** instead of
+  ending in a traceback, and closes its audit log on every exit path. 3.5.1
+  had taught only `librarian.py --pdfs` to refuse.
+- **The venue filter no longer removes MIT Press's peer-reviewed journal
+  *Open Mind*** (ISSN 2470-2986). OpenAlex carries both an uncurated
+  repository "Open MIND" and that journal; the case-insensitive substring
+  matched both and dropped the journal before screening in any
+  cognitive-science search. Repository names are now word-anchored, and the
+  one ambiguous name is matched case-sensitively.
+- `librarian.py` pointed readers at `docs/ADDING_A_DATABASE.md` and
+  `SEARCH_QUERIES.md`; neither ever shipped. A guard now checks that every
+  repo document a module names exists.
+- **New: `SECURITY.md`** (private reporting route, and what the tool
+  touches), **`docs/THIRD_PARTY.md`** (every dependency, data source and
+  standard, with the terms each comes under and what may be redistributed),
+  **`docs/platforms.md`** (dated rows for platforms actually run), a
+  **threat note** in `docs/DESIGN.md`, and **`.github/dependabot.yml`**
+  watching the GitHub Actions -- the tool itself has no runtime
+  dependencies.
+- The README now says which version produced the committed samples (3.2.2),
+  and points at the three new documents.
+- Smaller: the project timeline read each run's `counts.json` once per block
+  instead of once; the sources table rebuilt the member-date map once per
+  record; `journals.py` asked "no subcommand?" twice.
+- Suite: 374 offline checks, including a guard that every translation keeps
+  exactly the placeholders of its English message. CI now runs pyflakes over
+  every `.py` in the repo -- the hand-written module list had omitted
+  `i18n.py` -- and runs the vendored checker's wiring test, which had never
+  run in CI at all. Vendored checker re-synced to 1.6.5; `.gitattributes`
+  pins `* text=auto eol=lf` repo-wide.
+
 ## 3.5.2 - 2026-09-04
 
 - **Suite fix, no behaviour change.** 3.5.1's CI was red on all six runners:

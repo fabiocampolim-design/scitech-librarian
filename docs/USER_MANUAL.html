@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-04" />
+  <meta name="dcterms.date" content="2026-09-06" />
   <title>scitech-librarian — User Manual</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — User Manual</h1>
-<p class="subtitle">version 3.5.2</p>
-<p class="date">2026-09-04</p>
+<p class="subtitle">version 3.6.0</p>
+<p class="date">2026-09-06</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -127,8 +127,9 @@ directory</a></li>
 <li><a href="#formats" id="toc-formats">7.4 Formats</a></li>
 <li><a href="#filters" id="toc-filters">7.5 Filters</a></li>
 <li><a href="#prisma" id="toc-prisma">7.6 PRISMA</a></li>
-<li><a href="#suggestions" id="toc-suggestions">7.7 Suggestions</a></li>
-<li><a href="#languages" id="toc-languages">7.8 Languages</a></li>
+<li><a href="#diagnostics" id="toc-diagnostics">7.7 Diagnostics</a></li>
+<li><a href="#suggestions" id="toc-suggestions">7.8 Suggestions</a></li>
+<li><a href="#languages" id="toc-languages">7.9 Languages</a></li>
 </ul></li>
 <li><a href="#journal-metrics" id="toc-journal-metrics">8. Journal
 metrics</a></li>
@@ -200,7 +201,7 @@ by <code>report.py</code>)</td>
 <tr>
 <td><code>i18n.py</code></td>
 <td>report languages: the en / pt-BR / es / de / fr catalogue (imported
-by <code>report.py</code>; §7.8)</td>
+by <code>report.py</code>; §7.9)</td>
 </tr>
 </tbody>
 </table>
@@ -360,7 +361,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -666,14 +667,82 @@ progresses and re-run the report:</p>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;studies_included&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span> <span class="dt">&quot;reports_included&quot;</span><span class="fu">:</span> <span class="dv">31</span><span class="fu">,</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;citation_searching&quot;</span><span class="fu">:</span> <span class="st">&quot;reference lists of the 22 included studies&quot;</span><span class="fu">,</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;prior_work&quot;</span><span class="fu">:</span> <span class="st">&quot;none&quot;</span><span class="fu">,</span> <span class="dt">&quot;peer_review&quot;</span><span class="fu">:</span> <span class="st">&quot;search strategy reviewed by the librarian&quot;</span><span class="fu">}</span></span></code></pre></div>
-<h2 id="suggestions">7.7 Suggestions</h2>
+<h2 id="diagnostics">7.7 Diagnostics</h2>
+<p>Every report opens with a <strong>Diagnostics</strong> section,
+placed before the counts so that a number produced by a broken
+credential is never read as a result. It is computed from the hit counts
+and the failed calls alone, and it says nothing when nothing is
+wrong.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Finding</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Calls refused, HTTP 401/403</td>
+<td>A credential or an entitlement, never the query. On Scopus it
+usually means you are off your institution’s network</td>
+<td>Connect to the VPN or set <code>SCOPUS_INSTTOKEN</code>, check the
+key, rerun those blocks</td>
+</tr>
+<tr>
+<td>Rate limit (429), server error (5xx), timeout</td>
+<td>The database or the connection</td>
+<td>Rerun the affected blocks; get the free key the hint names</td>
+</tr>
+<tr>
+<td>Query rejected, HTTP 400/422</td>
+<td>That engine parsed the generated string and refused it</td>
+<td>Look for characters it treats as operators, or <code>--skip</code>
+it</td>
+</tr>
+<tr>
+<td>A database that answered before and answers nothing now</td>
+<td>An outage or an expired credential, found by comparing
+<code>counts_history.csv</code></td>
+<td>Do not report today’s zero</td>
+</tr>
+<tr>
+<td>0 hits on every block while others found records</td>
+<td>It does not index the subject, or it ignored the query silently</td>
+<td>Check one block by hand in its web interface</td>
+</tr>
+<tr>
+<td>0 hits on several databases that answered the other blocks</td>
+<td>The vocabulary, not an empty field: one synonym group holds no term
+those databases use</td>
+<td>Drop one group at a time and rerun the block</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is the trap this section exists for. A block that
+returns three hits looks like a novelty finding; if two large indexes
+returned <em>exactly</em> zero for it while answering every other block
+with thousands, it is a broken synonym group. In that case the report
+also withholds its usual “novelty-check territory” advice for that
+block.</p>
+<p>The same findings are printed at the end of the run under
+<code>DIAGNOSIS</code>, and every failed call is archived with its cause
+and HTTP code in the run’s <code>errors.json</code>. Reports translate
+the findings; the console and the logs stay English, so runs made in
+different languages remain greppable together.</p>
+<h2 id="suggestions">7.8 Suggestions</h2>
 <p>Rule-based, at the end of every report: failed backend calls, blocks
 with thousands of hits, novelty-sized blocks (read every hit),
 <code>--limit</code> cap hits, a database with a high share of filtered
 venues, no citation-grade backend, open-access lookup not run, PRISMA
 stages unfilled, no journal metrics, count drift between runs, and — in
 project mode — the absence of any manual source.</p>
-<h2 id="languages">7.8 Languages</h2>
+<h2 id="languages">7.9 Languages</h2>
 <pre><code>python report.py --latest --lang pt-BR
 python report.py --project --lang de --format pdf
 python librarian.py --report-lang fr            # the report written at the end of a run</code></pre>
@@ -824,7 +893,7 @@ keyless backends; NASA ADS and INSPIRE for physics; legal OA-PDF links
 via Unpaywall; three-level reports in five formats with PRISMA 2020 and
 PRISMA-S; research directories with manual sources, provenance, timeline
 and differential reports; journal metrics with a per-year series; audit
-logs; an offline test suite (325 checks) and CI.</p>
+logs; an offline test suite (374 checks) and CI.</p>
 <p>Limitations, all by design or by the world:</p>
 <ul>
 <li>Counts are not comparable across databases; proximity operators are

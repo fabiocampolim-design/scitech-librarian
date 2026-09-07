@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Benutzerhandbuch"
-subtitle: "Version 3.5.2"
-date: "2026-09-04"
+subtitle: "Version 3.6.0"
+date: "2026-09-06"
 lang: "de"
-source-digest: "a0b91afa92730631"
+source-digest: "807a8e5918a310c8"
 ---
 
 [English](USER_MANUAL.md) · [Português (Brasil)](USER_MANUAL.pt-BR.md) · [Español](USER_MANUAL.es.md) · **Deutsch** · [Français](USER_MANUAL.fr.md)
@@ -36,7 +36,7 @@ Schlüssel bereitstellen, `queries.json` schreiben, ausführen.
 | `journals.py` | Zeitschriftenkennzahlen (Impact-Factor-ähnliche Werte) pro Jahr |
 | `wos_manual.py` | Web of Science von Hand (keine brauchbare kostenlose API) |
 | `render.py` | Markdown- / HTML- / LaTeX- / Text-Renderer und die PDF-Kette (von `report.py` importiert) |
-| `i18n.py` | Berichtssprachen: der en / pt-BR / es / de / fr-Katalog (von `report.py` importiert; §7.8) |
+| `i18n.py` | Berichtssprachen: der en / pt-BR / es / de / fr-Katalog (von `report.py` importiert; §7.9) |
 
 **Für KI-Agenten.** `AGENTS.md` im Wurzelverzeichnis des Repositorys ist die
 vollständige maschinenorientierte Beschreibung des Werkzeugs. Wenn Sie mit
@@ -173,7 +173,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -389,7 +389,35 @@ Bericht erneut aus:
  "prior_work": "none", "peer_review": "search strategy reviewed by the librarian"}
 ```
 
-## 7.7 Vorschläge
+## 7.7 Diagnose
+
+Jeder Bericht beginnt mit einem Abschnitt **Diagnose**, vor den Trefferzahlen
+platziert, damit eine Zahl, die aus einer kaputten Zugangsberechtigung stammt,
+nie als Ergebnis gelesen wird. Er wird allein aus den Trefferzahlen und den
+fehlgeschlagenen Aufrufen berechnet und sagt nichts, wenn nichts falsch ist.
+
+| Befund | Was er bedeutet | Was zu tun ist |
+|---|---|---|
+| Abgewiesene Aufrufe, HTTP 401/403 | Eine Zugangsberechtigung, nie die Suchanfrage. Bei Scopus heißt es meist, dass Sie außerhalb des Netzes Ihrer Einrichtung sind | Ins VPN gehen oder `SCOPUS_INSTTOKEN` setzen, den Schlüssel prüfen, diese Blöcke wiederholen |
+| Ratenlimit (429), Serverfehler (5xx), Zeitüberschreitung | Die Datenbank oder die Verbindung | Betroffene Blöcke wiederholen; den kostenlosen Schlüssel holen, den der Hinweis nennt |
+| Anfrage abgelehnt, HTTP 400/422 | Diese Suchmaschine hat die erzeugte Zeichenkette gelesen und verworfen | Nach Zeichen suchen, die sie als Operatoren behandelt, oder `--skip` verwenden |
+| Eine Datenbank, die früher antwortete und jetzt nichts liefert | Ein Ausfall oder eine abgelaufene Zugangsberechtigung, gefunden durch Vergleich mit `counts_history.csv` | Die heutige Null nicht berichten |
+| 0 Treffer in jedem Block, während andere Datensätze fanden | Sie erschließt das Fachgebiet nicht, oder sie hat die Anfrage still ignoriert | Einen Block von Hand in ihrer Weboberfläche prüfen |
+| 0 Treffer bei mehreren Datenbanken, die die anderen Blöcke beantwortet haben | Das Vokabular, kein leeres Feld: eine Synonymgruppe enthält keinen Begriff, den diese Datenbanken verwenden | Eine Gruppe nach der anderen weglassen und den Block wiederholen |
+
+Die letzte Zeile ist die Falle, für die es diesen Abschnitt gibt. Ein Block
+mit drei Treffern sieht aus wie ein Neuheitsbefund; wenn zwei große Indizes
+dafür *genau* null lieferten und jeden anderen Block mit Tausenden
+beantworteten, ist eine Synonymgruppe kaputt. Dann hält der Bericht für diesen
+Block auch seinen üblichen Rat zur Neuheitsprüfung zurück.
+
+Dieselben Befunde werden am Ende des Laufs unter `DIAGNOSIS` ausgegeben, und
+jeder fehlgeschlagene Aufruf wird mit Ursache und HTTP-Code in der
+`errors.json` des Laufs archiviert. Berichte übersetzen die Befunde; Konsole
+und Protokolle bleiben englisch, damit Läufe in verschiedenen Sprachen
+gemeinsam durchsuchbar bleiben.
+
+## 7.8 Vorschläge
 
 Regelbasiert, am Ende jedes Berichts: fehlgeschlagene Backend-Aufrufe,
 Blöcke mit Tausenden Treffern, Blöcke in Neuheitsgröße (jeden Treffer
@@ -399,7 +427,7 @@ nicht ausgeführt, unausgefüllte PRISMA-Stufen, keine Zeitschriftenkennzahlen,
 Trefferdrift zwischen Läufen und — im Projektmodus — das Fehlen jeder
 manuellen Quelle.
 
-## 7.8 Sprachen
+## 7.9 Sprachen
 
 ```
 python report.py --latest --lang pt-BR
@@ -532,7 +560,7 @@ schlüssellose Backends; NASA ADS und INSPIRE für Physik; legale OA-PDF-Links
 über Unpaywall; dreistufige Berichte in fünf Formaten mit PRISMA 2020 und
 PRISMA-S; Forschungsverzeichnisse mit manuellen Quellen, Herkunft,
 Zeitverlauf und Differenzberichten; Zeitschriftenkennzahlen mit Jahresreihe;
-Audit-Logs; eine Offline-Testsuite (325 Prüfungen) und CI.
+Audit-Logs; eine Offline-Testsuite (374 Prüfungen) und CI.
 
 Einschränkungen, alle konstruktionsbedingt oder durch die Welt:
 

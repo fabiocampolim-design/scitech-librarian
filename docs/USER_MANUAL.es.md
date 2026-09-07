@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Manual del usuario"
-subtitle: "versión 3.5.2"
-date: "2026-09-04"
+subtitle: "versión 3.6.0"
+date: "2026-09-06"
 lang: "es"
-source-digest: "a0b91afa92730631"
+source-digest: "807a8e5918a310c8"
 ---
 
 [English](USER_MANUAL.md) · [Português (Brasil)](USER_MANUAL.pt-BR.md) · **Español** · [Deutsch](USER_MANUAL.de.md) · [Français](USER_MANUAL.fr.md)
@@ -36,7 +36,7 @@ ejecuta.
 | `journals.py` | métricas de revistas (cifras del tipo factor de impacto) por año |
 | `wos_manual.py` | Web of Science a mano (sin API gratuita utilizable) |
 | `render.py` | renderizadores Markdown / HTML / LaTeX / texto y la cadena de PDF (importado por `report.py`) |
-| `i18n.py` | idiomas del informe: el catálogo en / pt-BR / es / de / fr (importado por `report.py`; §7.8) |
+| `i18n.py` | idiomas del informe: el catálogo en / pt-BR / es / de / fr (importado por `report.py`; §7.9) |
 
 **Para agentes de IA.** `AGENTS.md` en la raíz del repositorio es la
 descripción completa de la herramienta orientada a la máquina. Si trabajas con
@@ -170,7 +170,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -384,7 +384,36 @@ enteros a medida que avanza el cribado y vuelve a ejecutar el informe:
  "prior_work": "none", "peer_review": "search strategy reviewed by the librarian"}
 ```
 
-## 7.7 Sugerencias
+## 7.7 Diagnóstico
+
+Todo informe comienza con una sección **Diagnóstico**, colocada antes de los
+recuentos para que un número producido por una credencial rota nunca se lea
+como un resultado. Se calcula solo a partir de los recuentos y de las llamadas
+fallidas, y no dice nada cuando nada va mal.
+
+| Hallazgo | Qué significa | Qué hacer |
+|---|---|---|
+| Llamadas rechazadas, HTTP 401/403 | Una credencial o un derecho de acceso, nunca la consulta. En Scopus suele significar que está fuera de la red de su institución | Conéctese a la VPN o defina `SCOPUS_INSTTOKEN`, revise la clave, reejecute esos bloques |
+| Límite de tasa (429), error de servidor (5xx), tiempo agotado | La base o la conexión | Reejecute los bloques afectados; consiga la clave gratuita que indica la sugerencia |
+| Consulta rechazada, HTTP 400/422 | Ese motor analizó la cadena generada y la rechazó | Busque caracteres que trate como operadores, o use `--skip` |
+| Una base que respondía antes y ahora no responde nada | Caída del servicio o credencial caducada, hallada comparando `counts_history.csv` | No informe el cero de hoy |
+| 0 resultados en todos los bloques mientras otras encontraron registros | No indexa el tema, o ignoró la consulta en silencio | Compruebe un bloque a mano en su interfaz web |
+| 0 resultados en varias bases que respondieron a los otros bloques | El vocabulario, no un campo vacío: un grupo de sinónimos no contiene ningún término que esas bases usen | Quite un grupo cada vez y reejecute el bloque |
+
+La última fila es la trampa por la que existe esta sección. Un bloque que
+devuelve tres resultados parece un hallazgo de novedad; si dos grandes índices
+devolvieron *exactamente* cero para él mientras respondían a todos los demás
+bloques con miles, es un grupo de sinónimos roto. En ese caso el informe
+también retiene, para ese bloque, su consejo habitual de "territorio de
+comprobación de novedad".
+
+Los mismos hallazgos se imprimen al final de la ejecución bajo `DIAGNOSIS`, y
+cada llamada fallida queda archivada con su causa y su código HTTP en el
+`errors.json` de la ejecución. Los informes traducen los hallazgos; la consola
+y los registros permanecen en inglés, de modo que ejecuciones hechas en
+idiomas distintos siguen siendo consultables juntas.
+
+## 7.8 Sugerencias
 
 Basadas en reglas, al final de cada informe: llamadas a backends fallidas,
 bloques con miles de resultados, bloques de tamaño de novedad (lee cada
@@ -394,7 +423,7 @@ abierto no ejecutada, etapas PRISMA sin rellenar, sin métricas de revistas,
 deriva de recuentos entre ejecuciones y — en modo proyecto — la ausencia de
 cualquier fuente manual.
 
-## 7.8 Idiomas
+## 7.9 Idiomas
 
 ```
 python report.py --latest --lang pt-BR
@@ -530,7 +559,7 @@ enlaces legales a PDF de acceso abierto vía Unpaywall; informes de tres
 niveles en cinco formatos con PRISMA 2020 y PRISMA-S; directorios de
 investigación con fuentes manuales, procedencia, línea de tiempo e informes
 diferenciales; métricas de revistas con serie por año; logs de auditoría; una
-suite de pruebas sin conexión (325 comprobaciones) y CI.
+suite de pruebas sin conexión (374 comprobaciones) y CI.
 
 Limitaciones, todas por diseño o por el mundo:
 

@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.6.2"
+VERSION = "1.6.6"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -45,18 +45,38 @@ COMMUNITY = ("CONTRIBUTING.md", "CODE_OF_CONDUCT.md", "docs/DESIGN.md")   # rule
 COMMUNITY_MIN = 400                        # bytes; a stub is not a pathway
 PROFILE_RULES = (3, 18, 20)                # kind: profile (a GitHub profile README repo) is not software:
                                            # only scrub, held-material and archive rules apply (Fabio 2026-09-02)
-# 1.6.2: JSON-string-aware (an svg+xml payload carries escaped quotes; the old
-# "[^"]*" stopped at the first one and left the tail unmasked) and applied so
-# that line numbers survive (see mask_image_payloads).
-IMAGE_PAYLOAD = re.compile(r'"image/[a-z0-9+.-]+"\s*:\s*(?:"(?:[^"\\]|\\.)*"|\[[^\]]*\])')
-HARVEST_RE = re.compile(r'(^|/)(all_records\.[A-Za-z.]+|junk\.json|unpaywall_cache\.json)$'
-                        r'|(^|/)lit/runs/[^/]+/(records|ris)/')   # rule 29: a literature pass's harvest
+# 1.6.2: JSON-string-aware (a payload carries escaped quotes; the old "[^"]*"
+# stopped at the first one and left the tail unmasked) and applied so that line
+# numbers survive (see mask_image_payloads).
+# 1.6.5, from the SESSIONPUBLISHER v2.7.6 review:
+#   - the mime class is raster only. svg+xml is *text*: masking it removed
+#     rule-3 coverage of the absolute paths, e-mails and captions matplotlib
+#     and plotly bake into a figure, and the "base64 can spell a token by
+#     chance" rationale for masking never applied to it.
+#   - both branches are unrolled ("[^"\\]*(?:\\.[^"\\]*)*"), which accepts the
+#     identical language as the per-character alternation at ~25x the speed:
+#     1.6.4 spent 3.9 s on a 5.3 MB payload where 1.5.1 spent 4 ms, and
+#     chk_scrub runs this over every tracked notebook.
+#   - the list branch is string-aware too; `[^\]]*` stopped at the first `]`
+#     inside the payload (a CSS attribute selector, a CDATA close, embedded
+#     plotly JSON) and left the rest unmasked.
+_JSON_STR = r'"[^"\\]*(?:\\.[^"\\]*)*"'
+IMAGE_PAYLOAD = re.compile(
+    r'"image/(?:png|jpe?g|gif|webp|bmp|tiff?|x-[a-z0-9.-]+)"\s*:\s*'
+    r'(?:' + _JSON_STR + r'|\[(?:[^\]"]|' + _JSON_STR + r')*\])')
+# rule 29: a literature pass's harvest. 1.6.5 -- the extension class carried no
+# digits (`all_records.json5`, `all_records.2026.json` slipped through) and the
+# run layout was hardcoded one segment deep under `lit/`, so `literature/`,
+# a dated sub-directory or a top-level `records/` got "no harvest tracked".
+HARVEST_RE = re.compile(r'(^|/)(all_records\.[\w.]+|junk\.json|unpaywall_cache\.json)$'
+                        r'|(^|/)(lit|literature)/(.*/)?(records|ris)/')
 
 
 def mask_image_payloads(text):
-    """Replace every notebook image payload with a marker of the same line
-    count, so a scrub hit after a list-form payload is reported at its real
-    line (1.6.2; 1.5.0 shifted every later line number)."""
+    """Replace every notebook raster-image payload with a marker of the same
+    line count, so a scrub hit after a list-form payload is reported at its
+    real line (1.6.2; 1.5.0 shifted every later line number). Text-bearing
+    image data (svg+xml) is deliberately left for the scrub to read."""
     return IMAGE_PAYLOAD.sub(lambda m: '"image/*": "<binary>"' + "\n" * m.group(0).count("\n"), text)
 HELD_DIRS = ("held", "private")
 MAX_FINDINGS = 8   # per check, in the report
@@ -89,7 +109,8 @@ DEFAULT_RULES = [
          applies="all", check="manual", check_ids=[]),
     dict(id=5, title="Failing-first tests; pyflakes always looped in",
          applies="all", check="auto",
-         check_ids=["pyflakes-clean", "ci-pyflakes-step", "tests-exist"]),
+         check_ids=["pyflakes-clean", "ci-pyflakes-step", "tests-exist",
+                    "ci-pyflakes-covers-all", "ci-runs-every-test-file"]),
     dict(id=6, title="One project at a time", applies="all",
          check="manual", check_ids=[]),
     dict(id=7, title="Downloaded literature never ships", applies="all",
@@ -150,6 +171,24 @@ DEFAULT_RULES = [
          applies="all", check="auto", check_ids=["literature-harvest"]),
     dict(id=30, title="A repo that byte-compares any generated artefact pins "
                       "`* text=auto eol=lf` repo-wide, not only the vendored checker",
+         applies="all", check="auto", check_ids=["repowide-lf-pin"]),
+    dict(id=31, title="Release only on green: push the branch, wait for its workflow "
+                      "run to pass, then tag -- never tag a red or still-running branch",
+         applies="all", check="manual", check_ids=[]),
+    # Set by Fabio 2026-09-06 (keep-30 audit): the product standard -- multilingual,
+    # multi-platform, security baseline, legal/IP/ethics. Manual until 1.7.0's auto checks.
+    dict(id=32, title="Multilingual: English first; README + manual in en, pt-BR, es, de, fr; "
+                      "further languages pinned at project start",
+         applies="all", check="manual", check_ids=[]),
+    dict(id=33, title="Multi-platform: Windows/WSL first, then Linux, macOS; Docker and mobile "
+                      "pinned at project start; dated docs/platforms.md rows",
+         applies="all", check="manual", check_ids=[]),
+    dict(id=34, title="Security baseline: SECURITY.md, dependabot.yml, pinned environments, "
+                      "least-privilege tokens, threat note in docs/DESIGN.md",
+         applies="all", check="manual", check_ids=[]),
+    dict(id=35, title="Legal, IP and research ethics: third-party licence inventory, trademark "
+                      "check, data-protection pass, attribution, AI-usage disclosure, "
+                      "contributor agreements; owner's sign-off on anything with legal exposure",
          applies="all", check="manual", check_ids=[]),
 ]
 
@@ -332,6 +371,57 @@ def chk_ci_pyflakes(repo, ctx):
     return "FAIL", "no pyflakes step in any workflow"
 
 
+def _ci_text(repo, ctx):
+    return " ".join(read_text(repo, w) or "" for w in _workflows(repo, ctx))
+
+
+def chk_ci_pyflakes_covers_all(repo, ctx):
+    """Rule 5: the CI pyflakes step covers every tracked module, not a
+    hand-written list. scitech-librarian's step named its modules one by one
+    and had silently omitted i18n.py -- 863 lines on every report path --
+    since 3.4.0 (librarian-f3, 2026-09-06). `python -m pyflakes .` is the
+    form that cannot rot."""
+    wfs = _workflows(repo, ctx)
+    if not wfs:
+        return "FAIL", "no .github/workflows/*.yml"
+    steps = [ln.strip() for ln in _ci_text(repo, ctx).splitlines() if "pyflakes" in ln]
+    if not steps:
+        return "FAIL", "no pyflakes step in any workflow"
+    joined = " ".join(steps)
+    if re.search(r"pyflakes\s+\.(\s|$)", joined) or "git ls-files" in joined:
+        return "PASS", "the pyflakes step covers the whole tree"
+    tops = sorted(f.replace("\\", "/") for f in ctx["files"]
+                  if f.endswith(".py") and "/" not in f.replace("\\", "/"))
+    missing = [f for f in tops if f not in joined]
+    if missing:
+        return "FAIL", ("the pyflakes step names modules by hand and misses: "
+                        + ", ".join(missing[:MAX_FINDINGS])
+                        + " (rule 5: use `python -m pyflakes .`)")
+    return "PASS", "the pyflakes step names every tracked top-level module"
+
+
+def chk_ci_runs_every_test_file(repo, ctx):
+    """Rule 5: CI invokes every tracked tests/test_*.py, not only the main
+    suite. scitech-librarian ran `python tests/test_librarian.py` alone, so
+    the vendored-checker wiring test never ran on any runner
+    (librarian-f3, 2026-09-06)."""
+    wfs = _workflows(repo, ctx)
+    if not wfs:
+        return "FAIL", "no .github/workflows/*.yml"
+    text = _ci_text(repo, ctx)
+    if re.search(r"unittest\s+discover|pytest(\s+\S*tests\S*)?(\s|$)", text):
+        return "PASS", "CI discovers the test files"
+    tests = sorted({os.path.basename(f.replace("\\", "/")) for f in ctx["files"]
+                    if re.match(r"tests[/\\]test_.*\.py$", f.replace("\\", "/"))})
+    if not tests:
+        return "SKIP", "no tests/test_*.py"
+    missing = [t for t in tests if t not in text]
+    if missing:
+        return "FAIL", ("CI never invokes: " + ", ".join(missing[:MAX_FINDINGS])
+                        + " (rule 5)")
+    return "PASS", "CI invokes all %d test file(s)" % len(tests)
+
+
 def chk_ci_matrix(repo, ctx):
     wfs = _workflows(repo, ctx)
     if not wfs:
@@ -392,10 +482,34 @@ def chk_changelog(repo, ctx):
 
 
 VERSION_LINE = re.compile(r'(?m)^\s*version\s*=\s*["\']([^"\']+)["\']')
+TOML_TABLE = re.compile(r'(?m)^\s*\[([^\]]+)\]\s*$')
+PACKAGE_TABLES = ("project", "tool.poetry", "tool.flit.metadata")
+RANGE_SPEC = re.compile(r'^[\^~<>=!*]')   # a dependency range is not a version
 DUNDER_VERSION = re.compile(r'(?m)^__version__\s*=\s*["\']([^"\']+)["\']')
 VENDORED_NAME = "conformance.py"   # this checker, vendored into a repo
 CONST_VERSION = re.compile(r'(?m)^VERSION\s*=\s*["\']([^"\']+)["\']')
-CITED_VERSION = re.compile(r'(?m)^version:\s*["\']?([^"\'\s]+)')
+# 1.6.5: `\s*` matched the newline, so an empty `version:` captured the next
+# YAML key (`license:`) and rule 16 reported a mismatch that did not exist.
+CITED_VERSION = re.compile(r'(?m)^version:[ \t]*["\']?([^"\'\s]+)')
+
+
+def _toml_package_version(text):
+    """The version declared by the packaging table, not the first `version =`
+    in the file. 1.6.4 searched the whole of pyproject.toml, so a
+    `[tool.commitizen]` table above `[project]` supplied the "declared
+    version" and rule 16 hard-FAILed a conformant repo (2026-09-06)."""
+    table = None
+    for line in text.splitlines():
+        t = TOML_TABLE.match(line)
+        if t:
+            table = t.group(1).strip()
+            continue
+        if table not in PACKAGE_TABLES:
+            continue
+        m = VERSION_LINE.match(line)
+        if m and not RANGE_SPEC.match(m.group(1)):
+            return m.group(1)
+    return None
 
 
 def _package_version(repo, files=None):
@@ -405,17 +519,25 @@ def _package_version(repo, files=None):
     script. None when it declares none — then there is nothing to compare.
     `files` is the caller's tracked list (ctx["files"]); 1.6.1 re-ran
     `git ls-files` here and could disagree with the subdir-filtered list."""
-    m = VERSION_LINE.search(read_text(repo, "pyproject.toml") or "")
-    if m:
-        return m.group(1)
+    tracked = files if files is not None else tracked_files(repo)
+    norm = {f.replace(chr(92), "/") for f in tracked}
+    v = _toml_package_version(read_text(repo, "pyproject.toml") or "")
+    if v:
+        return v
     # 1.6.2: kwant-skill, pythtb-skill and practical-meteorology-course keep
     # the version in a VERSION file; 1.6.0-1.6.1 never read it, so the
     # comparison was inert for exactly the repos it was written for.
-    vfile = (read_text(repo, "VERSION") or "").strip().splitlines()
-    if vfile and re.match(r"^\d[\w.+-]*$", vfile[0].strip()):
-        return vfile[0].strip()
+    # 1.6.5: only when the file is TRACKED. Reading it off disk let a
+    # gitignored or build-generated VERSION drive the verdict here while a
+    # fresh CI clone picked a different source -- the same commit PASSing in
+    # CI and FAILing on the maintainer's machine. A leading `v` is stripped.
+    if "VERSION" in norm:
+        vfile = (read_text(repo, "VERSION") or "").strip().splitlines()
+        head = re.sub(r"^v(?=\d)", "", vfile[0].strip()) if vfile else ""
+        if re.match(r"^\d[\w.+-]*$", head):
+            return head
     depth = lambda f: f.replace(chr(92), "/").count("/")            # noqa: E731
-    pys = [f for f in (files if files is not None else tracked_files(repo)) if f.endswith(".py")]
+    pys = [f for f in tracked if f.endswith(".py")]
     for rel in sorted((f for f in pys
                        if os.path.basename(f) == "__init__.py"),
                       key=lambda f: (depth(f), f)):
@@ -434,12 +556,33 @@ def _package_version(repo, files=None):
     return None
 
 
+def _cff_has(text, key):
+    """A top-level CITATION.cff key with an actual value: either on the same
+    line, or as an indented block beneath it (a YAML list or mapping)."""
+    m = re.search(r"(?m)^%s:[ \t]*(.*)$" % re.escape(key), text)
+    if not m:
+        return False
+    if m.group(1).strip() and not m.group(1).lstrip().startswith("#"):
+        return True
+    for line in text[m.end():].splitlines()[1:]:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        return line[:1] in (" ", "\t")          # indented => a block value
+    return False
+
+
 def chk_citation(repo, ctx):
     p = os.path.join(repo, "CITATION.cff")
     if not os.path.isfile(p):
         return "FAIL", "no CITATION.cff"
     text = read_text(repo, "CITATION.cff") or ""
-    missing = [k for k in ("version", "license") if k + ":" not in text]
+    # 1.6.5: `"version:" in text` was satisfied by the `cff-version:`
+    # substring, so a citation carrying no version at all reached the PASS
+    # below and reported "(== X)" for a comparison nothing had made -- the
+    # exact failure this check exists to catch. Each key is matched anchored,
+    # and a block value counts: `license:` over an indented list is how a
+    # dual-licensed work states it (practical-meteorology-course, 2026-09-04).
+    missing = [k for k in ("version", "license") if not _cff_has(text, k)]
     if missing:
         return "FAIL", "CITATION.cff missing field(s): " + ", ".join(missing)
     # A citation left at an old version cites software nobody can get:
@@ -451,8 +594,10 @@ def chk_citation(repo, ctx):
     if declared and cited and cited != declared:
         return "FAIL", ("CITATION.cff cites %s but the package declares %s "
                         "(rule 16)" % (cited, declared))
+    # Report the comparison only when one was actually made: 1.6.4 keyed the
+    # "(== X)" off `declared` alone, so an unread citation looked verified.
     return "PASS", "CITATION.cff with version + license" + (
-        " (== %s)" % declared if declared else "")
+        " (== %s)" % declared if declared and cited else "")
 
 
 def _license_text(repo):
@@ -705,6 +850,30 @@ def chk_vendored_lf_pin(repo, ctx):
     return "FAIL", rel + " not pinned to LF (.gitattributes: `tests/conformance.py text eol=lf`)"
 
 
+REPOWIDE_LF = re.compile(r'(?m)^\*\s+text=auto\s+eol=lf\s*$')
+PERFILE_EOL = re.compile(r'(?m)^(?!\*\s)\S+.*\beol=lf\b')
+
+
+def chk_repowide_lf_pin(repo, ctx):
+    """Rule 30: a repo that byte-compares any generated artefact pins
+    `* text=auto eol=lf` repo-wide, not only the vendored checker. A per-file
+    `eol=lf` pin is exactly the signal that something is byte-compared, so it
+    is the trigger: SESSIONPUBLISHER pinned tests/conformance.py while its
+    suite also SHA-256s a rendered page against a baseline built from tracked
+    CRLF examples (2026-09-06). Rule 30 shipped `manual` in 1.6.4 although
+    this half of it is mechanical."""
+    rel = ".gitattributes"
+    if rel not in [f.replace("\\", "/") for f in ctx["files"]]:
+        return "SKIP", "no .gitattributes"
+    text = read_text(repo, rel) or ""
+    if not PERFILE_EOL.search(text):
+        return "SKIP", "no per-file eol pin (nothing signals a byte-compare)"
+    if REPOWIDE_LF.search(text):
+        return "PASS", ".gitattributes pins `* text=auto eol=lf` repo-wide"
+    return "FAIL", (".gitattributes pins single files to LF but not the repo "
+                    "(add `* text=auto eol=lf`) (rule 30)")
+
+
 def chk_literature_harvest(repo, ctx):
     """Rule 29: a literature pass ships its evidence (queries, counts, prisma,
     report), never its harvest -- records/, ris/, all_records.*, junk.json,
@@ -722,6 +891,8 @@ CHECKS = {
     "scrub-notebook-outputs": chk_scrub_nb_outputs,
     "pyflakes-clean": chk_pyflakes,
     "ci-pyflakes-step": chk_ci_pyflakes,
+    "ci-pyflakes-covers-all": chk_ci_pyflakes_covers_all,
+    "ci-runs-every-test-file": chk_ci_runs_every_test_file,
     "ci-matrix": chk_ci_matrix,
     "tests-exist": chk_tests_exist,
     "no-tracked-mirrors": chk_no_tracked_mirrors,
@@ -745,6 +916,7 @@ CHECKS = {
     "community-files": chk_community_files,
     "history-identity": chk_history_identity,
     "literature-harvest": chk_literature_harvest,
+    "repowide-lf-pin": chk_repowide_lf_pin,
 }
 
 
@@ -826,7 +998,19 @@ def run_repo(repo, rules, ptype, subdir=None, kind="software"):
                 results.append(dict(rule=rule["id"], check=cid, status="SKIP",
                                     detail="n/a for type " + ptype))
                 continue
-            status, detail = CHECKS[cid](repo, ctx)
+            fn = CHECKS.get(cid)
+            if fn is None:
+                # rules.yaml is shared with every vendored copy in the
+                # portfolio. A copy older than an id the table names used to
+                # die here on a bare KeyError, with no report and no --json at
+                # all (DYSON 1.6.1 on `literature-harvest`, PDFEXTRACT 1.4.1
+                # on `large-pdfs`, 2026-09-06). One SKIP line beats a crash.
+                results.append(dict(
+                    rule=rule["id"], check=cid, status="SKIP",
+                    detail="unknown check id -- this vendored checker (%s) "
+                           "predates the rule; re-vendor it" % VERSION))
+                continue
+            status, detail = fn(repo, ctx)
             results.append(dict(rule=rule["id"], check=cid,
                                 status=status, detail=detail))
     return results

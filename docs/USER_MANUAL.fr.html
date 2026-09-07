@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-04" />
+  <meta name="dcterms.date" content="2026-09-06" />
   <title>scitech-librarian — Manuel utilisateur</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Manuel utilisateur</h1>
-<p class="subtitle">version 3.5.2</p>
-<p class="date">2026-09-04</p>
+<p class="subtitle">version 3.6.0</p>
+<p class="date">2026-09-06</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -127,8 +127,9 @@ recherche entier</a></li>
 <li><a href="#formats" id="toc-formats">7.4 Formats</a></li>
 <li><a href="#filtres" id="toc-filtres">7.5 Filtres</a></li>
 <li><a href="#prisma" id="toc-prisma">7.6 PRISMA</a></li>
-<li><a href="#suggestions" id="toc-suggestions">7.7 Suggestions</a></li>
-<li><a href="#langues" id="toc-langues">7.8 Langues</a></li>
+<li><a href="#diagnostic" id="toc-diagnostic">7.7 Diagnostic</a></li>
+<li><a href="#suggestions" id="toc-suggestions">7.8 Suggestions</a></li>
+<li><a href="#langues" id="toc-langues">7.9 Langues</a></li>
 </ul></li>
 <li><a href="#indicateurs-des-revues" id="toc-indicateurs-des-revues">8.
 Indicateurs des revues</a></li>
@@ -211,7 +212,7 @@ année</td>
 <tr>
 <td><code>i18n.py</code></td>
 <td>langues du rapport : le catalogue en / pt-BR / es / de / fr (importé
-par <code>report.py</code> ; §7.8)</td>
+par <code>report.py</code> ; §7.9)</td>
 </tr>
 </tbody>
 </table>
@@ -382,7 +383,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -709,7 +710,80 @@ les entiers au fil du tri et relancez le rapport :</p>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;studies_included&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span> <span class="dt">&quot;reports_included&quot;</span><span class="fu">:</span> <span class="dv">31</span><span class="fu">,</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;citation_searching&quot;</span><span class="fu">:</span> <span class="st">&quot;reference lists of the 22 included studies&quot;</span><span class="fu">,</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;prior_work&quot;</span><span class="fu">:</span> <span class="st">&quot;none&quot;</span><span class="fu">,</span> <span class="dt">&quot;peer_review&quot;</span><span class="fu">:</span> <span class="st">&quot;search strategy reviewed by the librarian&quot;</span><span class="fu">}</span></span></code></pre></div>
-<h2 id="suggestions">7.7 Suggestions</h2>
+<h2 id="diagnostic">7.7 Diagnostic</h2>
+<p>Chaque rapport s’ouvre sur une section <strong>Diagnostic</strong>,
+placée avant les comptages pour qu’un nombre produit par un identifiant
+cassé ne soit jamais lu comme un résultat. Elle est calculée à partir
+des seuls comptages et des appels en échec, et ne dit rien quand rien ne
+va mal.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Constat</th>
+<th>Ce que cela signifie</th>
+<th>Que faire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Appels refusés, HTTP 401/403</td>
+<td>Un identifiant ou un droit d’accès, jamais la requête. Sur Scopus
+cela signifie en général que vous êtes hors du réseau de votre
+établissement</td>
+<td>Se connecter au VPN ou définir <code>SCOPUS_INSTTOKEN</code>,
+vérifier la clé, relancer ces blocs</td>
+</tr>
+<tr>
+<td>Limite de débit (429), erreur serveur (5xx), délai dépassé</td>
+<td>La base ou la connexion</td>
+<td>Relancer les blocs concernés ; obtenir la clé gratuite que désigne
+l’indice</td>
+</tr>
+<tr>
+<td>Requête rejetée, HTTP 400/422</td>
+<td>Ce moteur a analysé la chaîne produite et l’a refusée</td>
+<td>Chercher les caractères qu’il traite comme des opérateurs, ou
+utiliser <code>--skip</code></td>
+</tr>
+<tr>
+<td>Une base qui répondait avant et ne répond plus rien</td>
+<td>Une panne ou un identifiant expiré, trouvé en comparant
+<code>counts_history.csv</code></td>
+<td>Ne pas rapporter le zéro d’aujourd’hui</td>
+</tr>
+<tr>
+<td>0 résultat sur tous les blocs alors que d’autres ont trouvé des
+notices</td>
+<td>Elle n’indexe pas le domaine, ou elle a ignoré la requête en
+silence</td>
+<td>Vérifier un bloc à la main dans son interface web</td>
+</tr>
+<tr>
+<td>0 résultat sur plusieurs bases qui ont répondu aux autres blocs</td>
+<td>Le vocabulaire, non un domaine vide : un groupe de synonymes ne
+contient aucun terme employé par ces bases</td>
+<td>Retirer un groupe à la fois et relancer le bloc</td>
+</tr>
+</tbody>
+</table>
+<p>La dernière ligne est le piège pour lequel cette section existe. Un
+bloc qui renvoie trois résultats ressemble à une découverte de nouveauté
+; si deux grands index en ont renvoyé <em>exactement</em> zéro tout en
+répondant à tous les autres blocs par des milliers, c’est un groupe de
+synonymes cassé. Le rapport retient alors aussi, pour ce bloc, son
+conseil habituel de vérification de nouveauté.</p>
+<p>Les mêmes constats sont imprimés à la fin de l’exécution sous
+<code>DIAGNOSIS</code>, et chaque appel en échec est archivé avec sa
+cause et son code HTTP dans le <code>errors.json</code> de l’exécution.
+Les rapports traduisent les constats ; la console et les journaux
+restent en anglais, afin que des exécutions faites dans des langues
+différentes restent consultables ensemble.</p>
+<h2 id="suggestions">7.8 Suggestions</h2>
 <p>Fondées sur des règles, à la fin de chaque rapport : appels de
 backend en échec, blocs à des milliers de résultats, blocs de taille «
 nouveauté » (lire chaque résultat), plafond <code>--limit</code>
@@ -718,7 +792,7 @@ backend de qualité citation, recherche de libre accès non lancée, étapes
 PRISMA non remplies, pas d’indicateurs des revues, dérive des nombres
 entre exécutions et — en mode projet — l’absence de toute source
 manuelle.</p>
-<h2 id="langues">7.8 Langues</h2>
+<h2 id="langues">7.9 Langues</h2>
 <pre><code>python report.py --latest --lang pt-BR
 python report.py --project --lang de --format pdf
 python librarian.py --report-lang fr            # the report written at the end of a run</code></pre>
@@ -883,7 +957,7 @@ PDF en libre accès via Unpaywall ; rapports à trois niveaux en cinq
 formats avec PRISMA 2020 et PRISMA-S ; répertoires de recherche avec
 sources manuelles, provenance, chronologie et rapports différentiels ;
 indicateurs des revues avec série par année ; journaux d’audit ; une
-suite de tests hors ligne (325 vérifications) et CI.</p>
+suite de tests hors ligne (374 vérifications) et CI.</p>
 <p>Limitations, toutes par conception ou par le monde :</p>
 <ul>
 <li>Les nombres ne sont pas comparables entre bases de données ; les

@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 44343a37e1c07e63 -->
+<!-- source-digest: 15ff923f1762672d -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -177,7 +177,7 @@ datos que toca — no como letra pequeña, sino como principio de diseño:
   que un número *pequeño* sea el resultado informativo, ejecuta los mismos
   bloques a lo largo del tiempo, observa los recuentos — y luego lee cada
   resultado a mano antes de afirmar una laguna.
-- **Comprobable sin conexión.** 325 comprobaciones se ejecutan sin red y sin
+- **Comprobable sin conexión.** 374 comprobaciones se ejecutan sin red y sin
   claves (los backends se ejercitan contra respuestas de API grabadas; el
   directorio de investigación, los analizadores de ingesta, el almacén de
   revistas y el generador de informes contra directorios sintéticos); CI en
@@ -491,6 +491,37 @@ solo para este informe), `--metric NAME --min-metric X`, `--min-citations N`,
 los metadatos del informe y en el ítem 9 de PRISMA-S, para que un informe
 filtrado nunca se confunda con la búsqueda completa.
 
+## Diagnóstico: la ejecución se verifica a sí misma
+
+Un cero solo es evidencia si la base de datos fue realmente consultada. Todo
+informe comienza con una sección **Diagnóstico**, antes de los recuentos, y la
+ejecución imprime los mismos hallazgos bajo `DIAGNOSIS` al terminar:
+
+- **llamadas rechazadas (HTTP 401/403)** — una credencial o un derecho de
+  acceso, no la consulta; en Scopus suele significar que está fuera de la VPN
+  de su institución;
+- **límites de tasa, errores de servidor, tiempos agotados** — la base o la
+  conexión, dichos como tales, con la clave gratuita que señala la sugerencia
+  de la propia base;
+- **una consulta que el motor rechazó (HTTP 400/422)** — su gramática rechazó
+  la cadena generada;
+- **una base que respondió en la ejecución anterior y hoy no responde nada** —
+  caída del servicio o clave caducada, detectada comparando
+  `counts_history.csv`;
+- **una base que devuelve 0 en todos los bloques** mientras las demás
+  encuentran registros;
+- **un bloque para el que varias bases sanas devuelven exactamente 0** — eso
+  es el vocabulario, no un campo vacío: un grupo de sinónimos no contiene
+  ningún término que esas bases usen.
+
+El último es el hallazgo que cuesta una revisión. Un bloque con 3 resultados
+parece una laguna; cuando dos grandes índices devuelven *exactamente* cero
+para él mientras responden a todos los demás bloques con miles, se trata de un
+grupo de sinónimos roto. En ese caso el informe retiene su consejo habitual de
+"territorio de comprobación de novedad" y lo dice en su lugar. Cada llamada
+fallida queda archivada con su causa y su código HTTP en el `errors.json` de
+la ejecución.
+
 ## Métricas de revistas
 
 ```bash
@@ -517,7 +548,10 @@ ejemplo de `queries.example.json` contra las tres bases de datos **con
 licencia CC0** (OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5.705 resultados
 identificados, 1.286 registros recuperados, 1.226 únicos) renderizada en
 todos los niveles y todos los formatos — `simple` tiene 6 páginas,
-`intermediate` 68, `full` 427. Extractos de los PDF:
+`intermediate` 68, `full` 427. Fueron producidos por la versión 3.2.2, que es
+la versión que informa su propia tabla de metadatos; las secciones añadidas
+desde entonces (Diagnóstico y la base CORE) no aparecen en ellos. Extractos
+de los PDF:
 
 | `simple`, p. 1 — metadatos de la ejecución y estrategia de búsqueda | `simple`, p. 3 — flujo PRISMA 2020 |
 |---|---|
@@ -626,7 +660,7 @@ esta herramienta se construyó dentro de exactamente ese flujo de trabajo.
 python tests/test_librarian.py
 ```
 
-325 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
+374 comprobaciones, solo biblioteca estándar, sin red y sin claves — los
 backends se ejecutan contra respuestas de API grabadas; los analizadores de
 ingesta, la fusión del directorio de investigación, el almacén de revistas y
 el generador de informes contra directorios sintéticos — de modo que la suite
@@ -665,7 +699,7 @@ manuales el 28 de agosto de 2026. En términos de
 | **Conceptualización** | Una consulta en todas las bases de datos como instrumento reproducible; el método de recuentos como comprobación de novedad; la postura estricta sobre los términos de servicio (WoS manual en vez de scraping); el informe PRISMA de tres niveles; el directorio de investigación como unidad del laboratorio, fuentes manuales con procedencia, métricas de revistas seguidas en el tiempo | El esquema de consulta estructural; el motor de bases de datos como configuración; el modelo de documento del informe y la cadena de respaldo del PDF; el diseño del directorio como índice |
 | **Metodología** | Disciplina de diseño de consultas ("un número pequeño es el hallazgo — luego lee cada resultado"); selección de bases de datos y estrategia de acceso institucional | Cuantificación de revistas basura; la corrección de limitación de grupos de arXiv; el diseño de punto de control tras cada llamada |
 | **Software** | — | Todo |
-| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 325 comprobaciones; CI; autopruebas en vivo |
+| **Validación** | Barridos de novedad en vivo sobre consultas de investigación reales; detectó las trampas de la gramática de WoS, el cuelgue de arXiv, la discrepancia de recuentos OpenAlex/Scopus | La suite sin conexión de 374 comprobaciones; CI; autopruebas en vivo |
 | **Investigación** | El laberinto del acceso institucional (CAPES/CAFe, VPN, obtención de claves) | Documentación de API de 8+ bases de datos; análisis del código de la competencia |
 | **Redacción** | Revisión y edición | Borrador original |
 | **Recursos · Supervisión · Administración del proyecto · Obtención de financiación** | Todo | — |
@@ -678,6 +712,12 @@ que la licencia y el aviso lo acompañen; las contribuciones se aceptan en los
 mismos términos (sección 5). Y respeta los términos de servicio de cada base
 de datos que consultes; esta herramienta está hecha para que ese sea el camino
 fácil.
+
+[`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) inventaria cada dependencia,
+fuente de datos y norma que usa este proyecto, con los términos de cada una;
+[`SECURITY.md`](SECURITY.md) es cómo informar una vulnerabilidad en privado; y
+[`docs/platforms.md`](docs/platforms.md) registra las plataformas en las que la
+herramienta se ha ejecutado realmente, con fecha.
 
 ### Exención de responsabilidad
 

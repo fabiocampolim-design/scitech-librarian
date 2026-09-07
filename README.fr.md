@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 44343a37e1c07e63 -->
+<!-- source-digest: 15ff923f1762672d -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -181,7 +181,7 @@ conception :
   blocs de sorte qu'un *petit* nombre soit le résultat informatif, exécutez
   les mêmes blocs dans le temps, surveillez les nombres — puis lisez chaque
   résultat à la main avant d'affirmer une lacune.
-- **Testable hors ligne.** 325 vérifications s'exécutent sans réseau et sans
+- **Testable hors ligne.** 374 vérifications s'exécutent sans réseau et sans
   clés (les backends sont exercés contre des réponses d'API enregistrées ; le
   répertoire de recherche, les analyseurs d'ingestion, le magasin des revues
   et le générateur de rapports contre des répertoires synthétiques) ; CI sur
@@ -502,6 +502,36 @@ filtres sont imprimés dans les métadonnées du rapport et dans l'item 9 de
 PRISMA-S, pour qu'un rapport filtré ne soit jamais pris pour la recherche
 entière.
 
+## Diagnostic : l'exécution se vérifie elle-même
+
+Un zéro n'est un résultat que si la base a réellement été interrogée. Chaque
+rapport s'ouvre sur une section **Diagnostic**, avant les comptages, et
+l'exécution imprime les mêmes constats sous `DIAGNOSIS` à la fin :
+
+- **appels refusés (HTTP 401/403)** — un identifiant ou un droit d'accès, pas
+  la requête ; sur Scopus cela signifie en général que vous êtes hors du VPN
+  de votre établissement ;
+- **limites de débit, erreurs serveur, délais dépassés** — la base ou la
+  connexion, nommées comme telles, avec la clé gratuite que désigne l'indice
+  de la base elle-même ;
+- **une requête que le moteur a rejetée (HTTP 400/422)** — sa grammaire a
+  refusé la chaîne produite ;
+- **une base qui a répondu à l'exécution précédente et ne répond plus rien
+  aujourd'hui** — une panne ou une clé expirée, repérée en comparant
+  `counts_history.csv` ;
+- **une base renvoyant 0 sur tous les blocs** alors que les autres trouvent
+  des notices ;
+- **un bloc pour lequel plusieurs bases saines renvoient exactement 0** —
+  c'est le vocabulaire, non un domaine vide : un groupe de synonymes ne
+  contient aucun terme employé par ces bases.
+
+Le dernier est le constat qui coûte une revue. Un bloc à 3 résultats ressemble
+à une lacune ; quand deux grands index en renvoient *exactement* zéro tout en
+répondant à tous les autres blocs par des milliers, c'est un groupe de
+synonymes cassé. Le rapport retient alors son conseil habituel de « terrain de
+vérification de nouveauté » et le dit à la place. Chaque appel en échec est
+archivé avec sa cause et son code HTTP dans le `errors.json` de l'exécution.
+
 ## Indicateurs des revues
 
 ```bash
@@ -528,7 +558,9 @@ d'exemple de `queries.example.json` contre les trois bases de données **sous
 licence CC0** (OpenAlex, arXiv, INSPIRE-HEP ; 2026-08-28 : 5 705 résultats
 identifiés, 1 286 notices récupérées, 1 226 uniques) rendue à chaque niveau
 et dans chaque format — `simple` fait 6 pages, `intermediate` 68, `full` 427.
-Extraits des PDF :
+Ils ont été produits par la version 3.2.2, celle qu'indique leur propre
+tableau de métadonnées ; les sections ajoutées depuis (Diagnostic et la base
+CORE) n'y figurent donc pas. Extraits des PDF :
 
 | `simple`, p. 1 — métadonnées de l'exécution et stratégie de recherche | `simple`, p. 3 — flux PRISMA 2020 |
 |---|---|
@@ -639,7 +671,7 @@ agent — cet outil a été construit dans exactement ce flux de travail.
 python tests/test_librarian.py
 ```
 
-325 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
+374 vérifications, bibliothèque standard uniquement, sans réseau et sans clés
 — les backends s'exécutent contre des réponses d'API enregistrées ; les
 analyseurs d'ingestion, la fusion du répertoire de recherche, le magasin des
 revues et le générateur de rapports contre des répertoires synthétiques — de
@@ -677,7 +709,7 @@ recherche, de l'ingestion, des indicateurs des revues et des manuels le
 | **Conceptualisation** | Une requête sur toutes les bases de données comme instrument reproductible ; la méthode des nombres comme vérification de nouveauté ; la position stricte sur les conditions d'utilisation (WoS manuel plutôt que scraping) ; le rapport PRISMA à trois niveaux ; le répertoire de recherche comme unité du laboratoire, sources manuelles avec provenance, indicateurs des revues suivis dans le temps | Le schéma de requête structurelle ; le moteur des bases de données en configuration ; le modèle de document du rapport et la chaîne de repli PDF ; la conception du répertoire comme index |
 | **Méthodologie** | Discipline de conception des requêtes (« un petit nombre est la découverte — puis lire chaque résultat ») ; sélection des bases de données et stratégie d'accès institutionnel | Quantification des revues déchets ; la correction de limitation des groupes arXiv ; la conception point de reprise après chaque appel |
 | **Logiciel** | — | Tout |
-| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 325 vérifications ; CI ; autotests en direct |
+| **Validation** | Balayages de nouveauté en direct sur de vraies requêtes de recherche ; a repéré les pièges de grammaire WoS, le blocage d'arXiv, l'écart de nombres OpenAlex/Scopus | La suite hors ligne de 374 vérifications ; CI ; autotests en direct |
 | **Investigation** | Le labyrinthe de l'accès institutionnel (CAPES/CAFe, VPN, obtention des clés) | Documentation des API de 8+ bases de données ; analyse du code des concurrents |
 | **Rédaction** | Relecture et édition | Première version |
 | **Ressources · Supervision · Administration du projet · Obtention de financements** | Tout | — |
@@ -690,6 +722,12 @@ commercialement, à condition que la licence et l'avis l'accompagnent ; les
 contributions sont acceptées aux mêmes conditions (section 5). Et respectez
 les conditions d'utilisation de chaque base de données que vous interrogez ;
 cet outil est construit pour en faire le chemin facile.
+
+[`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) inventorie chaque dépendance,
+source de données et norme utilisée par ce projet, avec les conditions de
+chacune ; [`SECURITY.md`](SECURITY.md) explique comment signaler une
+vulnérabilité en privé ; et [`docs/platforms.md`](docs/platforms.md) consigne,
+avec leur date, les plateformes sur lesquelles l'outil a réellement tourné.
 
 ### Avertissement
 

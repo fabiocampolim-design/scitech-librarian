@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.10.2" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="dcterms.date" content="2026-09-04" />
+  <meta name="dcterms.date" content="2026-09-06" />
   <title>scitech-librarian — Benutzerhandbuch</title>
   <style>
 
@@ -96,8 +96,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 <body>
 <header id="title-block-header">
 <h1 class="title">scitech-librarian — Benutzerhandbuch</h1>
-<p class="subtitle">Version 3.5.2</p>
-<p class="date">2026-09-04</p>
+<p class="subtitle">Version 3.6.0</p>
+<p class="date">2026-09-06</p>
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
@@ -126,8 +126,9 @@ Forschungsverzeichnis</a></li>
 <li><a href="#formate" id="toc-formate">7.4 Formate</a></li>
 <li><a href="#filter" id="toc-filter">7.5 Filter</a></li>
 <li><a href="#prisma" id="toc-prisma">7.6 PRISMA</a></li>
-<li><a href="#vorschläge" id="toc-vorschläge">7.7 Vorschläge</a></li>
-<li><a href="#sprachen" id="toc-sprachen">7.8 Sprachen</a></li>
+<li><a href="#diagnose" id="toc-diagnose">7.7 Diagnose</a></li>
+<li><a href="#vorschläge" id="toc-vorschläge">7.8 Vorschläge</a></li>
+<li><a href="#sprachen" id="toc-sprachen">7.9 Sprachen</a></li>
 </ul></li>
 <li><a href="#zeitschriftenkennzahlen" id="toc-zeitschriftenkennzahlen">8. Zeitschriftenkennzahlen</a></li>
 <li><a href="#web-of-science" id="toc-web-of-science">9. Web of
@@ -208,7 +209,7 @@ Filter</td>
 <tr>
 <td><code>i18n.py</code></td>
 <td>Berichtssprachen: der en / pt-BR / es / de / fr-Katalog (von
-<code>report.py</code> importiert; §7.8)</td>
+<code>report.py</code> importiert; §7.9)</td>
 </tr>
 </tbody>
 </table>
@@ -379,7 +380,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -704,7 +705,81 @@ aus:</p>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;studies_included&quot;</span><span class="fu">:</span> <span class="dv">22</span><span class="fu">,</span> <span class="dt">&quot;reports_included&quot;</span><span class="fu">:</span> <span class="dv">31</span><span class="fu">,</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;citation_searching&quot;</span><span class="fu">:</span> <span class="st">&quot;reference lists of the 22 included studies&quot;</span><span class="fu">,</span></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a> <span class="dt">&quot;prior_work&quot;</span><span class="fu">:</span> <span class="st">&quot;none&quot;</span><span class="fu">,</span> <span class="dt">&quot;peer_review&quot;</span><span class="fu">:</span> <span class="st">&quot;search strategy reviewed by the librarian&quot;</span><span class="fu">}</span></span></code></pre></div>
-<h2 id="vorschläge">7.7 Vorschläge</h2>
+<h2 id="diagnose">7.7 Diagnose</h2>
+<p>Jeder Bericht beginnt mit einem Abschnitt <strong>Diagnose</strong>,
+vor den Trefferzahlen platziert, damit eine Zahl, die aus einer kaputten
+Zugangsberechtigung stammt, nie als Ergebnis gelesen wird. Er wird
+allein aus den Trefferzahlen und den fehlgeschlagenen Aufrufen berechnet
+und sagt nichts, wenn nichts falsch ist.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Befund</th>
+<th>Was er bedeutet</th>
+<th>Was zu tun ist</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Abgewiesene Aufrufe, HTTP 401/403</td>
+<td>Eine Zugangsberechtigung, nie die Suchanfrage. Bei Scopus heißt es
+meist, dass Sie außerhalb des Netzes Ihrer Einrichtung sind</td>
+<td>Ins VPN gehen oder <code>SCOPUS_INSTTOKEN</code> setzen, den
+Schlüssel prüfen, diese Blöcke wiederholen</td>
+</tr>
+<tr>
+<td>Ratenlimit (429), Serverfehler (5xx), Zeitüberschreitung</td>
+<td>Die Datenbank oder die Verbindung</td>
+<td>Betroffene Blöcke wiederholen; den kostenlosen Schlüssel holen, den
+der Hinweis nennt</td>
+</tr>
+<tr>
+<td>Anfrage abgelehnt, HTTP 400/422</td>
+<td>Diese Suchmaschine hat die erzeugte Zeichenkette gelesen und
+verworfen</td>
+<td>Nach Zeichen suchen, die sie als Operatoren behandelt, oder
+<code>--skip</code> verwenden</td>
+</tr>
+<tr>
+<td>Eine Datenbank, die früher antwortete und jetzt nichts liefert</td>
+<td>Ein Ausfall oder eine abgelaufene Zugangsberechtigung, gefunden
+durch Vergleich mit <code>counts_history.csv</code></td>
+<td>Die heutige Null nicht berichten</td>
+</tr>
+<tr>
+<td>0 Treffer in jedem Block, während andere Datensätze fanden</td>
+<td>Sie erschließt das Fachgebiet nicht, oder sie hat die Anfrage still
+ignoriert</td>
+<td>Einen Block von Hand in ihrer Weboberfläche prüfen</td>
+</tr>
+<tr>
+<td>0 Treffer bei mehreren Datenbanken, die die anderen Blöcke
+beantwortet haben</td>
+<td>Das Vokabular, kein leeres Feld: eine Synonymgruppe enthält keinen
+Begriff, den diese Datenbanken verwenden</td>
+<td>Eine Gruppe nach der anderen weglassen und den Block
+wiederholen</td>
+</tr>
+</tbody>
+</table>
+<p>Die letzte Zeile ist die Falle, für die es diesen Abschnitt gibt. Ein
+Block mit drei Treffern sieht aus wie ein Neuheitsbefund; wenn zwei
+große Indizes dafür <em>genau</em> null lieferten und jeden anderen
+Block mit Tausenden beantworteten, ist eine Synonymgruppe kaputt. Dann
+hält der Bericht für diesen Block auch seinen üblichen Rat zur
+Neuheitsprüfung zurück.</p>
+<p>Dieselben Befunde werden am Ende des Laufs unter
+<code>DIAGNOSIS</code> ausgegeben, und jeder fehlgeschlagene Aufruf wird
+mit Ursache und HTTP-Code in der <code>errors.json</code> des Laufs
+archiviert. Berichte übersetzen die Befunde; Konsole und Protokolle
+bleiben englisch, damit Läufe in verschiedenen Sprachen gemeinsam
+durchsuchbar bleiben.</p>
+<h2 id="vorschläge">7.8 Vorschläge</h2>
 <p>Regelbasiert, am Ende jedes Berichts: fehlgeschlagene
 Backend-Aufrufe, Blöcke mit Tausenden Treffern, Blöcke in Neuheitsgröße
 (jeden Treffer lesen), erreichte <code>--limit</code>-Obergrenzen, eine
@@ -712,7 +787,7 @@ Datenbank mit hohem Anteil gefilterter Zeitschriften, kein zitierfähiges
 Backend, Open-Access-Abfrage nicht ausgeführt, unausgefüllte
 PRISMA-Stufen, keine Zeitschriftenkennzahlen, Trefferdrift zwischen
 Läufen und — im Projektmodus — das Fehlen jeder manuellen Quelle.</p>
-<h2 id="sprachen">7.8 Sprachen</h2>
+<h2 id="sprachen">7.9 Sprachen</h2>
 <pre><code>python report.py --latest --lang pt-BR
 python report.py --project --lang de --format pdf
 python librarian.py --report-lang fr            # the report written at the end of a run</code></pre>
@@ -875,7 +950,7 @@ Backends; NASA ADS und INSPIRE für Physik; legale OA-PDF-Links über
 Unpaywall; dreistufige Berichte in fünf Formaten mit PRISMA 2020 und
 PRISMA-S; Forschungsverzeichnisse mit manuellen Quellen, Herkunft,
 Zeitverlauf und Differenzberichten; Zeitschriftenkennzahlen mit
-Jahresreihe; Audit-Logs; eine Offline-Testsuite (325 Prüfungen) und
+Jahresreihe; Audit-Logs; eine Offline-Testsuite (374 Prüfungen) und
 CI.</p>
 <p>Einschränkungen, alle konstruktionsbedingt oder durch die Welt:</p>
 <ul>

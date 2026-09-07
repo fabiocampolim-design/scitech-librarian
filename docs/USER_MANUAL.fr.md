@@ -1,9 +1,9 @@
 ---
 title: "scitech-librarian — Manuel utilisateur"
-subtitle: "version 3.5.2"
-date: "2026-09-04"
+subtitle: "version 3.6.0"
+date: "2026-09-06"
 lang: "fr"
-source-digest: "a0b91afa92730631"
+source-digest: "807a8e5918a310c8"
 ---
 
 [English](USER_MANUAL.md) · [Português (Brasil)](USER_MANUAL.pt-BR.md) · [Español](USER_MANUAL.es.md) · [Deutsch](USER_MANUAL.de.md) · **Français**
@@ -37,7 +37,7 @@ rien à installer : copiez les fichiers, fournissez vos clés, écrivez
 | `journals.py` | indicateurs des revues (chiffres de type facteur d'impact) par année |
 | `wos_manual.py` | Web of Science à la main (pas d'API gratuite utilisable) |
 | `render.py` | moteurs de rendu Markdown / HTML / LaTeX / texte et la chaîne PDF (importé par `report.py`) |
-| `i18n.py` | langues du rapport : le catalogue en / pt-BR / es / de / fr (importé par `report.py` ; §7.8) |
+| `i18n.py` | langues du rapport : le catalogue en / pt-BR / es / de / fr (importé par `report.py` ; §7.9) |
 
 **Pour les agents d'IA.** `AGENTS.md` à la racine du dépôt est la description
 complète de l'outil orientée machine. Si vous travaillez avec un agent de
@@ -174,7 +174,7 @@ python librarian.py --pdfs --pdf-blocks NOV  # legal OA-PDF links via Unpaywall
 python librarian.py --keep-junk            # keep non-curated venues (Zenodo, SSRN…)
 python librarian.py --outdir lit_topomat   # another research directory
 python librarian.py --report-level intermediate --report-format md html pdf
-python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.8)
+python librarian.py --report-lang pt-BR    # report in Portuguese (en, pt-BR, es, de, fr; §7.9)
 python librarian.py --no-report
 python librarian.py --queries other.json      # another query file (default ./queries.json)
 python librarian.py --backends-file b.json    # another backends config; --init-backends writes the defaults
@@ -391,7 +391,36 @@ au fil du tri et relancez le rapport :
  "prior_work": "none", "peer_review": "search strategy reviewed by the librarian"}
 ```
 
-## 7.7 Suggestions
+## 7.7 Diagnostic
+
+Chaque rapport s'ouvre sur une section **Diagnostic**, placée avant les
+comptages pour qu'un nombre produit par un identifiant cassé ne soit jamais lu
+comme un résultat. Elle est calculée à partir des seuls comptages et des
+appels en échec, et ne dit rien quand rien ne va mal.
+
+| Constat | Ce que cela signifie | Que faire |
+|---|---|---|
+| Appels refusés, HTTP 401/403 | Un identifiant ou un droit d'accès, jamais la requête. Sur Scopus cela signifie en général que vous êtes hors du réseau de votre établissement | Se connecter au VPN ou définir `SCOPUS_INSTTOKEN`, vérifier la clé, relancer ces blocs |
+| Limite de débit (429), erreur serveur (5xx), délai dépassé | La base ou la connexion | Relancer les blocs concernés ; obtenir la clé gratuite que désigne l'indice |
+| Requête rejetée, HTTP 400/422 | Ce moteur a analysé la chaîne produite et l'a refusée | Chercher les caractères qu'il traite comme des opérateurs, ou utiliser `--skip` |
+| Une base qui répondait avant et ne répond plus rien | Une panne ou un identifiant expiré, trouvé en comparant `counts_history.csv` | Ne pas rapporter le zéro d'aujourd'hui |
+| 0 résultat sur tous les blocs alors que d'autres ont trouvé des notices | Elle n'indexe pas le domaine, ou elle a ignoré la requête en silence | Vérifier un bloc à la main dans son interface web |
+| 0 résultat sur plusieurs bases qui ont répondu aux autres blocs | Le vocabulaire, non un domaine vide : un groupe de synonymes ne contient aucun terme employé par ces bases | Retirer un groupe à la fois et relancer le bloc |
+
+La dernière ligne est le piège pour lequel cette section existe. Un bloc qui
+renvoie trois résultats ressemble à une découverte de nouveauté ; si deux
+grands index en ont renvoyé *exactement* zéro tout en répondant à tous les
+autres blocs par des milliers, c'est un groupe de synonymes cassé. Le rapport
+retient alors aussi, pour ce bloc, son conseil habituel de vérification de
+nouveauté.
+
+Les mêmes constats sont imprimés à la fin de l'exécution sous `DIAGNOSIS`, et
+chaque appel en échec est archivé avec sa cause et son code HTTP dans le
+`errors.json` de l'exécution. Les rapports traduisent les constats ; la
+console et les journaux restent en anglais, afin que des exécutions faites
+dans des langues différentes restent consultables ensemble.
+
+## 7.8 Suggestions
 
 Fondées sur des règles, à la fin de chaque rapport : appels de backend en
 échec, blocs à des milliers de résultats, blocs de taille « nouveauté » (lire
@@ -401,7 +430,7 @@ accès non lancée, étapes PRISMA non remplies, pas d'indicateurs des revues,
 dérive des nombres entre exécutions et — en mode projet — l'absence de toute
 source manuelle.
 
-## 7.8 Langues
+## 7.9 Langues
 
 ```
 python report.py --latest --lang pt-BR
@@ -536,7 +565,7 @@ la physique ; liens légaux vers des PDF en libre accès via Unpaywall ;
 rapports à trois niveaux en cinq formats avec PRISMA 2020 et PRISMA-S ;
 répertoires de recherche avec sources manuelles, provenance, chronologie et
 rapports différentiels ; indicateurs des revues avec série par année ;
-journaux d'audit ; une suite de tests hors ligne (325 vérifications) et CI.
+journaux d'audit ; une suite de tests hors ligne (374 vérifications) et CI.
 
 Limitations, toutes par conception ou par le monde :
 

@@ -1,3 +1,8 @@
+# The suite byte-compares generated artefacts (the vendored checker, SKILL.md,
+# the reproducible manual PDF), so line endings are pinned repo-wide, not
+# per file: a CRLF checkout on Windows would break the comparison (rule 30).
+* text=auto eol=lf
+
 # Vendored byte-identical files must not be CRLF-converted on checkout
 tests/conformance.py text eol=lf
 tests/test_githubify_conformance.py text eol=lf
