@@ -32,7 +32,7 @@ import re
 import subprocess
 import sys
 
-VERSION = "1.6.6"
+VERSION = "1.6.7"
 
 TEXT_EXT = {".py", ".md", ".ipynb", ".txt", ".yml", ".yaml", ".json", ".ps1",
             ".bib", ".cff", ".toml", ".cfg", ".ini", ".bat", ".sh", ".html",
@@ -640,11 +640,25 @@ def _readme(repo):
     return slurp(p) if os.path.isfile(p) else ""
 
 
+def _flat(text):
+    """Lower-case with whitespace collapsed.
+
+    2026-09-07 (SKYCOMPUTING): a correct disclaimer was reported as missing
+    "without warrant" because the paragraph happened to wrap between "without"
+    and "warranties". A prose check that depends on where a line breaks tests
+    the formatter, not the content, and sends the author hunting for a clause
+    that is already there. The same trap was then hit a second time in that
+    project's own docs guard within the hour, which is why this is a helper
+    rather than a one-line fix.
+    """
+    return " ".join(text.lower().split())
+
+
 def chk_readme_disclaimer(repo, ctx):
     text = _readme(repo)
     if not text:
         return "FAIL", "no README.md"
-    low = text.lower()
+    low = _flat(text)
     if "### disclaimer" not in low:
         return "FAIL", "README has no '### Disclaimer' section (rule 17)"
     missing = [s for s in ("without warrant", "liable") if s not in low]
@@ -654,7 +668,7 @@ def chk_readme_disclaimer(repo, ctx):
 
 
 def chk_non_affiliation(repo, ctx):
-    if "not affiliated" in _readme(repo).lower():
+    if "not affiliated" in _flat(_readme(repo)):
         return "PASS", "non-affiliation note present"
     return "FAIL", "README lacks a non-affiliation note (rule 17)"
 
