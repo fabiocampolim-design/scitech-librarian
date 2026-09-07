@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 15ff923f1762672d -->
+<!-- source-digest: 564626a613f3cb40 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -555,9 +555,9 @@ wird ihn nicht scrapen.
 (OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5.705 identifizierte Treffer,
 1.286 abgerufene Datensätze, 1.226 eindeutige), gerendert in jeder Stufe und
 jedem Format — `simple` hat 6 Seiten, `intermediate` 68, `full` 427. Erzeugt
-wurden sie mit Version 3.2.2, die auch ihre eigene Metadatentabelle nennt;
-die seither hinzugekommenen Abschnitte (Diagnose und die Datenbank CORE)
-stehen daher nicht darin. Ausschnitte aus den PDFs:
+wurden sie mit den Versionen 3.2 und 3.2.2 — die Metadatentabelle jedes
+Berichts nennt die, die ihn erzeugt hat —, sodass das seither Hinzugekommene,
+der Abschnitt Diagnose und die Datenbank CORE, nicht darin steht. Ausschnitte aus den PDFs:
 
 | `simple`, S. 1 — Laufmetadaten und Suchstrategie | `simple`, S. 3 — PRISMA-2020-Fluss |
 |---|---|

@@ -502,9 +502,9 @@ not scrape it.
 (OpenAlex, arXiv, INSPIRE-HEP; 2026-08-28: 5,705 hits identified, 1,286
 records retrieved, 1,226 unique) rendered at every level in every format —
 `simple` is 6 pages, `intermediate` 68, `full` 427. They were produced by
-version 3.2.2, which is the version their own metadata table reports; the
-sections added since (Diagnostics, and the CORE backend) are therefore not
-in them. Excerpts from the PDFs:
+versions 3.2 and 3.2.2 — each report's own metadata table names the one
+that made it — so what has been added since, the Diagnostics section and the
+CORE backend, is not in them. Excerpts from the PDFs:
 
 | `simple`, p. 1 — run metadata and search strategy | `simple`, p. 3 — PRISMA 2020 flow |
 |---|---|

@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 15ff923f1762672d -->
+<!-- source-digest: 564626a613f3cb40 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -534,9 +534,9 @@ importação de uma exportação licenciada. A ferramenta não vai raspá-lo.
 arXiv, INSPIRE-HEP; 2026-08-28: 5.705 resultados identificados, 1.286
 registros recuperados, 1.226 únicos), renderizada em todos os níveis e todos
 os formatos — `simple` tem 6 páginas, `intermediate` 68, `full` 427. Foram
-produzidos pela versão 3.2.2, que é a versão informada na própria tabela de
-metadados deles; as seções acrescentadas desde então (Diagnóstico e a base
-CORE) portanto não aparecem ali. Trechos dos PDFs:
+produzidos pelas versões 3.2 e 3.2.2 — a tabela de metadados de cada
+relatório nomeia a que o gerou —, de modo que o que veio depois, a seção
+Diagnóstico e a base CORE, não aparece ali. Trechos dos PDFs:
 
 | `simple`, p. 1 — metadados da rodada e estratégia de busca | `simple`, p. 3 — fluxo PRISMA 2020 |
 |---|---|

@@ -1,5 +1,5 @@
 # scitech-librarian
-<!-- source-digest: 15ff923f1762672d -->
+<!-- source-digest: 564626a613f3cb40 -->
 
 [![Tests](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml/badge.svg)](https://github.com/fabiocampolim-design/scitech-librarian/actions/workflows/tests.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
@@ -558,9 +558,10 @@ d'exemple de `queries.example.json` contre les trois bases de données **sous
 licence CC0** (OpenAlex, arXiv, INSPIRE-HEP ; 2026-08-28 : 5 705 résultats
 identifiés, 1 286 notices récupérées, 1 226 uniques) rendue à chaque niveau
 et dans chaque format — `simple` fait 6 pages, `intermediate` 68, `full` 427.
-Ils ont été produits par la version 3.2.2, celle qu'indique leur propre
-tableau de métadonnées ; les sections ajoutées depuis (Diagnostic et la base
-CORE) n'y figurent donc pas. Extraits des PDF :
+Ils ont été produits par les versions 3.2 et 3.2.2 — le tableau de
+métadonnées de chaque rapport nomme celle qui l'a produit —, de sorte que ce
+qui a été ajouté depuis, la section Diagnostic et la base CORE, n'y figure
+pas. Extraits des PDF :
 
 | `simple`, p. 1 — métadonnées de l'exécution et stratégie de recherche | `simple`, p. 3 — flux PRISMA 2020 |
 |---|---|
