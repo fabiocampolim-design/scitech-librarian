@@ -106,6 +106,22 @@ every log stay English — a project rule, guarded by the suite. Sample:
   if one is installed) — citation-graph gaps and vocabulary gaps are
   different failure modes, and this step has caught the most important
   references in past reviews.
+- **Never conclude from the top-cited hits.** Ranking a novelty block by
+  citations answers "what is famous", not "what exists". LAMMPS 2026-09-07:
+  the 139 hits of a deliberate-intersection block, ranked by citations, were
+  all *extensions* of the code and supported a tidy "nobody studies this"
+  conclusion. Scanning **all 139** titles and abstracts for the block's own
+  vocabulary found 23 relevant and four decisive — including the maintainer's
+  own paper on the code's software engineering, and the closest existing
+  neighbour of the tool being built. All four were recent and lightly cited,
+  i.e. invisible to the ranking. Grep the whole block; the only gap you can
+  defend is the one you actually looked at.
+- **A keyword search finds the literature that uses a name, not the paper
+  that coined the thing.** Same run: a block requiring "LAMMPS" never returned
+  Plimpton 1995, whose title and abstract do not contain the word, and a
+  methods block returned *commentary on* Nosé, Hoover, Berendsen and FIRE
+  rather than those papers themselves. Add the founding references by hand
+  from the methods' own citations, and say in the report that you did.
 
 ## No stray copies
 
